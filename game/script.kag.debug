@@ -3,6 +3,7 @@
 # Settings
 @game_title "Sample Visual Novel"
 
+
 # Define characters
 @char Sayuri
 
@@ -12,6 +13,7 @@
 # Define sprite images
 @sprite miki = Miki_Casual_Smile.png
 @sprite miki_openSmile = Miki_Casual_OpenSmile.png
+
 
         
 @scene start

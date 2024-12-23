@@ -78,6 +78,9 @@ class VNEngine:
         self.current_sprites = []
         self.dialogue_queue = []
         self.running = True
+        self.dialogue_text_color = (255, 255, 255)
+        self.character_name_color = (255, 255, 255)
+        
 
     COMMAND_PREFIX = '@'
     COMMENT_PREFIX = '#'
@@ -297,7 +300,7 @@ class VNEngine:
             # End of Label @endScene
             case "endScene":
                 self.current_line = len(self.script)  # End the script
-
+            
             case _:
                 raise ValueError(f"Error: Unknown command ({cmd})")
         
@@ -525,13 +528,13 @@ class VNEngine:
    
         line_height = self.font.get_height()
         textbox_height = line_height * len(wrapped_lines)
-
-        character_surface = self.font.render(character, True, (255, 255, 255))
+        print(self.character_name_color)
+        character_surface = self.font.render(character, True, self.character_name_color)
         
         self.screen.blit(character_surface, (textbox_x, textbox_y - 40))
 
         for i, line in enumerate(wrapped_lines):
-            dialogue_surface = self.font.render(line, True, (255, 255, 255))
+            dialogue_surface = self.font.render(line, True, self.dialogue_text_color)
             self.screen.blit(dialogue_surface, (textbox_x, textbox_y + i * line_height))
 
         self.dialogue_queue.append((character, dialogue))
