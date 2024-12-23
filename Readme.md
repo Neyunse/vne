@@ -131,6 +131,8 @@ The `script.kag` file uses a simple syntax to define the flow of the visual nove
 
 >INFO: `@return` returns to a line after changing scenes.
 
+>INFO: All `@scene` need to be closed with `@endScene`, except when using `@return`.
+
 ## Example Script
 
 ```plaintext
