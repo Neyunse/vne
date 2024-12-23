@@ -1,81 +1,77 @@
 # Visual Novel Engine (VNEngine)
 
-**VNEngine** es un motor para novelas visuales desarrollado en Python utilizando Pygame. Ofrece una forma flexible y sencilla de crear novelas visuales con soporte para personajes, fondos, sprites, diálogos, condiciones y etiquetas.
+**VNEngine** is a visual novel engine developed in Python using Pygame. It offers a flexible and simple way to create visual novels with support for characters, backgrounds, sprites, dialogues, conditions, and labels.
 
-## Características
+## Features
 
-- **Fácil configuración**: Define variables, personajes, fondos, sprites y más utilizando comandos simples en un archivo de script.
-- **Motor basado en Pygame**: Renderizado de gráficos y manejo de eventos mediante Pygame.
-- **Soporte de lógica de flujo**: Uso de etiquetas, saltos entre escenas y condiciones para controlar el flujo narrativo. (beta)
-- **Herramientas de depuración**: Registro automático de eventos y soporte para manejo de errores.
+- **Easy setup**: Define variables, characters, backgrounds, sprites, and more using simple commands in a script file.
+- **Pygame-based engine**: Rendering of graphics and event handling via Pygame.
+- **Flow logic support**: Use of labels, scene jumps, and conditions to control the narrative flow. (beta)
+- **Debugging tools**: Automatic event logging and error handling support.
 
-## Instalación (build)
+## Installation (build)
 
-1. Descarga el ejecutable
+1. Download the executable
+2. Run the engine (engine.exe)
+3. Edit
+4. Have fun!
 
-2. Ejecuta el motor (engine.exe)
+## Installation (SRC)
 
-3. Edita
-
-4. Diviertete!
-
-## Instalación (SRC)
-
-1. Clona este repositorio:
+1. Clone this repository:
    ```bash
-   git clone https://github.com/tuusuario/vnengine.git
-   cd vnengine
+   git clone https://github.com/Neyunse/vne
+   cd vne
    ```
 
-2. Instala las dependencias necesarias:
+2. Install necessary dependencies:
    ```bash
    pip install pygame
    ```
 
-3. Ejecuta el motor:
+3. Run the engine:
    ```bash
    python engine.py
    ```
 
-## Estructura del Proyecto
+## Project Structure
 
 ```plaintext
 .
-├── vne.exe            # SDK / motor.
-├── game/              # Carpeta para los archivos del juego.
-│   ├── assets/        # Contiene recursos del juego.
-│   │   ├── bg/        # Imágenes de fondo.
-│   │   └── sprites/   # Imágenes de personajes
-│   └── script.kag     # Archivo de script principal.
-
+├── vne.exe            # SDK / engine.
+├── game/              # Folder for game files.
+│   ├── assets/        # Contains game resources.
+│   │   ├── bg/        # Background images.
+│   │   └── sprites/   # Character images.
+│   └── script.kag     # Main script file.
 ```
 
-## Sintaxis del Script
+## Script Syntax
 
-El archivo `script.kag` utiliza una sintaxis sencilla para definir el flujo de la novela visual. Algunos comandos principales incluyen:
+The `script.kag` file uses a simple syntax to define the flow of the visual novel. Some key commands include:
 
->Nota: el motor no soporta "menus de elecciones", "guardado", "carga de partidas" por el momento. Y no tiene interfaz de usuario.
+>Note: the engine does not support "choice menus", "saving", or "loading" at the moment. It also has no user interface.
 
-- **Configuración inicial**:
+- **Initial setup**:
   ```plaintext
-  @game_title "Título de la Novela Visual"
+  @game_title "Visual Novel Title"
   
-  # By default 1280 720 is recommended, you can change the size but you can see problems.
+  # By default, 1280 720 is recommended, you can change the size but you may experience issues.
   # @game_size 1280 720
 
-  # por defecto icon.png y se debe colocar junto a engine.exe
-  # en caso de personalizar el nombre usa la siguiente forma.
-  # Sin embargo, tenga en cuenta que no debe contener .png,.jpg, etc
-  # y debe estar en la raiz junto a engine.exe
+  # by default icon.png and it should be placed next to engine.exe
+  # to customize the name, use this format.
+  # However, note that it should not contain .png, .jpg, etc.
+  # and must be in the root alongside engine.exe
   # @game_icon my_icon_name
   ```
 
-- **Definición de personajes**:
+- **Character definition**:
   ```plaintext
   @char Sayuri
   ```
 
-- **Definición de variables**:
+- **Variable definition**:
   ```plaintext
   @var test = "test"
 
@@ -86,24 +82,23 @@ El archivo `script.kag` utiliza una sintaxis sencilla para definir el flujo de l
   Sayuri: {test}
   ```
 
-> Nota: las variables no tienen un uso importante en este momento.
+> Note: Variables are not very useful at the moment.
 
-- **Renombrar personaje**:
+- **Renaming a character**:
   ```plaintext
   @renameChar Sayuri = Ami
   ```
-> Nota: Renombrar un personaje no cambia su definicion, solo el nombre a mostrar. Tanto el valor definido como el nombre renombrado son unicos y no puede haber 2 del mismo tipo.
+> Note: Renaming a character does not change its definition, only the displayed name. Both the defined value and the renamed name are unique and cannot have two of the same type.
 
-
-- **Diálogos**:
+- **Dialogues**:
   ```plaintext
-  Sayuri: ¡Hola, mundo!
+  Sayuri: Hello, world!
   ```
 
-- **Fondos**:
+- **Backgrounds**:
   ```plaintext
-  @background bosque = "forest.jpg"
-  # @bg bosque
+  @background forest = "forest.jpg"
+  # @bg forest
   ```
 
 - **Sprites**:
@@ -111,56 +106,56 @@ El archivo `script.kag` utiliza una sintaxis sencilla para definir el flujo de l
   @sprite sayuri_happy = "sayuri_happy.png"
   # @show_sprite sayuri_happy x=100 y=200 zoom=0.7
   ```
->INFO: Los fondos y los Sprites deben ser solamente los nombres y su formato, el motor se encarga de buscarlos en la carpetas correspondientes
+>INFO: Backgrounds and Sprites should only include the name and their format. The engine will search for them in the appropriate folders.
 
->Nota: Los sprites estan en fase de desarrollo y no funcionan bien, solo se mostrara 1 sprite, el resto puede sobrescribirse con el ultimo si se intenta cambiar. (es probable que los background tambien sean afectados por este bug)
+>Note: Sprites are under development and may not work correctly. Only one sprite will be shown; others might be overwritten if changed. (Backgrounds could also be affected by this bug).
 
-- **Escenas**:
+- **Scenes**:
   ```plaintext
-  @scene inicio
-    Sayuri: Este es el comienzo
-    @change_scene final
+  @scene start
+    Sayuri: This is the beginning
+    @change_scene end
 
-    Sayuri: Regrese al comienzo! ahora terminare mi historia
+    Sayuri: I returned to the beginning! Now I will finish my story
     @endScene
 
-  @scene final
-    Sayuri: Estoy en el final! Ahora regresare al comienzo
+  @scene end
+    Sayuri: I’m at the end! Now I’ll return to the beginning
     @return
-    
   ```
->INFO: `@return` retorna a una linea despues de que se cambio de escena
 
-## Ejemplo de Script
+>INFO: `@return` returns to a line after changing scenes.
+
+## Example Script
 
 ```plaintext
-@game_title "Mi Primera Novela Visual"
+@game_title "My First Visual Novel"
 @game_size 1280 720
 
 @char Sayuri
-@background parque = "park"
+@background park = "park"
 @sprite sayuri_normal = "sayuri"
 
-@scene inicio
-    @bg parque
+@scene start
+    @bg park
     @show_sprite sayuri_normal
-    Sayuri: ¡Bienvenidos a nuestra novela visual!
-    Sayuri: Disfruten la experiencia.
+    Sayuri: Welcome to our visual novel!
+    Sayuri: Enjoy the experience.
 @endScene
 ```
 
-## Cómo Personalizar
+## How to Customize
 
-1. **Editar `script.kag`**: Modifica el script para añadir tu propia historia.
-2. **Añadir recursos**: Coloca imágenes de fondo en `game/assets/bg` y sprites en `game/assets/sprites`.
-3. **Ejecutar**: Vuelve a ejecutar `vne.exe` para ver los cambios.
+1. **Edit `script.kag`**: Modify the script to add your own story.
+2. **Add resources**: Place background images in `game/assets/bg` and sprites in `game/assets/sprites`.
+3. **Run**: Rerun `vne.exe` to see the changes.
 
-## Licencia
+## License
 
-VNengine © 2024 by Neyunse is licensed under Creative Commons Attribution-NoDerivatives 4.0 International 
+VNengine © 2024 by Neyunse is licensed under Creative Commons Attribution-NoDerivatives 4.0 International
 
-## Contribuciones
+## Contributions
 
-Sientete libre de crear un fork y contribuir a este motor.
+Feel free to fork and contribute to this engine.
 
 ---
