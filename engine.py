@@ -90,6 +90,7 @@ class VNEngine:
         'sprite', 
         'scene', 
         'show_sprite',
+        'remove_sprite',
         'label', 
         'change_scene', 
         'return',  
@@ -239,8 +240,14 @@ class VNEngine:
                 pos_x, pos_y, sprite_scaled, zoom_image = self.parse_sprite_position(parts[2:], sprite)
                 position = (pos_x, pos_y)
                 self.display_sprite(sprite,sprite_scaled, position, zoom_image)
-        
- 
+            
+            # remove the sprite @ remove_sprite <key>
+            case "remove_sprite":
+                sprite = parts[1]
+                remove = [t for t in self.current_sprites if t[0] != sprite]
+                print(remove)
+                self.current_sprites = remove
+                
             # Scene definition @bg <key>
             case "bg":
                 image = parts[1]
@@ -450,7 +457,7 @@ class VNEngine:
         if not sprite_key in self.sprites:
             raise ValueError(f"Error: Sprite not defined: {sprite_key}")
        
-        self.current_sprites.append((sprite_image, position, zoom_factor))
+        self.current_sprites.append((sprite_key, sprite_image, position, zoom_factor))
         Log(f"Sprite '{sprite_key}' displayed.")
     
     def wrap_text(self, text, font, max_width):
@@ -649,7 +656,7 @@ class VNEngine:
         if self.current_background:
             self.screen.blit(self.current_background, (0, 0))
 
-        for sprite, position, _ in self.current_sprites:
+        for _ ,sprite, position, _ in self.current_sprites:
             self.screen.blit(sprite, position)
 
         if self.dialogue_queue:
@@ -811,4 +818,5 @@ if __name__ == "__main__":
         with open('error.txt', 'w') as f:
             f.write(f"{e}")
             f.close()
+        
         

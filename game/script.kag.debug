@@ -21,6 +21,7 @@
     Sayuri: This is a sample visual novel script.
     Sayuri: You can customize it to create your own story.
     @show_sprite miki_openSmile
+    @remove_sprite miki
     Sayuri: Enjoy the journey!
     
     @endScene # finish the scene or close the game
