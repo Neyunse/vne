@@ -7,15 +7,20 @@
 @char Sayuri
 
 # Define background images
-# use @background <key> = <image name>
+@background park = park.png
 
 # Define sprite images
-# use @sprite <key> = <image name>
+@sprite miki = Miki_Casual_Smile.png
+@sprite miki_openSmile = Miki_Casual_OpenSmile.png
+
         
 @scene start
+    @bg park
+    @show_sprite miki
     Sayuri: Hello, World!
     Sayuri: This is a sample visual novel script.
     Sayuri: You can customize it to create your own story.
+    @show_sprite miki_openSmile
     Sayuri: Enjoy the journey!
     
     @endScene # finish the scene or close the game
