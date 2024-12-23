@@ -747,28 +747,27 @@ def generate_files():
     os.makedirs(os.path.join('game', 'assets', 'bg'), exist_ok=True)
     os.makedirs(os.path.join('game', 'assets', 'sprites'), exist_ok=True)
     with open('game/script.kag', 'w') as f:
-        f.write("""
-        # This is a sample script file.
+        f.write("""# This is a sample script file.
+
+# Settings
+@game_title "Sample Visual Novel"
+
+# Define characters
+@char Sayuri
+
+# Define background images
+# use @background <key> = <image name>
+
+# Define sprite images
+# use @sprite <key> = <image name>
         
-        # Settings
-        @game_title "Sample Visual Novel"
-        
-        # Define characters
-        @char Sayuri
-        
-        # Define background images
-        # use @background <key> = <image name>
-        
-        # Define sprite images
-        # use @sprite <key> = <image name>
-                
-        @scene start
-            Sayuri: Hello, World!
-            Sayuri: This is a sample visual novel script.
-            Sayuri: You can customize it to create your own story.
-            Sayuri: Enjoy the journey!
-            
-            @endScene # finish the scene or close the game
+@scene start
+    Sayuri: Hello, World!
+    Sayuri: This is a sample visual novel script.
+    Sayuri: You can customize it to create your own story.
+    Sayuri: Enjoy the journey!
+    
+    @endScene # finish the scene or close the game
         """)
         f.close()
         Log("Game files generated successfully.")
