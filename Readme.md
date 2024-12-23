@@ -140,8 +140,8 @@ The `script.kag` file uses a simple syntax to define the flow of the visual nove
 @game_size 1280 720
 
 @char Sayuri
-@background park = "park"
-@sprite sayuri_normal = "sayuri"
+@background park = "park.jpg"
+@sprite sayuri_normal = "sayuri.png"
 
 @scene start
     @bg park
