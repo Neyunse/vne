@@ -447,14 +447,11 @@ class VNEngine:
         :type zoom_factor: float
         """
          
-        if sprite_key in self.sprites:
-            if len(self.current_sprites) > 0:
-                self.current_sprites.pop(0)
-            
-            Log(f"Sprite '{sprite_key}' displayed.")
-            self.current_sprites.append((sprite_image, position, zoom_factor))
-        else:
+        if not sprite_key in self.sprites:
             raise ValueError(f"Error: Sprite not defined: {sprite_key}")
+       
+        self.current_sprites.append((sprite_image, position, zoom_factor))
+        Log(f"Sprite '{sprite_key}' displayed.")
     
     def wrap_text(self, text, font, max_width):
         """
@@ -523,6 +520,7 @@ class VNEngine:
         textbox_height = line_height * len(wrapped_lines)
 
         character_surface = self.font.render(character, True, (255, 255, 255))
+        
         self.screen.blit(character_surface, (textbox_x, textbox_y - 40))
 
         for i, line in enumerate(wrapped_lines):
@@ -678,11 +676,13 @@ class VNEngine:
                 self.running = False
                 sys.exit(0)
             elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1: 
+                
                 if self.dialogue_queue:
                     self.dialogue_queue.pop(0)
                 elif self.current_line >= len(self.script):
                 
                     self.running = False
+ 
     
     def run(self):
         """
@@ -697,17 +697,21 @@ class VNEngine:
             return
         
         try:
+            
             while self.running:
-                if self.current_line < len(self.script):
-                    line = self.script[self.current_line]
-                    self.parse_line(line)
-                    self.current_line += 1
-                elif not self.dialogue_queue:  
-               
-                    self.running = False
-
                 self.handle_events()
                 self.render()
+
+                if self.current_line < len(self.script):
+                    if not self.dialogue_queue:
+                        line = self.script[self.current_line]
+                        self.parse_line(line)
+                        self.current_line +=1
+                else:
+                    if not self.dialogue_queue:  
+                        self.running = False
+
+                
                 self.clock.tick(30)
         except Exception as e:
             raise ValueError(f"{e}")
