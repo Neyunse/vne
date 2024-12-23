@@ -33,6 +33,9 @@
    ```bash
    python engine.py
    ```
+# Requirements
+
+* Pygame
 
 ## Project Structure
 
