@@ -1,6 +1,6 @@
 import os
 from PyInstaller.__main__ import run
-
+import zipfile
 # Paso 1: Ofuscar scripts (opcional, usando PyArmor)
 def obfuscate_script(script_path):
     os.system(f'pyarmor gen {script_path}')
@@ -19,9 +19,6 @@ def create_executable(script_path, output_name, icon_path=None):
         options.append(f'--icon={icon_path}')
     run(options)
 
-# Paso 3: Empaquetar recursos
-def package_resources(resource_folder, output_file):
-    os.system(f'zip -r {output_file} {resource_folder}')
 
 # Ejecución del flujo
 if __name__ == "__main__":
@@ -35,5 +32,7 @@ if __name__ == "__main__":
             output_name='vne',
             #icon_path='icon.ico'
         )
+
+   
  
         print("Empaquetado completado.")
