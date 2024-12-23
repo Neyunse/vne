@@ -32,7 +32,5 @@ if __name__ == "__main__":
             output_name='vne',
             #icon_path='icon.ico'
         )
-
-   
  
         print("Empaquetado completado.")
