@@ -11,8 +11,8 @@
 
 ## Installation (build)
 
-1. Download the executable
-2. Run the engine (engine.exe)
+1. Download the executable (https://github.com/Neyunse/vne/releases)
+2. Put the SDK in a folder with the name of your project and Run the engine (vne.exe)
 3. Edit
 4. Have fun!
 
