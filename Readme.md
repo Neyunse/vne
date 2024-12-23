@@ -60,9 +60,6 @@ The `script.kag` file uses a simple syntax to define the flow of the visual nove
 - **Initial setup**:
   ```plaintext
   @game_title "Visual Novel Title"
-  
-  # By default, 1280 720 is recommended, you can change the size but you may experience issues.
-  # @game_size 1280 720
 
   # by default icon.png and it should be placed next to engine.exe
   # to customize the name, use this format.
@@ -137,16 +134,17 @@ The `script.kag` file uses a simple syntax to define the flow of the visual nove
 
 ```plaintext
 @game_title "My First Visual Novel"
-@game_size 1280 720
 
 @char Sayuri
 @background park = "park.jpg"
 @sprite sayuri_normal = "sayuri.png"
-
+@sprite sayuri_happy = "sayuri-happy.png"
 @scene start
     @bg park
     @show_sprite sayuri_normal
     Sayuri: Welcome to our visual novel!
+    @show_sprite sayuri_happy
+    @remove_sprite sayuri_normal
     Sayuri: Enjoy the experience.
 @endScene
 ```
