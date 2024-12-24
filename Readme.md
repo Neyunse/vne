@@ -103,6 +103,11 @@ The `script.kag` file uses a simple syntax to define the flow of the visual nove
   # @bg forest
   ```
 
+- **Versioning**
+  ```plaintext
+  @game_version 1.0.0
+  ```
+
 - **Sprites**:
   ```plaintext
   @sprite sayuri_happy = "sayuri_happy.png"
