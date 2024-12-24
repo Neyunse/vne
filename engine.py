@@ -56,7 +56,7 @@ class VNEngine:
         pygame.init()
  
         self.screen_size = (1280, 720)
-        self.screen = pygame.display.set_mode(self.screen_size)   
+        self.screen = pygame.display.set_mode(self.screen_size, pygame.HIDDEN)   
         pygame.display.set_caption(f"VNEngine - {version}")
         if os.path.exists(os.path.join(base_folder, 'icon.png')):
             pygame.display.set_icon(pygame.image.load(os.path.join(base_folder, 'icon.png')))
@@ -73,6 +73,8 @@ class VNEngine:
         self.labels = []
         self.flags = {}
         self.game_version = "1.0.0"
+        self.needs_update = True
+        self.show_window = False
     
     
  
@@ -510,6 +512,7 @@ class VNEngine:
             if os.path.exists(background):
                 self.current_background = pygame.image.load(background)
                 self.current_background = pygame.transform.scale(self.current_background, self.screen_size)
+                self.needs_update = True
             else:
                 raise FileNotFoundError(f"Error: Background image not found in: {background}")
         else:
@@ -545,6 +548,7 @@ class VNEngine:
             raise ValueError(f"Error: Sprite not defined: {sprite_key}")
        
         self.current_sprites.append((sprite_key, sprite_image, position, zoom_factor))
+        self.needs_update = True
         Log(f"Sprite '{sprite_key}' displayed.")
     
     def wrap_text(self, text, font, max_width):
@@ -605,6 +609,7 @@ class VNEngine:
         dialogue = self.replace_variables(dialogue.strip())
 
         self.dialogue_queue.append((character, dialogue))
+        self.needs_update = True
 
 
     def replace_variables(self, text: str) -> str:
@@ -720,17 +725,20 @@ class VNEngine:
         This function renders the current background, sprites, and dialogue queue onto the screen in a
         game using Pygame.
         """
-         
+
+        if not self.needs_update:
+                return
+            
         self.screen.fill((0, 0, 0))
+
 
         if self.current_background:
             self.screen.blit(self.current_background, (0, 0))
 
         for _ ,sprite, position, _ in self.current_sprites:
             self.screen.blit(sprite, position)
-    
-        
 
+            
         if self.dialogue_queue:
             character, dialogue = self.dialogue_queue[0]
             character_surface = self.font.render(character, True, self.character_name_color)
@@ -744,15 +752,14 @@ class VNEngine:
               
             ch_w = character_rect.width+char_padding
             ch_h = character_rect.height+char_padding
-
             
             name_box = self.Box((ch_w, ch_h), self.dialog_box_color)
             
-            self.screen.blit(name_box, (character_rect.x, character_rect.y))
+            if character:
+                self.screen.blit(name_box, (character_rect.x, character_rect.y))
 
             character_pos = (character_rect.x + 2, character_rect.y + 3)
 
-            
             self.screen.blit(character_surface, character_pos)
             
             wrapped_lines = self.wrap_text(dialogue, self.font, self.screen_size[0] - 100)
@@ -774,8 +781,6 @@ class VNEngine:
                 tb_h = dialogue_rect.height+dialog_padding
 
                 dialogue_box = self.Box((tb_w, tb_h), self.dialog_box_color)
-
-                #self.Box(self.screen, self.dialog_box_color, [dialogue_rect.x, dialogue_rect.y, dialogue_rect.width+dialog_padding, dialogue_rect.height+dialog_padding])
                 
                 dialog_pos = (dialogue_rect.x + 2 * dialog_padding, dialogue_rect.y + 3 * dialog_padding + i * line_height)
 
@@ -784,8 +789,17 @@ class VNEngine:
                 self.screen.blit(dialogue_box, (dialogue_rect.x, dialogue_rect.y))
                 self.screen.blit(dialogue_surface, dialog_pos)
 
+            
+            self.needs_update = False
             pygame.display.flip()
-    
+        
+        if not self.show_window:
+            self.screen = pygame.display.set_mode(self.screen_size, pygame.SHOWN)
+            self.screen.fill((0, 0, 0))
+            pygame.display.flip()
+            self.show_window = True
+
+        
     def Box(self, size, color):
         bx = pygame.Surface(size, pygame.SRCALPHA)
         bx.fill(color)
