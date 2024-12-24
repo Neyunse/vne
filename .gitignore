@@ -7,3 +7,5 @@ __pycache__
 *.mp4
 *.ogg
 *.txt
+compile_sdk.py
+build_sdk.py
