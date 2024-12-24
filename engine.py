@@ -161,7 +161,7 @@ class VNEngine:
         if line.startswith(self.COMMAND_PREFIX):  # Command
             self.execute_command(line[1:])
         elif self.DIALOGUE_PREFIX in line:  # Dialogue
-            self.display_dialogue(line)
+            self.parse_dialogue(line)
             
         else:
             raise ValueError(f"Invalid script syntax: {line}")
@@ -277,8 +277,10 @@ class VNEngine:
 
             # Sprite definition @sprite <key> = <path>
             case "sprite":
-                key, path = self.parse_variables(parts, 3)
-                self.sprites[key] = path
+                key, image_name = self.parse_variables(parts, 3)
+                image = self.parse_sprite_scaled(key, image_name)
+                
+                self.sprites[key] = image
 
             # Set variable @setVar <var> = <value>
             case "setVar":
@@ -287,10 +289,9 @@ class VNEngine:
 
             # show sprite image @show_sprite <key>
             case "show_sprite":
-                sprite = parts[1]
-                pos_x, pos_y, sprite_scaled, zoom_image = self.parse_sprite_position(parts[2:], sprite)
-                position = (pos_x, pos_y)
-                self.display_sprite(sprite,sprite_scaled, position, zoom_image)
+                sprite_key = parts[1]
+                #position = self.parse_sprite_position(parts)
+                self.display_sprite(sprite_key)
             
             # remove the sprite @ remove_sprite <key>
             case "remove_sprite":
@@ -389,35 +390,17 @@ class VNEngine:
             return int(r), int(g), int(b), alpha
         r, g, b = rgb
         return int(r), int(g), int(b)
-        
-    def parse_sprite_position(self, parts, sprite_key):
-        """
-        The function `parse_sprite_position` parses sprite position and properties, loads the sprite
-        image, applies scaling and zoom, centers the sprite, and returns the position, scaled image, and
-        zoom factor.
-        
-        :param parts: The `parts` parameter in the `parse_sprite_position` method is a list of strings
-        that contain information about the position and size of a sprite. Each string in the list
-        represents a specific part of the sprite's configuration, such as its x and y position, width,
-        height, and zoom factor
-        :param sprite_key: The `sprite_key` parameter in the `parse_sprite_position` method is used to
-        identify a specific sprite image from a dictionary of sprites stored in `self.sprites`. This key
-        is used to retrieve the filename of the sprite image that will be loaded and processed in the
-        method
-        :return: The function `parse_sprite_position` returns the position x, position y, scaled image,
-        and zoom factor after processing the input parts and sprite key.
-        """
-         
+    
+    def parse_sprite_scaled(self, key, image):
+
         pos_x = 0  # Default position x
         pos_y = 20  # Default position y
         width = None
         height = None
-        scale_factor = 1.0  # Default scale factor
+
         zoom_factor = 0.7  # Default zoom factor
 
-        sprite = self.sprites[sprite_key].replace('=', '').strip().replace('"', '')
-
-        character_image = os.path.join(self.game_folder, 'assets','sprites', sprite)
+        character_image = os.path.join(self.game_folder, 'assets','sprites', image)
 
         if not os.path.exists(character_image):
             raise FileNotFoundError(f"Error: Character image not found in {character_image}")
@@ -425,19 +408,10 @@ class VNEngine:
         sprite_image = pygame.image.load(character_image)
         sprite_width, sprite_height = sprite_image.get_size()
 
-        for part in parts:
-            if part.startswith('x='):
-                pos_x = int(part[2:])  # Extract x value
-            elif part.startswith('y='):
-                pos_y = int(part[2:])  # Extract y value
-            elif part.startswith('width='):
-                width = int(part[6:])  # Extract width value
-            elif part.startswith('height='):
-                height = int(part[7:])  # Extract height value
-            elif part.startswith('zoom='):
-                zoom_factor = float(part[6:])  # Extract zoom value
-
-        # Get default size if no width/height provided
+        if not sprite_width == 740 and not sprite_height == 1080:
+            raise ValueError("Error: The sprite size must be 740x1080")
+        
+         # Get default size if no width/height provided
         width = width or sprite_width
         height = height or sprite_height
 
@@ -454,7 +428,26 @@ class VNEngine:
 
         # Smoothscale the image to avoid pixelation
         scaled_image = pygame.transform.smoothscale(sprite_image, (width, height))
-        return pos_x, pos_y, scaled_image, zoom_factor
+
+        return key, scaled_image, (pos_x, pos_y)
+
+        
+    def parse_sprite_position(self, parts):
+
+        pos_x = 0  # Default position x
+        pos_y = 0  # Default position y
+        zoom_factor = 0.7  # Default zoom factor
+        
+        for part in parts:
+            if part.startswith('x='):
+                pos_x = int(part[2:])  # Extract x value
+            elif part.startswith('y='):
+                pos_y = int(part[2:])  # Extract y value
+            elif part.startswith('zoom='):
+                zoom_factor = float(part[6:])  # Extract zoom value
+
+       
+        return (pos_x, pos_y), zoom_factor
 
  
     def return_from_jump(self):
@@ -518,38 +511,17 @@ class VNEngine:
         else:
             raise ValueError(f"Error: Background image not defined: {image_key}")
 
-    def display_sprite(self, sprite_key: str,sprite_image:str, position: tuple, zoom_factor: float):
-        """
-        This function displays a sprite image at a specified position with a given zoom factor, checking
-        if the sprite key is defined in the sprites dictionary.
-        
-        :param sprite_key: The `sprite_key` parameter is a string that represents the key or identifier
-        of the sprite you want to display. It is used to look up the sprite in the `self.sprites`
-        dictionary to check if it is defined
-        :type sprite_key: str
-        :param sprite_image: The `sprite_image` parameter in the `display_sprite` method is a string
-        that represents the image file path or name of the sprite that you want to display on the
-        screen. This parameter is used to specify which image should be displayed for the given sprite
-        key
-        :type sprite_image: str
-        :param position: The `position` parameter in the `display_sprite` method is a tuple that
-        represents the position where the sprite will be displayed on the screen. It typically consists
-        of two values, the x-coordinate and the y-coordinate, specifying the location of the sprite
-        within the game or application window
-        :type position: tuple
-        :param zoom_factor: The `zoom_factor` parameter in the `display_sprite` method is a float value
-        that determines the scaling factor by which the sprite image will be zoomed in or out when
-        displayed on the screen. A `zoom_factor` of 1.0 represents the original size of the sprite
-        image, while
-        :type zoom_factor: float
-        """
-         
+    def display_sprite(self, sprite_key):
         if not sprite_key in self.sprites:
             raise ValueError(f"Error: Sprite not defined: {sprite_key}")
-       
-        self.current_sprites.append((sprite_key, sprite_image, position, zoom_factor))
+        
+        sprite_surface = self.sprites[sprite_key][1]
+        sprite_pos = self.sprites[sprite_key][2]
+        
+        self.current_sprites.append((sprite_surface, sprite_pos))
         self.needs_update = True
         Log(f"Sprite '{sprite_key}' displayed.")
+
     
     def wrap_text(self, text, font, max_width):
         """
@@ -590,12 +562,12 @@ class VNEngine:
         return lines
 
 
-    def display_dialogue(self, line: str):
+    def parse_dialogue(self, line: str):
         """
-        The function `display_dialogue` parses a line of dialogue, extracts the character and dialogue
+        The function `parse_dialogue` parses a line of dialogue, extracts the character and dialogue
         text, replaces variables in the dialogue, and appends the character and dialogue to a queue.
         
-        :param line: The `display_dialogue` method takes in a string `line` as a parameter. This string
+        :param line: The `parse_dialogue` method takes in a string `line` as a parameter. This string
         is expected to contain a character name followed by a colon and then the dialogue spoken by that
         character. The method then processes this line by splitting it into the character name and
         dialogue, stripping any extra whitespace
@@ -610,6 +582,10 @@ class VNEngine:
 
         self.dialogue_queue.append((character, dialogue))
         self.needs_update = True
+
+        
+            
+            
 
 
     def replace_variables(self, text: str) -> str:
@@ -720,25 +696,7 @@ class VNEngine:
                     else:
                         nested_ifs -= 1
 
-    def render(self):
-        """
-        This function renders the current background, sprites, and dialogue queue onto the screen in a
-        game using Pygame.
-        """
-
-        if not self.needs_update:
-                return
-            
-        self.screen.fill((0, 0, 0))
-
-
-        if self.current_background:
-            self.screen.blit(self.current_background, (0, 0))
-
-        for _ ,sprite, position, _ in self.current_sprites:
-            self.screen.blit(sprite, position)
-
-            
+    def display_dialogue(self):
         if self.dialogue_queue:
             character, dialogue = self.dialogue_queue[0]
             character_surface = self.font.render(character, True, self.character_name_color)
@@ -764,40 +722,56 @@ class VNEngine:
             
             wrapped_lines = self.wrap_text(dialogue, self.font, self.screen_size[0] - 100)
 
-            for i, line in enumerate(wrapped_lines):
-                dialogue_surface = self.font.render(line, True, self.dialogue_text_color)
-
-                dialogue_rect = dialogue_surface.get_rect()
-                dialogue_rect.x = 50
-                dialogue_rect.y = 550
-
-                 
+           
+            
+            if wrapped_lines:
+                line_height = self.font.get_height()
+                total_height = len(wrapped_lines) * line_height + 10  # Añadir padding
+                dialogue_rect = pygame.Rect(50, 550, self.screen_size[0] - 100, total_height)
                 dialogue_rect.width = self.screen_size[0] - 100
                 dialogue_rect.height = self.screen_size[1] - 100
 
-                dialog_padding = 5
+                dialogue_box = self.Box((dialogue_rect.width, dialogue_rect.height), self.dialog_box_color)
 
-                tb_w = dialogue_rect.width+dialog_padding
-                tb_h = dialogue_rect.height+dialog_padding
+                self.screen.blit(dialogue_box, dialogue_rect.topleft)
 
-                dialogue_box = self.Box((tb_w, tb_h), self.dialog_box_color)
-                
-                dialog_pos = (dialogue_rect.x + 2 * dialog_padding, dialogue_rect.y + 3 * dialog_padding + i * line_height)
+                text_padding = 5
+                for i, line in enumerate(wrapped_lines):
+                    dialogue_surface = self.font.render(line, True, self.dialogue_text_color)
+                    self.screen.blit(dialogue_surface, (dialogue_rect.x + text_padding, dialogue_rect.y + text_padding + i * line_height))
+           
+        
 
+    def render(self):
+        """
+        This function renders the current background, sprites, and dialogue queue onto the screen in a
+        game using Pygame.
+        """
 
-                
-                self.screen.blit(dialogue_box, (dialogue_rect.x, dialogue_rect.y))
-                self.screen.blit(dialogue_surface, dialog_pos)
-
+        if not self.needs_update:
+                return
             
-            self.needs_update = False
-            pygame.display.flip()
+        self.screen.fill((0, 0, 0))
+
+        
+
+
+        if self.current_background:
+            self.screen.blit(self.current_background, (0, 0))
+
+        for sprite_surface, sprite_pos in self.current_sprites:
+            self.screen.blit(sprite_surface, sprite_pos)
+
+        self.display_dialogue()
         
         if not self.show_window:
             self.screen = pygame.display.set_mode(self.screen_size, pygame.SHOWN)
             self.screen.fill((0, 0, 0))
             pygame.display.flip()
             self.show_window = True
+        
+        self.needs_update = False
+        pygame.display.flip()
 
         
     def Box(self, size, color):

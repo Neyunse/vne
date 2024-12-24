@@ -111,8 +111,14 @@ The `script.kag` file uses a simple syntax to define the flow of the visual nove
 - **Sprites**:
   ```plaintext
   @sprite sayuri_happy = "sayuri_happy.png"
-  # @show_sprite sayuri_happy x=100 y=200 zoom=0.7
+  # @show_sprite sayuri_happy 
   ```
+
+- **Hide sprites**:
+  ```plaintext
+  # @remove_sprite sayuri_happy 
+  ```
+
 >INFO: Backgrounds and Sprites should only include the name and their format. The engine will search for them in the appropriate folders.
 
 >Note: Sprites are under development and may not work correctly. Only one sprite will be shown; others might be overwritten if changed. (Backgrounds could also be affected by this bug).

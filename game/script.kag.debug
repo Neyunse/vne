@@ -20,12 +20,14 @@
  
 @scene start
     @bg park
-    @show_sprite miki
+    @show_sprite miki 
+    : Recientemente me mude a un complejo de apartamentos muy barato, por lo que escuche esta embrujado...
+
     Sayuri: Hello, World! {game_version} 
     Sayuri: This is a sample visual novel script.
     Sayuri: You can customize it to create your own story.
     @show_sprite miki_openSmile
-    @remove_sprite miki
+    #@remove_sprite miki
     Sayuri: Enjoy the journey!
     
     @endScene # finish the scene or close the game
