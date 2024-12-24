@@ -215,6 +215,8 @@ class VNEngine:
             
             case "game_version":
                 _, v = self.parse_variables(parts, 1)
+                if v.isdigit():
+                    raise ValueError("Error: The game version must be of type float")
                 self.variables["game_version"] = self.parse_value(v)
             
             case "game_dialogue_color":
