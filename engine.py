@@ -853,7 +853,8 @@ class VNEngine:
             
             while self.running:
                 self.handle_events()
-                self.render()
+                if self.needs_update:
+                    self.render()
 
                 if self.current_line < len(self.script):
                     if not self.dialogue_queue:
