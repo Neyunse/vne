@@ -1,9 +1,16 @@
 import os
 import sys
+os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 import pygame
 from datetime import datetime
+
+import platform
 # This class `VNEngine` is used for initializing a visual novel engine with specified script and
 # configuration paths, as well as optional game and base folders.
+
+version = "0.0.0-alpha.3"
+version_name = "N/a"
+
 class VNEngine:
     
     def __init__(self, 
@@ -50,7 +57,7 @@ class VNEngine:
  
         self.screen_size = (1280, 720)
         self.screen = pygame.display.set_mode(self.screen_size)   
-        pygame.display.set_caption(f"VNEngine")
+        pygame.display.set_caption(f"VNEngine - {version}")
         if os.path.exists(os.path.join(base_folder, 'icon.png')):
             pygame.display.set_icon(pygame.image.load(os.path.join(base_folder, 'icon.png')))
         self.font = pygame.font.Font(None, 36)
@@ -80,8 +87,9 @@ class VNEngine:
         self.running = True
         self.dialogue_text_color = (255, 255, 255)
         self.character_name_color = (255, 255, 255)
-        
 
+        self.dialog_box_color = (0,0,0, 128)
+ 
     COMMAND_PREFIX = '@'
     COMMENT_PREFIX = '#'
     DIALOGUE_PREFIX = ':'
@@ -106,7 +114,18 @@ class VNEngine:
         'setVar',
         'game_size',
         'game_title',
-        'game_icon'
+        'game_icon',
+        'game_dialogue_color',
+        'game_character_color',
+        'game_textbox_background_color',
+        'engine_version'
+    ]
+  
+    RESERVED_VARIABLES = [
+        ('engine.version', f"VNE v{version}"),
+        ('engine.version_only', f"v{version}"),
+        ('engine.version_name', f"{version_name}"),
+        ('engine.current_plataform', f"{platform.system()}")
     ]
 
  
@@ -140,6 +159,7 @@ class VNEngine:
             self.execute_command(line[1:])
         elif self.DIALOGUE_PREFIX in line:  # Dialogue
             self.display_dialogue(line)
+            
         else:
             raise ValueError(f"Invalid script syntax: {line}")
 
@@ -191,13 +211,32 @@ class VNEngine:
                     pygame.display.set_icon(icon_surface)
                 else:
                     raise FileNotFoundError(f"Error: The Icon file not found in {icon_path}")
+            
+            case "game_dialogue_color":
+                rgb = self.parse_rbg_color(parts)
+                self.dialogue_text_color = rgb
+            
+            case "game_character_color":
+                rgb = self.parse_rbg_color(parts)
+                self.character_name_color = rgb
+            
+            case "game_textbox_background_color":
+                rgb = self.parse_rbg_color(parts)
+                
+                self.dialog_box_color = rgb
                 
             
             # Variable definition @var <key> = <value>
           
             case "var":
                 key, value = self.parse_variables(parts, 3)
-                self.variables[key] = self.parse_value(value)
+                
+                check = self.check_reserved_variables(key)
+                
+                if check:
+                    self.variables[key] = self.parse_value(value)
+                else:
+                    raise ValueError(f"Error: The variable '{key}' is reserved by the engine.")
 
             # Character definition @char <char> or @char <char> = <value>
             case "char":
@@ -248,7 +287,7 @@ class VNEngine:
             case "remove_sprite":
                 sprite = parts[1]
                 remove = [t for t in self.current_sprites if t[0] != sprite]
-                print(remove)
+               
                 self.current_sprites = remove
                 
             # Scene definition @bg <key>
@@ -303,6 +342,44 @@ class VNEngine:
             
             case _:
                 raise ValueError(f"Error: Unknown command ({cmd})")
+    
+    def check_reserved_variables(self, key):
+        
+        r = [t for t in self.RESERVED_VARIABLES if t[0] == key]
+
+        if r: return True
+        
+        return False
+    
+    def parse_rbg_color(self, parts):
+        """
+        This Python function parses an RGB color represented as a list of parts, extracting the red,
+        green, blue, and optional alpha values.
+        
+        :param parts: It looks like the `parse_rbg_color` function is designed to parse RGB color values
+        from a list of parts. The function assumes that the RGB values are stored in the `parts` list
+        starting from index 1
+        :return: The `parse_rbg_color` function is returning a tuple of integers representing the RGB
+        values of a color. If the input `parts` contains 4 elements (representing RGBA values), it
+        returns a tuple of four integers (r, g, b, alpha). If the input `parts` contains 3 elements
+        (representing RGB values), it returns a tuple of three integers (r,
+        """
+        rgb = parts[1:]
+
+        if len(rgb) > 3:
+            r,g,b,a = rgb
+
+            alpha = 0
+
+            if a.isdigit():
+                alpha = int(a)
+            else:
+                alpha = float(a)
+
+
+            return int(r), int(g), int(b), alpha
+        r, g, b = rgb
+        return int(r), int(g), int(b)
         
     def parse_sprite_position(self, parts, sprite_key):
         """
@@ -504,38 +581,21 @@ class VNEngine:
 
     def display_dialogue(self, line: str):
         """
-        The function `display_dialogue` takes a line of dialogue with a character name, formats it for
-        display in a text box on the screen, and adds it to a dialogue queue.
+        The function `display_dialogue` parses a line of dialogue, extracts the character and dialogue
+        text, replaces variables in the dialogue, and appends the character and dialogue to a queue.
         
-        :param line: The `display_dialogue` method takes a `line` parameter, which is a string
-        representing a line of dialogue in the format "character: dialogue". The method then processes
-        this line to extract the character and dialogue text, formats them for display on the screen,
-        and adds them to the dialogue queue
+        :param line: The `display_dialogue` method takes in a string `line` as a parameter. This string
+        is expected to contain a character name followed by a colon and then the dialogue spoken by that
+        character. The method then processes this line by splitting it into the character name and
+        dialogue, stripping any extra whitespace
         :type line: str
         """
+
         
         character, dialogue = line.split(':', 1)
         character = character.strip()
         character = self.characters.get(character, character)
         dialogue = self.replace_variables(dialogue.strip())
-
-
-        textbox_x, textbox_y = 50, 550
-        textbox_width, textbox_height = self.screen_size[0] - 100, 50
-
-        wrapped_lines = self.wrap_text(dialogue, self.font, textbox_width)
-
-   
-        line_height = self.font.get_height()
-        textbox_height = line_height * len(wrapped_lines)
-        print(self.character_name_color)
-        character_surface = self.font.render(character, True, self.character_name_color)
-        
-        self.screen.blit(character_surface, (textbox_x, textbox_y - 40))
-
-        for i, line in enumerate(wrapped_lines):
-            dialogue_surface = self.font.render(line, True, self.dialogue_text_color)
-            self.screen.blit(dialogue_surface, (textbox_x, textbox_y + i * line_height))
 
         self.dialogue_queue.append((character, dialogue))
 
@@ -661,19 +721,66 @@ class VNEngine:
 
         for _ ,sprite, position, _ in self.current_sprites:
             self.screen.blit(sprite, position)
+    
+        
 
         if self.dialogue_queue:
             character, dialogue = self.dialogue_queue[0]
-            character_surface = self.font.render(character, True, (255, 255, 255))
-            wrapped_lines = self.wrap_text(dialogue, self.font, self.screen_size[0] - 100)
-            self.screen.blit(character_surface, (50, 550))
+            character_surface = self.font.render(character, True, self.character_name_color)
+            
+            character_rect = character_surface.get_rect()
+            character_rect.y = 510
+            character_rect.x = 50
+
             line_height = self.font.get_height()
+            char_padding = 6
+              
+            ch_w = character_rect.width+char_padding
+            ch_h = character_rect.height+char_padding
+
+            name_box = self.Box((ch_w, ch_h), self.dialog_box_color)
+
+            character_pos = (character_rect.x + 2, character_rect.y + 3)
+
+            wrapped_lines = self.wrap_text(dialogue, self.font, self.screen_size[0] - 100)
+            self.screen.blit(name_box, (character_rect.x, character_rect.y))
+            self.screen.blit(character_surface, character_pos)
+            
 
             for i, line in enumerate(wrapped_lines):
-                dialogue_surface = self.font.render(line, True, (255, 255, 255))
-                self.screen.blit(dialogue_surface, (50, 590 + i * line_height))
+                dialogue_surface = self.font.render(line, True, self.dialogue_text_color)
 
-        pygame.display.flip()
+                dialogue_rect = dialogue_surface.get_rect()
+                dialogue_rect.x = 50
+                dialogue_rect.y = 550
+
+                 
+                dialogue_rect.width = self.screen_size[0] - 100
+                dialogue_rect.height = self.screen_size[1] - 100
+
+                dialog_padding = 5
+
+                tb_w = dialogue_rect.width+dialog_padding
+                tb_h = dialogue_rect.height+dialog_padding
+
+                dialogue_box = self.Box((tb_w, tb_h), self.dialog_box_color)
+
+                #self.Box(self.screen, self.dialog_box_color, [dialogue_rect.x, dialogue_rect.y, dialogue_rect.width+dialog_padding, dialogue_rect.height+dialog_padding])
+                
+                dialog_pos = (dialogue_rect.x + 2 * dialog_padding, dialogue_rect.y + 3 * dialog_padding + i * line_height)
+
+
+                
+                self.screen.blit(dialogue_box, (dialogue_rect.x, dialogue_rect.y))
+                self.screen.blit(dialogue_surface, dialog_pos)
+
+            pygame.display.flip()
+    
+    def Box(self, size, color):
+        bx = pygame.Surface(size, pygame.SRCALPHA)
+        bx.fill(color)
+        return bx
+
     
     def handle_events(self):
         """
@@ -701,7 +808,16 @@ class VNEngine:
         :return: The `run` method is returning None.
         """
          
+
+        # set internal variables or reserved variables
+
+        for vars in self.RESERVED_VARIABLES:
+            key, value = vars
+            self.variables[key] = value
+            
         self.load_script()
+     
+
         if not self.script:
             print("No script to execute. Please check the script path.")
             return
@@ -816,9 +932,30 @@ if __name__ == "__main__":
         )
         engine.run()
     except Exception as e:
+        
+    
+        traceback_template = '''
+Fail while game code was running:
+  File: "%(filename)s"
+  %(message)s\n
+
+  %(plataform)s
+  VNE v%(engineVersion)s
+  '''
+
         Log(f"Script was failed. Check the error.txt file for more information.")
-        with open('error.txt', 'w') as f:
-            f.write(f"{e}")
+
+        traceback_details = {
+                         'filename': os.path.join(game_folder, "script.kag"),
+                         'message' : e,
+                         'plataform': f"{platform.system()}-{platform.version()}",
+                         'engineVersion': version
+                        }
+        
+        print(traceback_template % traceback_details)
+
+        with open('traceback-error.txt', 'w') as f:
+            f.write(traceback_template % traceback_details)
             f.close()
         
         
