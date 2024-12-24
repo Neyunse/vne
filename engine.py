@@ -72,6 +72,7 @@ class VNEngine:
         self.sprites = {}
         self.labels = []
         self.flags = {}
+        self.game_version = "1.0.0"
     
     
  
@@ -118,7 +119,7 @@ class VNEngine:
         'game_dialogue_color',
         'game_character_color',
         'game_textbox_background_color',
-        'engine_version'
+        'game_version'
     ]
   
     RESERVED_VARIABLES = [
@@ -211,6 +212,10 @@ class VNEngine:
                     pygame.display.set_icon(icon_surface)
                 else:
                     raise FileNotFoundError(f"Error: The Icon file not found in {icon_path}")
+            
+            case "game_version":
+                _, v = self.parse_variables(parts, 1)
+                self.variables["game_version"] = self.parse_value(v)
             
             case "game_dialogue_color":
                 rgb = self.parse_rbg_color(parts)
@@ -814,6 +819,9 @@ class VNEngine:
         for vars in self.RESERVED_VARIABLES:
             key, value = vars
             self.variables[key] = value
+        
+        # set default version for the game
+        self.variables["game_version"] = self.game_version
             
         self.load_script()
      
