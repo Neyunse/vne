@@ -8,8 +8,9 @@ import platform
 # This class `VNEngine` is used for initializing a visual novel engine with specified script and
 # configuration paths, as well as optional game and base folders.
 
-version = "0.0.0-alpha.3"
+version = "0.0.0-alpha.4"
 version_name = "N/a"
+builded_file_name = "vne"
 
 class VNEngine:
     
@@ -55,8 +56,8 @@ class VNEngine:
         # LOAD PYGAME
         pygame.init()
  
-        self.screen_size = (1280, 720)
-        self.screen = pygame.display.set_mode(self.screen_size, pygame.HIDDEN)   
+        self.screen_size = (1280,720)
+        self.screen = pygame.display.set_mode(self.screen_size, pygame.SCALED | pygame.HIDDEN)   
         pygame.display.set_caption(f"VNEngine - {version}")
         if os.path.exists(os.path.join(base_folder, 'icon.png')):
             pygame.display.set_icon(pygame.image.load(os.path.join(base_folder, 'icon.png')))
@@ -75,6 +76,8 @@ class VNEngine:
         self.game_version = "1.0.0"
         self.needs_update = True
         self.show_window = False
+        self.scale_factor = 1.0
+        self.display_info = None
     
     
  
@@ -115,7 +118,7 @@ class VNEngine:
         'if',
         'endif',
         'setVar',
-        'game_size',
+        #'game_size',
         'game_title',
         'game_icon',
         'game_dialogue_color',
@@ -186,16 +189,18 @@ class VNEngine:
         match cmd:
             # Command to change the screen width @screen_width <width>
             case "game_size":
+                # Not implemented yet
+
                 w, h = self.parse_variables(parts, 2)
                 if w is None or h is None:
                     raise ValueError(f"Error: Missing screen size values. Usage: @screen_size <width> <height>")
                 
                 width = int(w) * 1
                 height = int(h) * 1
-            
-                self.screen_size = (width, height) 
+
+                self.virtual_screen((width, height))
                 
-                self.screen = pygame.display.set_mode(self.screen_size)
+                
             
             # Command to change the window title @game_title <title>
             case "game_title":
@@ -273,7 +278,8 @@ class VNEngine:
             # Background image definition @background <key> = <path>
             case "background":
                 key, path = self.parse_variables(parts, 3)
-                self.images[key] = path
+                image = self.parse_background_scaled(key, path)
+                self.images[key] = image
 
             # Sprite definition @sprite <key> = <path>
             case "sprite":
@@ -353,7 +359,36 @@ class VNEngine:
             case _:
                 raise ValueError(f"Error: Unknown command ({cmd})")
     
+    def reset_screen(self):
+        """
+        The function `reset_screen` initializes screen-related attributes such as display information,
+        scale factor, screen size, and screen object.
+        """
+
+        if self.display_info is None:
+            self.display_info = pygame.display.Info()
+
+        self.scale_factor = 1.0
+        
+        self.screen_size = (800, 600)
+
+        self.screen = None
+    
+    def virtual_screen(self, size):
+        pass
+    
     def check_reserved_variables(self, key):
+        """
+        The function `check_reserved_variables` checks if a given key is in a list of reserved
+        variables.
+        
+        :param key: The `key` parameter in the `check_reserved_variables` function is used to specify
+        the variable name that you want to check against the list of reserved variables
+        :return: The function is checking if the input key matches any of the reserved variables in the
+        list self.RESERVED_VARIABLES. If a match is found, the function returns True, indicating that
+        the key is a reserved variable. If no match is found, the function returns False, indicating
+        that the key is not a reserved variable.
+        """
         
         r = [t for t in self.RESERVED_VARIABLES if t[0] == key]
 
@@ -392,6 +427,19 @@ class VNEngine:
         return int(r), int(g), int(b)
     
     def parse_sprite_scaled(self, key, image):
+        """
+        The function `parse_sprite_scaled` loads and scales a sprite image while ensuring it meets
+        specific size requirements and centers it on the screen.
+        
+        :param key: The `key` parameter in the `parse_sprite_scaled` method is used to identify the
+        sprite being processed. It is typically a unique identifier or key that helps in managing and
+        accessing the sprite within the game or application
+        :param image: The `image` parameter in the `parse_sprite_scaled` method is the filename of the
+        sprite image that you want to load and scale. It should be a string representing the name of the
+        image file located in the 'assets/sprites' directory of your game folder
+        :return: The function `parse_sprite_scaled` returns a tuple containing the key, the scaled image
+        of the sprite, and the position (pos_x, pos_y) where the sprite will be displayed on the screen.
+        """
 
         pos_x = 0  # Default position x
         pos_y = 20  # Default position y
@@ -430,24 +478,33 @@ class VNEngine:
         scaled_image = pygame.transform.smoothscale(sprite_image, (width, height))
 
         return key, scaled_image, (pos_x, pos_y)
-
+    
+    def parse_background_scaled(self, key, image):
+        """
+        The function `parse_background_scaled` loads and scales a background image for a game using
+        Pygame.
         
-    def parse_sprite_position(self, parts):
+        :param key: The `key` parameter is a unique identifier or key associated with the background
+        image. It could be used to reference or store the image in a data structure such as a dictionary
+        or a list
+        :param image: The `image` parameter in the `parse_background_scaled` method is a string that
+        represents the filename of the background image that you want to load and scale. This filename
+        is used to locate the image file in the specified directory within the game assets
+        :return: The function `parse_background_scaled` returns a tuple containing the `key` and the
+        scaled background image.
+        """
+        background_image = os.path.join(self.game_folder, 'assets','bg', image)
 
-        pos_x = 0  # Default position x
-        pos_y = 0  # Default position y
-        zoom_factor = 0.7  # Default zoom factor
+        if not os.path.exists(background_image):
+            raise FileNotFoundError(f"Error: Background image not found in {background_image}")
         
-        for part in parts:
-            if part.startswith('x='):
-                pos_x = int(part[2:])  # Extract x value
-            elif part.startswith('y='):
-                pos_y = int(part[2:])  # Extract y value
-            elif part.startswith('zoom='):
-                zoom_factor = float(part[6:])  # Extract zoom value
+        image = pygame.image.load(background_image)
 
-       
-        return (pos_x, pos_y), zoom_factor
+        screen_width, screen_height = self.screen.get_size()
+
+        scaled_image = pygame.transform.scale(image, (screen_width, screen_height))
+ 
+        return key, scaled_image
 
  
     def return_from_jump(self):
@@ -484,34 +541,30 @@ class VNEngine:
 
     def display_scene(self, image_key: str):
         """
-        This function displays a background image for a scene in a game, handling errors if the image is
-        not found or not defined.
+        This function displays a scene with a specified background image in a Python program.
         
         :param image_key: The `image_key` parameter in the `display_scene` method is a string that
-        represents the key of the image to be displayed. This key is used to retrieve the image file
-        path from the `self.images` dictionary. If the key is found in the dictionary, the corresponding
-        image file is loaded
+        represents the key used to retrieve an image from a dictionary of images stored in the
+        `self.images` attribute of the class. This key is used to identify the specific image that
+        should be displayed as the background for the
         :type image_key: str
         """
-         
-        if image_key in self.images:
-            scene = self.images[image_key].replace('=', '').strip().replace('"', '')
-
-            background = os.path.join(self.game_folder, 'assets','bg', scene)
-
-            Log(f"Background '{scene}' displayed.")
-
-
-            if os.path.exists(background):
-                self.current_background = pygame.image.load(background)
-                self.current_background = pygame.transform.scale(self.current_background, self.screen_size)
-                self.needs_update = True
-            else:
-                raise FileNotFoundError(f"Error: Background image not found in: {background}")
-        else:
-            raise ValueError(f"Error: Background image not defined: {image_key}")
+ 
+        if not image_key in self.images:
+            raise ValueError(f"Error: Background not defined: {image_key}")
+        
+        background_surface = self.images[image_key][1]
+        self.current_background = background_surface
+        self.needs_update = True
 
     def display_sprite(self, sprite_key):
+        """
+        The function `display_sprite` displays a sprite on a surface and logs the action.
+        
+        :param sprite_key: The `sprite_key` parameter is a unique identifier for a specific sprite that
+        you want to display. It is used to look up the sprite in the `self.sprites` dictionary to
+        retrieve the necessary information such as the sprite surface and position
+        """
         if not sprite_key in self.sprites:
             raise ValueError(f"Error: Sprite not defined: {sprite_key}")
         
@@ -582,11 +635,6 @@ class VNEngine:
 
         self.dialogue_queue.append((character, dialogue))
         self.needs_update = True
-
-        
-            
-            
-
 
     def replace_variables(self, text: str) -> str:
         """
@@ -729,7 +777,8 @@ class VNEngine:
                 total_height = len(wrapped_lines) * line_height + 10  # Añadir padding
                 dialogue_rect = pygame.Rect(50, 550, self.screen_size[0] - 100, total_height)
                 dialogue_rect.width = self.screen_size[0] - 100
-                dialogue_rect.height = self.screen_size[1] - 100
+                dialogue_rect.height = 150
+                
 
                 dialogue_box = self.Box((dialogue_rect.width, dialogue_rect.height), self.dialog_box_color)
 
@@ -739,9 +788,7 @@ class VNEngine:
                 for i, line in enumerate(wrapped_lines):
                     dialogue_surface = self.font.render(line, True, self.dialogue_text_color)
                     self.screen.blit(dialogue_surface, (dialogue_rect.x + text_padding, dialogue_rect.y + text_padding + i * line_height))
-           
-        
-
+ 
     def render(self):
         """
         This function renders the current background, sprites, and dialogue queue onto the screen in a
@@ -752,29 +799,39 @@ class VNEngine:
                 return
             
         self.screen.fill((0, 0, 0))
-
         
-
-
         if self.current_background:
             self.screen.blit(self.current_background, (0, 0))
 
         for sprite_surface, sprite_pos in self.current_sprites:
             self.screen.blit(sprite_surface, sprite_pos)
-
+        
         self.display_dialogue()
         
         if not self.show_window:
-            self.screen = pygame.display.set_mode(self.screen_size, pygame.SHOWN)
+            self.screen = pygame.display.set_mode(self.screen_size, pygame.SCALED | pygame.SHOWN)
             self.screen.fill((0, 0, 0))
             pygame.display.flip()
             self.show_window = True
         
         self.needs_update = False
+  
         pygame.display.flip()
 
         
     def Box(self, size, color):
+        """
+        The function `Box` creates a rectangular surface with a specified size and color using the
+        Pygame library.
+        
+        :param size: The `size` parameter in the `Box` function represents the dimensions of the box
+        that will be created. It typically takes a tuple of two values, `(width, height)`, specifying
+        the width and height of the box in pixels
+        :param color: The `color` parameter in the `Box` function is used to specify the color with
+        which the box will be filled. It is a parameter that should be passed when calling the function
+        to create a box with a specific color
+        :return: A pygame Surface object filled with the specified color and size is being returned.
+        """
         bx = pygame.Surface(size, pygame.SRCALPHA)
         bx.fill(color)
         return bx
@@ -797,7 +854,9 @@ class VNEngine:
                 elif self.current_line >= len(self.script):
                 
                     self.running = False
- 
+    
+    
+        
     
     def run(self):
         """
@@ -877,10 +936,10 @@ def generate_files():
 @char Sayuri
 
 # Define background images
-# use @background <key> = <image name>
+# @background <key> = <image name>
 
 # Define sprite images
-# use @sprite <key> = <image name>
+# @sprite <key> = <image name>
         
 @scene start
     Sayuri: Hello, World!
@@ -900,7 +959,7 @@ if __name__ == "__main__":
         # TODO For debuging
         root = __file__
     
-    elif sys.executable.endswith('engine.exe'):
+    elif sys.executable.endswith(f"{builded_file_name}.exe"):
         root = sys.executable
     else:
         root = sys.argv[0]

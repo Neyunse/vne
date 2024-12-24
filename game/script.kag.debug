@@ -3,7 +3,6 @@
 # Settings
 @game_title "Sample Visual Novel"
 
-
 # Define characters
 @char Sayuri
 
