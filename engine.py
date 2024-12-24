@@ -573,7 +573,7 @@ class VNEngine:
         for word in words:
             current_line.append(word)
         
-            line_surface = font.render(' '.join(current_line), True, (0, 0, 0))
+            line_surface = font.render(' '.join(current_line), True, self.dialogue_text_color)
             if line_surface.get_width() > max_width:
                
                 current_line.pop()
@@ -745,14 +745,17 @@ class VNEngine:
             ch_w = character_rect.width+char_padding
             ch_h = character_rect.height+char_padding
 
+            
             name_box = self.Box((ch_w, ch_h), self.dialog_box_color)
+            
+            self.screen.blit(name_box, (character_rect.x, character_rect.y))
 
             character_pos = (character_rect.x + 2, character_rect.y + 3)
 
-            wrapped_lines = self.wrap_text(dialogue, self.font, self.screen_size[0] - 100)
-            self.screen.blit(name_box, (character_rect.x, character_rect.y))
+            
             self.screen.blit(character_surface, character_pos)
             
+            wrapped_lines = self.wrap_text(dialogue, self.font, self.screen_size[0] - 100)
 
             for i, line in enumerate(wrapped_lines):
                 dialogue_surface = self.font.render(line, True, self.dialogue_text_color)
