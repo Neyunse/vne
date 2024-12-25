@@ -773,15 +773,13 @@ class VNEngine:
 
             if wrapped_lines:
                 line_height = self.font.get_height()
-                total_height = len(wrapped_lines) * line_height + 10  # Añadir padding
+                total_height = len(wrapped_lines) * line_height + 10 
                 dialogue_rect = pygame.Rect(50, 550, w, total_height)
                 dialogue_rect.width = w
                 dialogue_rect.height = 150
                 
 
                 dialogue_box = self.Box((dialogue_rect.width, dialogue_rect.height), self.dialog_box_color)
-                
-                #pygame.draw.rect(self.screen, (255, 0, 0), dialogue_box.get_rect)
                 
                 self.screen.blit(dialogue_box, dialogue_rect.topleft)
 
