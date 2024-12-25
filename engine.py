@@ -54,8 +54,9 @@ class VNEngine:
         """
 
         self.pygame_flags = pygame.SCALED | pygame.HWSURFACE | pygame.DOUBLEBUF | pygame.RESIZABLE
-        self.screen_size = (1280,720)
+        self.screen_size = (1280, 720)
         self.screen = None  
+        self.screen_rect = None
         
         self.font = None
         self.clock = None
@@ -741,7 +742,7 @@ class VNEngine:
                         nested_ifs -= 1
 
     def display_dialogue(self):
-        if self.dialogue_queue:
+        if self.dialogue_queue and self.screen_size:
             character, dialogue = self.dialogue_queue[0]
             character_surface = self.font.render(character, True, self.character_name_color)
             
@@ -842,10 +843,32 @@ class VNEngine:
                 elif self.current_line >= len(self.script):
                 
                     self.running = False
+            
+            elif event.type == pygame.VIDEORESIZE:
+                self.screen_size = pygame.display.get_window_size()
+                self.needs_update = True
+                pygame.display.flip()
+         
+            elif event.type == pygame.WINDOWRESTORED:
+                self.screen_size = (1280, 720)
+                self.needs_update = True
+                pygame.display.flip()
+
+            elif event.type == pygame.WINDOWMAXIMIZED:
+                self.screen_size = pygame.display.get_window_size()
+                self.needs_update = True
+                pygame.display.flip()
+
+            elif event.type == pygame.WINDOWRESIZED:
+                self.screen_size = (1280, 720)
+                self.needs_update = True
+                pygame.display.flip()
+            
+            
     
-    
-        
-    
+
+
+
     def run(self):
         """
         The function runs a script line by line, handling events and rendering while checking for
@@ -870,6 +893,7 @@ class VNEngine:
             print("No script to execute. Please check the script path.")
             return
         
+        os.environ["SDL_VIDEO_CENTERED"] = "1"
         # LOAD PYGAME
         pygame.init()
 
@@ -877,14 +901,17 @@ class VNEngine:
         self.clock = pygame.time.Clock()
 
         if not self.show_window:
-            self.screen = pygame.display.set_mode(self.screen_size, self.pygame_flags | pygame.SHOWN)
+            self.screen = pygame.display.set_mode(self.screen_size, self.pygame_flags, 0)
+          
             pygame.display.set_caption(f"VNEngine - {version}")
             if os.path.exists(os.path.join(base_folder, 'icon.png')):
                 pygame.display.set_icon(pygame.image.load(os.path.join(base_folder, 'icon.png')))
-
+ 
             self.screen.fill((0, 0, 0))
             pygame.display.flip()
             self.show_window = True
+        
+   
         
         try:
             
