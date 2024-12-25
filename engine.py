@@ -53,10 +53,10 @@ class VNEngine:
         :type base_folder: str
         """
 
-        self.pygame_flags = pygame.HWSURFACE | pygame.DOUBLEBUF | pygame.RESIZABLE
+        self.pygame_flags = pygame.SCALED | pygame.HWSURFACE | pygame.DOUBLEBUF | pygame.RESIZABLE
         self.screen_size = (1280, 720)
         self.screen = None  
-        self.base_surface = None
+       
         
         self.font = None
         self.clock = None
@@ -759,11 +759,11 @@ class VNEngine:
             name_box = self.Box((ch_w, ch_h), self.dialog_box_color)
             
             if character:
-               self.base_surface.blit(name_box, (character_rect.x, character_rect.y))
+               self.screen.blit(name_box, (character_rect.x, character_rect.y))
 
             character_pos = (character_rect.x + 2, character_rect.y + 3)
 
-            self.base_surface.blit(character_surface, character_pos)
+            self.screen.blit(character_surface, character_pos)
 
             w = pygame.display.get_window_size()[0] - 100
             
@@ -778,13 +778,15 @@ class VNEngine:
                 
 
                 dialogue_box = self.Box((dialogue_rect.width, dialogue_rect.height), self.dialog_box_color)
-
-                self.base_surface.blit(dialogue_box, dialogue_rect.topleft)
+                
+                #pygame.draw.rect(self.screen, (255, 0, 0), dialogue_box.get_rect)
+                
+                self.screen.blit(dialogue_box, dialogue_rect.topleft)
 
                 text_padding = 5
                 for i, line in enumerate(wrapped_lines):
                     dialogue_surface = self.font.render(line, True, self.dialogue_text_color)
-                    self.base_surface.blit(dialogue_surface, (dialogue_rect.x + text_padding, dialogue_rect.y + text_padding + i * line_height))
+                    self.screen.blit(dialogue_surface, (dialogue_rect.x + text_padding, dialogue_rect.y + text_padding + i * line_height))
  
     def render(self):
         """
@@ -798,14 +800,14 @@ class VNEngine:
         
             
         if self.current_background:
-            self.base_surface.blit(self.current_background, (0, 0))
+            self.screen.blit(self.current_background, (0, 0))
 
         for sprite_surface, sprite_pos in self.current_sprites:
-            self.base_surface.blit(sprite_surface, sprite_pos)
+            self.screen.blit(sprite_surface, sprite_pos)
         
         self.display_dialogue()
 
-        scaled_surface = pygame.transform.smoothscale(self.base_surface, self.screen.get_size())
+        scaled_surface = pygame.transform.smoothscale(self.screen, self.screen.get_size())
         self.screen.blit(scaled_surface, (0, 0))
         
         self.needs_update = False
@@ -854,36 +856,35 @@ class VNEngine:
             if event.type == pygame.QUIT:
                 self.running = False
                 sys.exit(0)
-            elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1: 
+            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1: 
                 
                 if self.dialogue_queue:
                     self.dialogue_queue.pop(0)
                 elif self.current_line >= len(self.script):
                 
                     self.running = False
-            
-            elif event.type == pygame.VIDEORESIZE:
+            if event.type == pygame.VIDEORESIZE:
                 new_width = max(self.screen_size[0], min(1980, event.w))
                 new_height = max(self.screen_size[1], min(1080, event.h))
-                self.screen = pygame.display.set_mode((new_width, new_height), self.pygame_flags)
+                self.screen_size = (new_width, new_height)
+                pygame.display.update()
+               
                 self.needs_update = True
-                pygame.display.flip()
-         
-            elif event.type == pygame.WINDOWRESTORED:
-                self.screen_size = (1280, 720)
-                self.needs_update = True
-                pygame.display.flip()
-
-            elif event.type == pygame.WINDOWMAXIMIZED:
-                self.screen_size = pygame.display.get_window_size()
-                self.needs_update = True
-                pygame.display.flip()
-
-            elif event.type == pygame.WINDOWRESIZED:
-                self.screen_size = (1280, 720)
-                self.needs_update = True
-                pygame.display.flip()
             
+            if event.type == pygame.WINDOWMAXIMIZED:
+                pygame.display.update()
+
+            if event.type == pygame.WINDOWRESIZED:
+                pygame.display.update()
+            if event.type == pygame.WINDOWRESTORED:
+                pass
+
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_f:
+                pygame.display.toggle_fullscreen()
+
+            
+            
+
             
     
 
@@ -927,10 +928,7 @@ class VNEngine:
             if os.path.exists(os.path.join(base_folder, 'icon.png')):
                 pygame.display.set_icon(pygame.image.load(os.path.join(base_folder, 'icon.png')))
 
-            self.base_surface = pygame.Surface(self.screen_size)
-
-            
-
+       
             self.screen.fill((0, 0, 0))
             pygame.display.flip()
             self.show_window = True
