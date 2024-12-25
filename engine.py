@@ -56,7 +56,7 @@ class VNEngine:
         self.pygame_flags = pygame.SCALED | pygame.HWSURFACE | pygame.DOUBLEBUF | pygame.RESIZABLE
         self.screen_size = (1280, 720)
         self.screen = None  
-        self.screen_rect = None
+        self.base_surface = None
         
         self.font = None
         self.clock = None
@@ -759,11 +759,11 @@ class VNEngine:
             name_box = self.Box((ch_w, ch_h), self.dialog_box_color)
             
             if character:
-                self.screen.blit(name_box, (character_rect.x, character_rect.y))
+               self.base_surface.blit(name_box, (character_rect.x, character_rect.y))
 
             character_pos = (character_rect.x + 2, character_rect.y + 3)
 
-            self.screen.blit(character_surface, character_pos)
+            self.base_surface.blit(character_surface, character_pos)
 
             w = pygame.display.get_window_size()[0] - 100
             
@@ -779,12 +779,12 @@ class VNEngine:
 
                 dialogue_box = self.Box((dialogue_rect.width, dialogue_rect.height), self.dialog_box_color)
 
-                self.screen.blit(dialogue_box, dialogue_rect.topleft)
+                self.base_surface.blit(dialogue_box, dialogue_rect.topleft)
 
                 text_padding = 5
                 for i, line in enumerate(wrapped_lines):
                     dialogue_surface = self.font.render(line, True, self.dialogue_text_color)
-                    self.screen.blit(dialogue_surface, (dialogue_rect.x + text_padding, dialogue_rect.y + text_padding + i * line_height))
+                    self.base_surface.blit(dialogue_surface, (dialogue_rect.x + text_padding, dialogue_rect.y + text_padding + i * line_height))
  
     def render(self):
         """
@@ -794,14 +794,19 @@ class VNEngine:
 
         if not self.needs_update:
                 return
+        
+        
             
         if self.current_background:
-            self.screen.blit(self.current_background, (0, 0))
+            self.base_surface.blit(self.current_background, (0, 0))
 
         for sprite_surface, sprite_pos in self.current_sprites:
-            self.screen.blit(sprite_surface, sprite_pos)
+            self.base_surface.blit(sprite_surface, sprite_pos)
         
         self.display_dialogue()
+
+        scaled_surface = pygame.transform.smoothscale(self.base_surface, self.screen.get_size())
+        self.screen.blit(scaled_surface, (0, 0))
         
         self.needs_update = False
   
@@ -906,7 +911,11 @@ class VNEngine:
             pygame.display.set_caption(f"VNEngine - {version}")
             if os.path.exists(os.path.join(base_folder, 'icon.png')):
                 pygame.display.set_icon(pygame.image.load(os.path.join(base_folder, 'icon.png')))
- 
+
+            self.base_surface = pygame.Surface(self.screen_size)
+
+            
+
             self.screen.fill((0, 0, 0))
             pygame.display.flip()
             self.show_window = True
