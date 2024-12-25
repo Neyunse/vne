@@ -744,13 +744,16 @@ class VNEngine:
     def display_dialogue(self):
         # TODO improve the positions and sizes to accommodate when the window is scaled.
         # Like the text font size.
+
+        xpos = 74 # in pixels
+
         if self.dialogue_queue and self.screen_size:
             character, dialogue = self.dialogue_queue[0]
             character_surface = self.font.render(character, True, self.character_name_color).convert_alpha()
             
             character_rect = character_surface.get_rect()
-            character_rect.y = 510
-            character_rect.x = 50
+            character_rect.y = 542
+            character_rect.x = xpos
 
             line_height = self.font.get_height()
             char_padding = 6
@@ -767,26 +770,31 @@ class VNEngine:
 
             self.screen.blit(character_surface, character_pos)
 
-            w = pygame.display.get_window_size()[0] - 100
+            w = 1116
             
             wrapped_lines = self.wrap_text(dialogue, self.font, w)
 
             if wrapped_lines:
                 line_height = self.font.get_height()
                 total_height = len(wrapped_lines) * line_height + 10 
-                dialogue_rect = pygame.Rect(50, 550, w, total_height)
+                dialogue_rect = pygame.Rect(0, 421, w, total_height)
                 dialogue_rect.width = w
                 dialogue_rect.height = 150
                 
 
-                dialogue_box = self.Box((dialogue_rect.width, dialogue_rect.height), self.dialog_box_color)
+                dialogue_box = self.Box((pygame.display.get_window_size()[0], dialogue_rect.height), self.dialog_box_color)
                 
-                self.screen.blit(dialogue_box, dialogue_rect.topleft)
+                self.screen.blit(dialogue_box, dialogue_rect.bottomleft)
 
                 text_padding = 5
                 for i, line in enumerate(wrapped_lines):
                     dialogue_surface = self.font.render(line, True, self.dialogue_text_color).convert_alpha()
-                    self.screen.blit(dialogue_surface, (dialogue_rect.x + text_padding, dialogue_rect.y + text_padding + i * line_height))
+                    
+                    x, y = dialogue_rect.bottomleft 
+
+                  
+
+                    self.screen.blit(dialogue_surface, (x + text_padding + xpos, y + text_padding +  6  + i * line_height))
  
     def render(self):
         """

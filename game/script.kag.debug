@@ -20,7 +20,7 @@
 @scene start
     @bg park
     @show_sprite miki 
-    : Recientemente me mude a un complejo de apartamentos muy barato, por lo que escuche esta embrujado...
+    : Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book.
 
     Sayuri: Hello, World! {game_version} 
     Sayuri: This is a sample visual novel script.
