@@ -53,7 +53,7 @@ class VNEngine:
         :type base_folder: str
         """
 
-        self.pygame_flags = pygame.SCALED | pygame.HWSURFACE | pygame.DOUBLEBUF | pygame.RESIZABLE
+        self.pygame_flags = pygame.HWSURFACE | pygame.DOUBLEBUF | pygame.RESIZABLE
         self.screen_size = (1280, 720)
         self.screen = None  
         self.base_surface = None
@@ -829,7 +829,20 @@ class VNEngine:
         bx = pygame.Surface(size, pygame.SRCALPHA)
         bx.fill(color)
         return bx
-
+    
+    def maintain_aspect_ratio(self, new_width, new_height):
+        """
+        Ajusta el tamaño para mantener el ratio de aspecto 16:9.
+        """
+        new_ratio = new_width / new_height
+        aspect_ratio = 16 / 9
+        if new_ratio > aspect_ratio:
+            # Ajustar ancho para coincidir con la altura
+            new_width = int(new_height * aspect_ratio)
+        else:
+            # Ajustar altura para coincidir con el ancho
+            new_height = int(new_width / aspect_ratio)
+        return new_width, new_height
     
     def handle_events(self):
         """
@@ -850,7 +863,9 @@ class VNEngine:
                     self.running = False
             
             elif event.type == pygame.VIDEORESIZE:
-                self.screen_size = pygame.display.get_window_size()
+                new_width = max(self.screen_size[0], min(1980, event.w))
+                new_height = max(self.screen_size[1], min(1080, event.h))
+                self.screen = pygame.display.set_mode((new_width, new_height), self.pygame_flags)
                 self.needs_update = True
                 pygame.display.flip()
          
