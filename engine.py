@@ -883,6 +883,8 @@ class VNEngine:
 
             if event.type == pygame.KEYDOWN and event.key == pygame.K_f:
                 pygame.display.toggle_fullscreen()
+                pygame.display.flip()
+
 
             
             
