@@ -497,7 +497,7 @@ class VNEngine:
         
         image = pygame.image.load(background_image)
 
-        screen_width, screen_height = self.screen.get_size()
+        screen_width, screen_height = pygame.display.get_window_size()
 
         scaled_image = pygame.transform.scale(image, (screen_width, screen_height))
  
@@ -764,16 +764,16 @@ class VNEngine:
             character_pos = (character_rect.x + 2, character_rect.y + 3)
 
             self.screen.blit(character_surface, character_pos)
-            
-            wrapped_lines = self.wrap_text(dialogue, self.font, self.screen_size[0] - 100)
 
-           
+            w = pygame.display.get_window_size()[0] - 100
             
+            wrapped_lines = self.wrap_text(dialogue, self.font, w)
+
             if wrapped_lines:
                 line_height = self.font.get_height()
                 total_height = len(wrapped_lines) * line_height + 10  # Añadir padding
-                dialogue_rect = pygame.Rect(50, 550, self.screen_size[0] - 100, total_height)
-                dialogue_rect.width = self.screen_size[0] - 100
+                dialogue_rect = pygame.Rect(50, 550, w, total_height)
+                dialogue_rect.width = w
                 dialogue_rect.height = 150
                 
 
@@ -897,7 +897,7 @@ class VNEngine:
         # LOAD PYGAME
         pygame.init()
 
-        self.font = pygame.font.Font(None, 36)
+        self.font = pygame.font.Font(None, 40)
         self.clock = pygame.time.Clock()
 
         if not self.show_window:
