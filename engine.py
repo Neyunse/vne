@@ -792,7 +792,7 @@ class VNEngine:
                     
                     x, y = dialogue_rect.bottomleft 
 
-                  
+                    # TODO place typewriter effect
 
                     self.screen.blit(dialogue_surface, (x + text_padding + xpos, y + text_padding +  6  + i * line_height))
  
