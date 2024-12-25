@@ -53,17 +53,12 @@ class VNEngine:
         :type base_folder: str
         """
 
-        # LOAD PYGAME
-        pygame.init()
-
         self.pygame_flags = pygame.SCALED | pygame.HWSURFACE | pygame.DOUBLEBUF | pygame.RESIZABLE
         self.screen_size = (1280,720)
-        self.screen = pygame.display.set_mode(self.screen_size, self.pygame_flags | pygame.HIDDEN)   
-        pygame.display.set_caption(f"VNEngine - {version}")
-        if os.path.exists(os.path.join(base_folder, 'icon.png')):
-            pygame.display.set_icon(pygame.image.load(os.path.join(base_folder, 'icon.png')))
-        self.font = pygame.font.Font(None, 36)
-        self.clock = pygame.time.Clock()
+        self.screen = None  
+        
+        self.font = None
+        self.clock = None
 
         self.script_path = script_path
         self.script = []
@@ -799,8 +794,6 @@ class VNEngine:
         if not self.needs_update:
                 return
             
-        self.screen.fill((0, 0, 0))
-        
         if self.current_background:
             self.screen.blit(self.current_background, (0, 0))
 
@@ -808,12 +801,6 @@ class VNEngine:
             self.screen.blit(sprite_surface, sprite_pos)
         
         self.display_dialogue()
-        
-        if not self.show_window:
-            self.screen = pygame.display.set_mode(self.screen_size, self.pygame_flags | pygame.SHOWN)
-            self.screen.fill((0, 0, 0))
-            pygame.display.flip()
-            self.show_window = True
         
         self.needs_update = False
   
@@ -882,6 +869,22 @@ class VNEngine:
         if not self.script:
             print("No script to execute. Please check the script path.")
             return
+        
+        # LOAD PYGAME
+        pygame.init()
+
+        self.font = pygame.font.Font(None, 36)
+        self.clock = pygame.time.Clock()
+
+        if not self.show_window:
+            self.screen = pygame.display.set_mode(self.screen_size, self.pygame_flags | pygame.SHOWN)
+            pygame.display.set_caption(f"VNEngine - {version}")
+            if os.path.exists(os.path.join(base_folder, 'icon.png')):
+                pygame.display.set_icon(pygame.image.load(os.path.join(base_folder, 'icon.png')))
+
+            self.screen.fill((0, 0, 0))
+            pygame.display.flip()
+            self.show_window = True
         
         try:
             
