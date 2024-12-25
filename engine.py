@@ -55,9 +55,10 @@ class VNEngine:
 
         # LOAD PYGAME
         pygame.init()
- 
+
+        self.pygame_flags = pygame.SCALED | pygame.HWSURFACE | pygame.DOUBLEBUF | pygame.RESIZABLE
         self.screen_size = (1280,720)
-        self.screen = pygame.display.set_mode(self.screen_size, pygame.SCALED | pygame.HIDDEN)   
+        self.screen = pygame.display.set_mode(self.screen_size, self.pygame_flags | pygame.HIDDEN)   
         pygame.display.set_caption(f"VNEngine - {version}")
         if os.path.exists(os.path.join(base_folder, 'icon.png')):
             pygame.display.set_icon(pygame.image.load(os.path.join(base_folder, 'icon.png')))
@@ -809,7 +810,7 @@ class VNEngine:
         self.display_dialogue()
         
         if not self.show_window:
-            self.screen = pygame.display.set_mode(self.screen_size, pygame.SCALED | pygame.SHOWN)
+            self.screen = pygame.display.set_mode(self.screen_size, self.pygame_flags | pygame.SHOWN)
             self.screen.fill((0, 0, 0))
             pygame.display.flip()
             self.show_window = True
