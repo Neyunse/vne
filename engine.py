@@ -53,7 +53,7 @@ class VNEngine:
         :type base_folder: str
         """
 
-        self.pygame_flags = pygame.SCALED | pygame.HWSURFACE | pygame.DOUBLEBUF | pygame.RESIZABLE
+        self.pygame_flags = pygame.SCALED | pygame.HWSURFACE | pygame.DOUBLEBUF
         self.screen_size = (1280, 720)
         self.screen = None  
        
@@ -746,7 +746,7 @@ class VNEngine:
         # Al igual que el tamaño de la fuente de texto
         if self.dialogue_queue and self.screen_size:
             character, dialogue = self.dialogue_queue[0]
-            character_surface = self.font.render(character, True, self.character_name_color)
+            character_surface = self.font.render(character, True, self.character_name_color).convert_alpha()
             
             character_rect = character_surface.get_rect()
             character_rect.y = 510
@@ -787,7 +787,7 @@ class VNEngine:
 
                 text_padding = 5
                 for i, line in enumerate(wrapped_lines):
-                    dialogue_surface = self.font.render(line, True, self.dialogue_text_color)
+                    dialogue_surface = self.font.render(line, True, self.dialogue_text_color).convert_alpha()
                     self.screen.blit(dialogue_surface, (dialogue_rect.x + text_padding, dialogue_rect.y + text_padding + i * line_height))
  
     def render(self):
@@ -920,7 +920,7 @@ class VNEngine:
         # LOAD PYGAME
         pygame.init()
 
-        self.font = pygame.font.Font(None, 40)
+        self.font = pygame.font.Font(None, 33)
         self.clock = pygame.time.Clock()
 
         if not self.show_window:
