@@ -742,8 +742,8 @@ class VNEngine:
                         nested_ifs -= 1
 
     def display_dialogue(self):
-        # TODO mejorar las posiciones y los tamaños para que se acomoden cuando la ventana es escalada.
-        # Al igual que el tamaño de la fuente de texto
+        # TODO improve the positions and sizes to accommodate when the window is scaled.
+        # Like the text font size.
         if self.dialogue_queue and self.screen_size:
             character, dialogue = self.dialogue_queue[0]
             character_surface = self.font.render(character, True, self.character_name_color).convert_alpha()
