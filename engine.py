@@ -426,8 +426,8 @@ class VNEngine:
      
         pos_x = 0 
         pos_y = 20  
-        width =  screen_width % sprite_width / screen_width
-        height =  screen_height % sprite_height / screen_height
+        width =  screen_width % sprite_width  
+        height =  screen_height % sprite_height 
 
         zoom_factor = 1
 
