@@ -136,21 +136,6 @@ class VNEngine:
             raise ValueError(f"Invalid command: {cmd}")
 
         match cmd:
-            # Command to change the screen width @screen_width <width>
-            case "game_size":
-                # Not implemented yet
-
-                w, h = self.parse_variables(parts, 2)
-                if w is None or h is None:
-                    raise ValueError(f"Error: Missing screen size values. Usage: @screen_size <width> <height>")
-                
-                width = int(w) * 1
-                height = int(h) * 1
-
-                self.virtual_screen((width, height))
-                
-                
-            
             # Command to change the window title @game_title <title>
             case "game_title":
                 _, title = self.parse_variables(parts, 1)
@@ -624,7 +609,7 @@ class VNEngine:
         self.display_dialogue(virtual_work)
 
         self.screen.blit(virtual_work,(0,0))
-        
+
         if self.needs_update:
             pygame.display.flip()
             self.needs_update = False
