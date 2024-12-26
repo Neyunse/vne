@@ -22,10 +22,10 @@ class VNEngine:
                  base_folder: str = None
                  ):
 
-        self.pygame_flags = pygame.SCALED | pygame.HWSURFACE | pygame.DOUBLEBUF
+        self.pygame_flags = pygame.HWSURFACE | pygame.DOUBLEBUF
         self.screen_size = (1280, 720)
         self.screen = None  
-       
+        self.fullscreen = False
         
         self.font = None
         self.clock = None
@@ -635,9 +635,9 @@ class VNEngine:
                     self.running = False
                 
             if event.type == pygame.KEYDOWN and event.key == pygame.K_f:
-                pygame.display.toggle_fullscreen()
-                self.screen_size = pygame.display.get_window_size()
-                self.needs_update = True
+                #TODO: Implement fullscreen
+                #TODO: Not use pygame.SCALED, SCALED add a low-quality to images if the fullscreen is active.
+                pass
 
     def run(self):
  
