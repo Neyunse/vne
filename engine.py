@@ -399,7 +399,20 @@ class VNEngine:
             raise ValueError(f"Error: Background not defined: {image_key}")
         
         background_surface = self.images[image_key][1]
-        self.current_background = background_surface
+
+        bg_width, bg_height = background_surface.get_size()
+        screen_width, screen_height = pygame.display.get_window_size()
+
+        zoom_factor = 1
+ 
+
+        width =  screen_width % bg_width
+        height =  screen_height % bg_height
+
+        width = int(width  * zoom_factor)
+        height = int(height * zoom_factor)
+    
+        self.current_background = (background_surface, (width, height))
         self.needs_update = True
 
     def display_sprite(self, sprite_key):
@@ -409,13 +422,12 @@ class VNEngine:
         
         sprite_surface = self.sprites[sprite_key][1]
         sprite_width, sprite_height = sprite_surface.get_size()
-        screen_width, screen_height = self.screen.get_size()
+        screen_width, screen_height = pygame.display.get_window_size()
      
-
         pos_x = 0 
         pos_y = 20  
-        width =  sprite_width
-        height =  sprite_height
+        width =  screen_width % sprite_width / screen_width
+        height =  screen_height % sprite_height / screen_height
 
         zoom_factor = 1
 
@@ -431,7 +443,7 @@ class VNEngine:
             pos_y = (screen_height - height) // 2
 
         
-        self.current_sprites.append((sprite_surface))
+        self.current_sprites.append((sprite_surface, (width, height),(pos_x, pos_y)))
         self.needs_update = True
         Log(f"Sprite '{sprite_key}' displayed.")
 
@@ -586,32 +598,36 @@ class VNEngine:
  
     def render(self):
 
-        virtual_work = pygame.Surface(self.screen.get_size())
-        virtual_work = virtual_work.convert()
-     
+        window_size = pygame.display.get_window_size()
+
         if not self.needs_update:
             return
         
-        
-            
+        virtual_work = pygame.Surface(window_size)
+        virtual_work = virtual_work.convert()
+     
         if self.current_background:
-            bg_scaled = pygame.transform.scale(self.current_background, self.screen.get_size())
+            surface, size = self.current_background
+
+            bg_scaled = pygame.transform.scale(surface, size)
+            
             virtual_work.blit(bg_scaled, (0, 0))
 
             
-        for sprite_surface in self.current_sprites:
-            sprite_scaled = pygame.transform.scale(sprite_surface, sprite_surface.get_size())
+        for sprite_surface,  sprite_size, sprite_pos in self.current_sprites:
+            sprite_scaled = pygame.transform.smoothscale(sprite_surface, sprite_size)
             
-            virtual_work.blit(sprite_surface, (0,0))
+            virtual_work.blit(sprite_scaled, sprite_pos)
         
         self.screen.blit(virtual_work,(0,0))
         
         self.display_dialogue()
 
-        
         if self.needs_update:
             pygame.display.flip()
             self.needs_update = False
+        
+        print(f"virtual work: {virtual_work.get_size()}")
   
         
 
@@ -621,20 +637,6 @@ class VNEngine:
         bx = pygame.Surface(size, pygame.SRCALPHA)
         bx.fill(color)
         return bx
-    
-    def maintain_aspect_ratio(self, new_width, new_height):
-        """
-        Ajusta el tamaño para mantener el ratio de aspecto 16:9.
-        """
-        new_ratio = new_width / new_height
-        aspect_ratio = 16 / 9
-        if new_ratio > aspect_ratio:
-            # Ajustar ancho para coincidir con la altura
-            new_width = int(new_height * aspect_ratio)
-        else:
-            # Ajustar altura para coincidir con el ancho
-            new_height = int(new_width / aspect_ratio)
-        return new_width, new_height
     
     def handle_events(self):
      
@@ -649,25 +651,11 @@ class VNEngine:
                 elif self.current_line >= len(self.script):
                 
                     self.running = False
-            if event.type == pygame.VIDEORESIZE:
-                new_width = max(self.screen_size[0], min(1980, event.w))
-                new_height = max(self.screen_size[1], min(1080, event.h))
-                self.screen_size = (new_width, new_height)
-                pygame.display.update()
-               
-                self.needs_update = True
-            
-            if event.type == pygame.WINDOWMAXIMIZED:
-                pygame.display.update()
-
-            if event.type == pygame.WINDOWRESIZED:
-                pygame.display.update()
-            if event.type == pygame.WINDOWRESTORED:
-                pass
-
+     
             if event.type == pygame.KEYDOWN and event.key == pygame.K_f:
                 pygame.display.toggle_fullscreen()
-                pygame.display.flip()
+                self.screen_size = pygame.display.get_window_size()
+                self.needs_update = True
 
     def run(self):
  
