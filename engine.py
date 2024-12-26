@@ -624,6 +624,7 @@ class VNEngine:
         self.display_dialogue(virtual_work)
 
         self.screen.blit(virtual_work,(0,0))
+        
         if self.needs_update:
             pygame.display.flip()
             self.needs_update = False
