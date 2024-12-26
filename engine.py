@@ -447,7 +447,7 @@ class VNEngine:
         self.needs_update = True
         Log(f"Sprite '{sprite_key}' displayed.")
     
-    def display_dialogue(self):
+    def display_dialogue(self, virtual_work):
 
         xpos = 74 # in pixels
 
@@ -468,11 +468,11 @@ class VNEngine:
             name_box = self.Box((ch_w, ch_h), self.dialog_box_color)
             
             if character:
-               self.screen.blit(name_box, (character_rect.x, character_rect.y))
+               virtual_work.blit(name_box, (character_rect.x, character_rect.y))
 
             character_pos = (character_rect.x + 2, character_rect.y + 3)
 
-            self.screen.blit(character_surface, character_pos)
+            virtual_work.blit(character_surface, character_pos)
 
             ## for dialogue
 
@@ -490,7 +490,7 @@ class VNEngine:
 
                 dialogue_box = self.Box((pygame.display.get_window_size()[0], dialogue_rect.height), self.dialog_box_color)
                 
-                self.screen.blit(dialogue_box, dialogue_rect.bottomleft)
+                virtual_work.blit(dialogue_box, dialogue_rect.bottomleft)
 
                 text_padding = 5
                 
@@ -502,7 +502,7 @@ class VNEngine:
  
                     x, y = dialogue_rect.bottomleft 
 
-                    self.screen.blit(dialogue_surface, (x + text_padding + xpos, y + text_padding +  6  + i * line_height))
+                    virtual_work.blit(dialogue_surface, (x + text_padding + xpos, y + text_padding +  6  + i * line_height))
 
         
 
@@ -620,10 +620,10 @@ class VNEngine:
             
             virtual_work.blit(sprite_scaled, sprite_pos)
         
-        self.screen.blit(virtual_work,(0,0))
         
-        self.display_dialogue()
+        self.display_dialogue(virtual_work)
 
+        self.screen.blit(virtual_work,(0,0))
         if self.needs_update:
             pygame.display.flip()
             self.needs_update = False
