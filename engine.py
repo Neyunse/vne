@@ -358,7 +358,7 @@ class VNEngine:
         if not os.path.exists(character_image):
             raise FileNotFoundError(f"Error: Character image not found in {character_image}")
 
-        sprite_image = pygame.image.load(character_image)
+        sprite_image = pygame.image.load(character_image).convert_alpha()
         sprite_width, sprite_height = sprite_image.get_size()
 
         if not sprite_width == 740 and not sprite_height == 1080:
@@ -373,7 +373,7 @@ class VNEngine:
         if not os.path.exists(background_image):
             raise FileNotFoundError(f"Error: Background image not found in {background_image}")
         
-        image = pygame.image.load(background_image)
+        image = pygame.image.load(background_image).convert_alpha()
  
         return key, image
 
@@ -446,6 +446,65 @@ class VNEngine:
         self.current_sprites.append((sprite_surface, (width, height),(pos_x, pos_y)))
         self.needs_update = True
         Log(f"Sprite '{sprite_key}' displayed.")
+    
+    def display_dialogue(self):
+
+        xpos = 74 # in pixels
+
+        if self.dialogue_queue and self.screen_size:
+            character, dialogue = self.dialogue_queue[0]
+            character_surface = self.font.render(character, True, self.character_name_color).convert_alpha()
+            
+            character_rect = character_surface.get_rect()
+            character_rect.y = 542
+            character_rect.x = xpos
+
+            line_height = self.font.get_height()
+            char_padding = 6
+              
+            ch_w = character_rect.width+char_padding
+            ch_h = character_rect.height+char_padding
+            
+            name_box = self.Box((ch_w, ch_h), self.dialog_box_color)
+            
+            if character:
+               self.screen.blit(name_box, (character_rect.x, character_rect.y))
+
+            character_pos = (character_rect.x + 2, character_rect.y + 3)
+
+            self.screen.blit(character_surface, character_pos)
+
+            ## for dialogue
+
+            w = 1116
+            
+            wrapped_lines = self.wrap_text(dialogue, self.font, w)
+
+            if wrapped_lines:
+                line_height = self.font.get_height()
+                total_height = len(wrapped_lines) * line_height + 10 
+                dialogue_rect = pygame.Rect(0, 421, w, total_height)
+                dialogue_rect.width = w
+                dialogue_rect.height = 150
+                
+
+                dialogue_box = self.Box((pygame.display.get_window_size()[0], dialogue_rect.height), self.dialog_box_color)
+                
+                self.screen.blit(dialogue_box, dialogue_rect.bottomleft)
+
+                text_padding = 5
+                
+                
+                for i, line in enumerate(wrapped_lines):
+
+                
+                    dialogue_surface = self.font.render(line, True, self.dialogue_text_color)
+ 
+                    x, y = dialogue_rect.bottomleft 
+
+                    self.screen.blit(dialogue_surface, (x + text_padding + xpos, y + text_padding +  6  + i * line_height))
+
+        
 
     
     def wrap_text(self, text, font, max_width):
@@ -535,64 +594,6 @@ class VNEngine:
                         break
                     else:
                         nested_ifs -= 1
-
-    def display_dialogue(self):
-
-        xpos = 74 # in pixels
-
-        if self.dialogue_queue and self.screen_size:
-            character, dialogue = self.dialogue_queue[0]
-            character_surface = self.font.render(character, True, self.character_name_color).convert_alpha()
-            
-            character_rect = character_surface.get_rect()
-            character_rect.y = 542
-            character_rect.x = xpos
-
-            line_height = self.font.get_height()
-            char_padding = 6
-              
-            ch_w = character_rect.width+char_padding
-            ch_h = character_rect.height+char_padding
-            
-            name_box = self.Box((ch_w, ch_h), self.dialog_box_color)
-            
-            if character:
-               self.screen.blit(name_box, (character_rect.x, character_rect.y))
-
-            character_pos = (character_rect.x + 2, character_rect.y + 3)
-
-            self.screen.blit(character_surface, character_pos)
-
-            ## for dialogue
-
-            w = 1116
-            
-            wrapped_lines = self.wrap_text(dialogue, self.font, w)
-
-            if wrapped_lines:
-                line_height = self.font.get_height()
-                total_height = len(wrapped_lines) * line_height + 10 
-                dialogue_rect = pygame.Rect(0, 421, w, total_height)
-                dialogue_rect.width = w
-                dialogue_rect.height = 150
-                
-
-                dialogue_box = self.Box((pygame.display.get_window_size()[0], dialogue_rect.height), self.dialog_box_color)
-                
-                self.screen.blit(dialogue_box, dialogue_rect.bottomleft)
-
-                text_padding = 5
-                
-                for i, line in enumerate(wrapped_lines):
-
-                
-                    dialogue_surface = self.font.render(line, True, self.dialogue_text_color).convert_alpha()
- 
-                    x, y = dialogue_rect.bottomleft 
-
-                    self.screen.blit(dialogue_surface, (x + text_padding + xpos, y + text_padding +  6  + i * line_height))
-
-        
                  
       
  
@@ -604,12 +605,12 @@ class VNEngine:
             return
         
         virtual_work = pygame.Surface(window_size)
-        virtual_work = virtual_work.convert()
+        virtual_work = virtual_work.convert_alpha()
      
         if self.current_background:
             surface, size = self.current_background
 
-            bg_scaled = pygame.transform.scale(surface, size)
+            bg_scaled = pygame.transform.smoothscale(surface, size)
             
             virtual_work.blit(bg_scaled, (0, 0))
 
@@ -626,12 +627,7 @@ class VNEngine:
         if self.needs_update:
             pygame.display.flip()
             self.needs_update = False
-        
-        print(f"virtual work: {virtual_work.get_size()}")
-  
-        
-
-        
+         
     def Box(self, size, color):
 
         bx = pygame.Surface(size, pygame.SRCALPHA)
