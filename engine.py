@@ -633,7 +633,7 @@ class VNEngine:
                 elif self.current_line >= len(self.script):
                 
                     self.running = False
-     
+                
             if event.type == pygame.KEYDOWN and event.key == pygame.K_f:
                 pygame.display.toggle_fullscreen()
                 self.screen_size = pygame.display.get_window_size()
