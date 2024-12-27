@@ -24,6 +24,8 @@ class VNEngine:
 
         self.pygame_flags = pygame.HWSURFACE | pygame.DOUBLEBUF
         self.screen_size = (1280, 720)
+        self.default_screen_size = (1280, 720)
+        self.monitor_size = ()
         self.screen = None  
         self.fullscreen = False
         
@@ -88,7 +90,6 @@ class VNEngine:
         'if',
         'endif',
         'setVar',
-        #'game_size',
         'game_title',
         'game_icon',
         'game_dialogue_color',
@@ -292,22 +293,7 @@ class VNEngine:
             
             case _:
                 raise ValueError(f"Error: Unknown command ({cmd})")
-    
-    def reset_screen(self):
- 
-
-        if self.display_info is None:
-            self.display_info = pygame.display.Info()
-
-        self.scale_factor = 1.0
-        
-        self.screen_size = (800, 600)
-
-        self.screen = None
-    
-    def virtual_screen(self, size):
-        pass
-    
+            
     def check_reserved_variables(self, key):
  
         r = [t for t in self.RESERVED_VARIABLES if t[0] == key]
@@ -348,6 +334,8 @@ class VNEngine:
 
         if not sprite_width == 740 and not sprite_height == 1080:
             raise ValueError("Error: The sprite size must be 740x1080")
+        
+        Log(f"The sprite '{key}' was loaded")
 
         return key, sprite_image
     
@@ -359,6 +347,8 @@ class VNEngine:
             raise FileNotFoundError(f"Error: Background image not found in {background_image}")
         
         image = pygame.image.load(background_image).convert_alpha()
+
+        Log(f"The background '{key}' was loaded")
  
         return key, image
 
@@ -399,6 +389,8 @@ class VNEngine:
     
         self.current_background = (background_surface, (width, height))
         self.needs_update = True
+        Log(f"Background '{image_key}' displayed.")
+
 
     def display_sprite(self, sprite_key):
 
@@ -436,35 +428,35 @@ class VNEngine:
 
         xpos = 74 # in pixels
 
+
         if self.dialogue_queue and self.screen_size:
             character, dialogue = self.dialogue_queue[0]
             character_surface = self.font.render(character, True, self.character_name_color).convert_alpha()
             
             character_rect = character_surface.get_rect()
-            character_rect.y = 542
+            character_rect.y = 536
             character_rect.x = xpos
-
+            
+            character_rect.height = 29
+        
             line_height = self.font.get_height()
             char_padding = 6
               
-            ch_w = character_rect.width+char_padding
+            ch_w = character_rect.width+20
             ch_h = character_rect.height+char_padding
             
             name_box = self.Box((ch_w, ch_h), self.dialog_box_color)
+            character_pos = (character_rect.x, character_rect.y)
+            name_box.blit(character_surface, (char_padding,char_padding))
             
             if character:
-               virtual_work.blit(name_box, (character_rect.x, character_rect.y))
-
-            character_pos = (character_rect.x + 2, character_rect.y + 3)
-
-            virtual_work.blit(character_surface, character_pos)
-
-            ## for dialogue
+               virtual_work.blit(name_box, (character_pos))
 
             w = 1116
             
             wrapped_lines = self.wrap_text(dialogue, self.font, w)
 
+            
             if wrapped_lines:
                 line_height = self.font.get_height()
                 total_height = len(wrapped_lines) * line_height + 10 
@@ -472,7 +464,7 @@ class VNEngine:
                 dialogue_rect.width = w
                 dialogue_rect.height = 150
                 
-
+                # TODO: move dialogue inside dialogue_box
                 dialogue_box = self.Box((pygame.display.get_window_size()[0], dialogue_rect.height), self.dialog_box_color)
                 
                 virtual_work.blit(dialogue_box, dialogue_rect.bottomleft)
@@ -589,6 +581,7 @@ class VNEngine:
         if not self.needs_update:
             return
         
+        # full screen may not work for some reason
         virtual_work = pygame.Surface(window_size)
         virtual_work = virtual_work.convert_alpha()
      
@@ -608,8 +601,7 @@ class VNEngine:
         
         self.display_dialogue(virtual_work)
 
-        self.screen.blit(virtual_work,(0,0))
-
+        self.screen.blit(virtual_work, (0,0)) 
         if self.needs_update:
             pygame.display.flip()
             self.needs_update = False
@@ -620,12 +612,16 @@ class VNEngine:
         bx.fill(color)
         return bx
     
+    def new_screen_context(self, size, flags):
+        self.screen = pygame.display.set_mode(size, flags)
+        self.needs_update = True
+    
     def handle_events(self):
      
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                self.running = False
-                sys.exit(0)
+                pygame.quit()
+                sys.exit()
             if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1: 
                 
                 if self.dialogue_queue:
@@ -633,11 +629,18 @@ class VNEngine:
                 elif self.current_line >= len(self.script):
                 
                     self.running = False
-                
+            
             if event.type == pygame.KEYDOWN and event.key == pygame.K_f:
-                #TODO: Implement fullscreen
-                #TODO: Not use pygame.SCALED, SCALED add a low-quality to images if the fullscreen is active.
+                #pass implement fullScreen here
+                #pygame.display.toggle_fullscreen() not work correclty
                 pass
+
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+                pygame.quit()
+                sys.exit()
+                    
+
+               
 
     def run(self):
  
@@ -664,19 +667,27 @@ class VNEngine:
         self.font = pygame.font.Font(None, 33)
         self.clock = pygame.time.Clock()
 
+        self.monitor_size = (pygame.display.Info().current_w, pygame.display.Info().current_h)
+
+        Log(f'desktop size: ({self.monitor_size})')
+
         if not self.show_window:
-            self.screen = pygame.display.set_mode(self.screen_size, self.pygame_flags, 0)
-          
+            self.new_screen_context(self.screen_size, self.pygame_flags)
+
             pygame.display.set_caption(f"VNEngine - {version}")
             if os.path.exists(os.path.join(base_folder, 'icon.png')):
                 pygame.display.set_icon(pygame.image.load(os.path.join(base_folder, 'icon.png')))
+                Log("game icon was loaded")
 
        
             self.screen.fill((0, 0, 0))
             pygame.display.flip()
             self.show_window = True
         
-   
+        Log(f'video mode size: ({pygame.display.Info().current_w},{pygame.display.Info().current_h})')
+
+ 
+    
         
         try:
             
@@ -700,6 +711,7 @@ class VNEngine:
             raise ValueError(f"{e}")
         finally:
             pygame.quit()
+            sys.exit()
 
     
     def run_for_console(self):
@@ -711,10 +723,11 @@ class VNEngine:
             self.current_line += 1
 
 
-def Log(message):
-    with open('log.txt', 'a') as f:
-        f.write(f"-----------------[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}]-----------------\n")
-        f.write(f"{message}\n")
+def Log(log):
+    
+    with open('log.txt', 'a+') as f:
+        f.write("\n")
+        f.write(log)
         f.close()
 
 def generate_files():
@@ -764,6 +777,21 @@ if __name__ == "__main__":
     base_folder = os.path.join(dirname)
     game_folder = os.path.join(base_folder, 'game')
 
+    init_log_template = """
+created at: %(createdAt)s
+Plataform: %(plataform)s
+VNE v%(engineVersion)s
+"""
+    init_log_template_data = {
+        'createdAt': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+        'plataform': f"{platform.system()}-{platform.version()}",
+        'engineVersion': version,
+    }
+
+    with open('log.txt', 'w') as f:
+        f.write(init_log_template % init_log_template_data)
+        pass
+
     try:
         script_file = None
         if os.path.exists(game_folder):
@@ -788,26 +816,26 @@ if __name__ == "__main__":
             base_folder=base_folder
         )
         engine.run()
+
+        
     except Exception as e:
         
     
         traceback_template = '''
-Fail while game code was running:
-  File: "%(filename)s"
+Exception error:
   %(message)s\n
 
   %(plataform)s
   VNE v%(engineVersion)s
   '''
 
-        Log(f"Script was failed. Check the error.txt file for more information.")
-
         traceback_details = {
-                         'filename': os.path.join(game_folder, "script.kag"),
-                         'message' : e,
-                         'plataform': f"{platform.system()}-{platform.version()}",
-                         'engineVersion': version
-                        }
+            'message' : e,
+            'plataform': f"{platform.system()}-{platform.version()}",
+            'engineVersion': version
+        }    
+
+        Log(f"Script was failed. Check the error.txt file for more information.")
         
         print(traceback_template % traceback_details)
 
