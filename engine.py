@@ -374,20 +374,8 @@ class VNEngine:
             raise ValueError(f"Error: Background not defined: {image_key}")
         
         background_surface = self.images[image_key][1]
-
-        bg_width, bg_height = background_surface.get_size()
-        screen_width, screen_height = pygame.display.get_window_size()
-
-        zoom_factor = 1
- 
-
-        width =  screen_width % bg_width
-        height =  screen_height % bg_height
-
-        width = int(width  * zoom_factor)
-        height = int(height * zoom_factor)
-    
-        self.current_background = (background_surface, (width, height))
+        
+        self.current_background = background_surface
         self.needs_update = True
         Log(f"Background '{image_key}' displayed.")
 
@@ -399,35 +387,19 @@ class VNEngine:
         
         sprite_surface = self.sprites[sprite_key][1]
         sprite_width, sprite_height = sprite_surface.get_size()
-        screen_width, screen_height = pygame.display.get_window_size()
-     
-        pos_x = 0 
-        pos_y = 20  
-        width =  screen_width % sprite_width  
-        height =  screen_height % sprite_height 
 
         zoom_factor = 1
 
-        # Apply scaling and zoom
-        width = int(width  * zoom_factor)
-        height = int(height * zoom_factor)
-
-        # Center the sprite by default
-        
-        if pos_x == 0:  # Center horizontally
-            pos_x = (screen_width - width) // 2
-        if pos_y == 0:  # Center vertically
-            pos_y = (screen_height - height) // 2
-
-        
-        self.current_sprites.append((sprite_surface, (width, height),(pos_x, pos_y)))
+        self.current_sprites.append((sprite_surface, (sprite_width, sprite_height), (0, 0), zoom_factor))
         self.needs_update = True
         Log(f"Sprite '{sprite_key}' displayed.")
     
     def display_dialogue(self, virtual_work):
 
-        xpos = 74 # in pixels
+        # TODO improve the dialog position and put in bottom of the screen
+        # because when entering the fullscreen the dialog box is centered.
 
+        xpos = 74 # in pixels
 
         if self.dialogue_queue and self.screen_size:
             character, dialogue = self.dialogue_queue[0]
@@ -576,35 +548,52 @@ class VNEngine:
  
     def render(self):
 
-        window_size = pygame.display.get_window_size()
+        try:
+            window_size = pygame.display.get_window_size()
 
-        if not self.needs_update:
-            return
-        
-        # full screen may not work for some reason
-        virtual_work = pygame.Surface(window_size)
-        virtual_work = virtual_work.convert_alpha()
-     
-        if self.current_background:
-            surface, size = self.current_background
-
-            bg_scaled = pygame.transform.smoothscale(surface, size)
+            if not self.needs_update:
+                return
             
-            virtual_work.blit(bg_scaled, (0, 0))
+            # full screen may not work for some reason
+            virtual_work = pygame.Surface(window_size)
+            virtual_work = virtual_work.convert_alpha()
+        
+            if self.current_background:
+                bg_scaled = pygame.transform.smoothscale(self.current_background, window_size)
+                
+                virtual_work.blit(bg_scaled, (0, 0))
+
+                
+            for sprite_surface,  sprite_size, sprite_pos, zoom in self.current_sprites:
+                
+                scaled_size = (
+                    sprite_size[0] * virtual_work.get_width() / self.screen_size[0],
+                    sprite_size[1] * virtual_work.get_height() / self.screen_size[1]
+                )
+
+                sprite = None
+                if zoom:
+                    sprite_scaled = pygame.transform.smoothscale(sprite_surface, scaled_size)
+                    sprite = pygame.transform.rotozoom(sprite_scaled, 0, zoom)
+                else:
+                    sprite = pygame.transform.smoothscale(sprite_surface, scaled_size)
+                
+                # TODO Implement a position system for sprites
+                # for the moment put the sprite at the left
+                virtual_work.blit(sprite, (0,0))
 
             
-        for sprite_surface,  sprite_size, sprite_pos in self.current_sprites:
-            sprite_scaled = pygame.transform.smoothscale(sprite_surface, sprite_size)
             
-            virtual_work.blit(sprite_scaled, sprite_pos)
-        
-        
-        self.display_dialogue(virtual_work)
+            self.display_dialogue(virtual_work)
 
-        self.screen.blit(virtual_work, (0,0)) 
-        if self.needs_update:
-            pygame.display.flip()
-            self.needs_update = False
+            self.screen.blit(virtual_work, (0,0)) 
+            if self.needs_update:
+                pygame.display.flip()
+                self.needs_update = False
+        except Exception as e:
+            print(e)
+            raise ValueError(f"{e}")
+
          
     def Box(self, size, color):
 
@@ -613,7 +602,7 @@ class VNEngine:
         return bx
     
     def new_screen_context(self, size, flags):
-        self.screen = pygame.display.set_mode(size, flags)
+        self.screen = pygame.display.set_mode(size, flags, 32, vsync=1)
         self.needs_update = True
     
     def handle_events(self):
@@ -629,11 +618,22 @@ class VNEngine:
                 elif self.current_line >= len(self.script):
                 
                     self.running = False
-            
+            if event.type == pygame.WINDOWRESIZED:
+                self.needs_update = True
+            if event.type == pygame.WINDOWRESTORED:
+                self.needs_update = True
             if event.type == pygame.KEYDOWN and event.key == pygame.K_f:
-                #pass implement fullScreen here
-                #pygame.display.toggle_fullscreen() not work correclty
-                pass
+                if pygame.display.get_driver() =='x11':
+                    pygame.display.toggle_fullscreen()
+                else:
+                    self.fullscreen = not self.fullscreen
+                    if self.fullscreen:
+                        self.new_screen_context(self.monitor_size, self.pygame_flags | pygame.FULLSCREEN)
+                    else:
+                        self.new_screen_context(self.default_screen_size, self.pygame_flags)
+                    
+                self.needs_update = True
+                
 
             if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
                 pygame.quit()
@@ -666,13 +666,14 @@ class VNEngine:
 
         self.font = pygame.font.Font(None, 33)
         self.clock = pygame.time.Clock()
+        self.display_info = pygame.display.Info()
 
-        self.monitor_size = (pygame.display.Info().current_w, pygame.display.Info().current_h)
+        self.monitor_size = (self.display_info.current_w, self.display_info.current_h)
 
         Log(f'desktop size: ({self.monitor_size})')
-
+ 
         if not self.show_window:
-            self.new_screen_context(self.screen_size, self.pygame_flags)
+            self.new_screen_context(self.default_screen_size, self.pygame_flags)
 
             pygame.display.set_caption(f"VNEngine - {version}")
             if os.path.exists(os.path.join(base_folder, 'icon.png')):
@@ -685,10 +686,7 @@ class VNEngine:
             self.show_window = True
         
         Log(f'video mode size: ({pygame.display.Info().current_w},{pygame.display.Info().current_h})')
-
- 
-    
-        
+  
         try:
             
             while self.running:
