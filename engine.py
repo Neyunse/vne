@@ -388,7 +388,7 @@ class VNEngine:
         sprite_surface = self.sprites[sprite_key][1]
         sprite_width, sprite_height = sprite_surface.get_size()
 
-        zoom_factor = 1
+        zoom_factor = 0.7 # for the moment 0.7
 
         self.current_sprites.append((sprite_surface, (sprite_width, sprite_height), (0, 0), zoom_factor))
         self.needs_update = True
