@@ -9,7 +9,7 @@ import platform
 # This class `VNEngine` is used for initializing a visual novel engine with specified script and
 # configuration paths, as well as optional game and base folders.
 
-version = "0.0.0-alpha.7"
+version = "0.0.0-alpha.8"
 version_name = "N/a"
 builded_file_name = "vne"
 
@@ -589,6 +589,8 @@ class VNEngine:
                         self.new_screen_context(self.default_screen_size, self.pygame_flags)
                     
                 self.needs_update = True
+            if event.type == pygame.VIDEORESIZE:
+                self.new_screen_context((event.w, event.h), self.pygame_flags | pygame.RESIZABLE)
                 
 
             if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
