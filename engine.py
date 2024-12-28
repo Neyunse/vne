@@ -3,6 +3,7 @@ import sys
 os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 import pygame
 from datetime import datetime
+from dialogue_box import DialogueBox as TextBox
 
 import platform
 # This class `VNEngine` is used for initializing a visual novel engine with specified script and
@@ -46,6 +47,8 @@ class VNEngine:
         self.show_window = False
         self.scale_factor = 1.0
         self.display_info = None
+        self.typing_speed=50
+        self.char_index = 0 
     
     
  
@@ -59,8 +62,7 @@ class VNEngine:
         self.current_sprites = []
         self.dialogue_queue = []
         self.running = True
-        self.dialogue_text_color = (255, 255, 255)
-        self.character_name_color = (255, 255, 255)
+        self.dialogue_box_text_color = (255, 255, 255)
 
         self.dialog_box_color = (0,0,0, 128)
  
@@ -221,6 +223,7 @@ class VNEngine:
                 key, image_name = self.parse_variables(parts, 3)
                 image = self.load_sprite(key, image_name)
                 
+
                 self.sprites[key] = image
 
             # Set variable @setVar <var> = <value>
@@ -231,14 +234,18 @@ class VNEngine:
             # show sprite image @show_sprite <key>
             case "show_sprite":
                 sprite_key = parts[1]
-                #position = self.parse_sprite_position(parts)
-                self.display_sprite(sprite_key)
+                prefixes = ['pos=']
+                default_values = {
+                    'pos=': 'center'
+                }
+                modifiers = self.parse_modifiers(parts, prefixes, default_values)
+                self.display_sprite(sprite_key, modifiers)
             
             # remove the sprite @ remove_sprite <key>
             case "remove_sprite":
                 sprite = parts[1]
                 remove = [t for t in self.current_sprites if t[0] != sprite]
-               
+                
                 self.current_sprites = remove
                 
             # Scene definition @bg <key>
@@ -293,6 +300,12 @@ class VNEngine:
             
             case _:
                 raise ValueError(f"Error: Unknown command ({cmd})")
+    
+    def parse_modifiers(self, parts, prefixes = [], default_values={}):
+        
+        matching_values = {prefix: (next((item.split('=')[1] for item in parts if item.startswith(prefix)), default_values.get(prefix))) 
+                   for prefix in prefixes}
+        return matching_values
             
     def check_reserved_variables(self, key):
  
@@ -367,6 +380,15 @@ class VNEngine:
                 self.current_line = idx
                 return
         raise ValueError(f"Error: The scene '{label}' was not found, and the @change_scene cannot be executed.")
+    
+    def calculate_positions(self, size):
+        width, height = size
+      
+        return {
+            "left": (0, 0),
+            "center": (width * 0.5, 0),
+            "right": (width, 0),
+        }
 
     def display_scene(self, image_key: str):
 
@@ -380,102 +402,37 @@ class VNEngine:
         Log(f"Background '{image_key}' displayed.")
 
 
-    def display_sprite(self, sprite_key):
+    def display_sprite(self, sprite_key, modifiers):
 
-        if not sprite_key in self.sprites:
+        if not self.sprites[sprite_key]:
             raise ValueError(f"Error: Sprite not defined: {sprite_key}")
         
-        sprite_surface = self.sprites[sprite_key][1]
-        sprite_width, sprite_height = sprite_surface.get_size()
+        try:
+            sprite_surface = self.sprites[sprite_key][1]
+            sprite_width, sprite_height = sprite_surface.get_size()
 
-        zoom_factor = 0.7 # for the moment 0.7
-
-        self.current_sprites.append((sprite_surface, (sprite_width, sprite_height), (0, 0), zoom_factor))
-        self.needs_update = True
-        Log(f"Sprite '{sprite_key}' displayed.")
     
-    def display_dialogue(self, virtual_work):
+            zoom_factor = 0.7 # for the moment 0.7
 
-        # TODO improve the dialog position and put in bottom of the screen
-        # because when entering the fullscreen the dialog box is centered.
+            self.current_sprites.append((sprite_key, sprite_surface, (sprite_width, sprite_height), modifiers["pos="], zoom_factor))
+            self.needs_update = True
+            Log(f"Sprite '{sprite_key}' displayed.")
+        except Exception as e:
+            print(e)
 
-        xpos = 74 # in pixels
 
-        if self.dialogue_queue and self.screen_size:
+    def display_dialogue(self, virtual_work, textbox):
+
+        if self.dialogue_queue:
             character, dialogue = self.dialogue_queue[0]
-            character_surface = self.font.render(character, True, self.character_name_color).convert_alpha()
-            
-            character_rect = character_surface.get_rect()
-            character_rect.y = 536
-            character_rect.x = xpos
-            
-            character_rect.height = 29
-        
-            line_height = self.font.get_height()
-            char_padding = 6
-              
-            ch_w = character_rect.width+20
-            ch_h = character_rect.height+char_padding
-            
-            name_box = self.Box((ch_w, ch_h), self.dialog_box_color)
-            character_pos = (character_rect.x, character_rect.y)
-            name_box.blit(character_surface, (char_padding,char_padding))
-            
-            if character:
-               virtual_work.blit(name_box, (character_pos))
-
-            w = 1116
-            
-            wrapped_lines = self.wrap_text(dialogue, self.font, w)
-
-            
-            if wrapped_lines:
-                line_height = self.font.get_height()
-                total_height = len(wrapped_lines) * line_height + 10 
-                dialogue_rect = pygame.Rect(0, 421, w, total_height)
-                dialogue_rect.width = w
-                dialogue_rect.height = 150
-                
-                # TODO: move dialogue inside dialogue_box
-                dialogue_box = self.Box((pygame.display.get_window_size()[0], dialogue_rect.height), self.dialog_box_color)
-                
-                virtual_work.blit(dialogue_box, dialogue_rect.bottomleft)
-
-                text_padding = 5
-                
-                
-                for i, line in enumerate(wrapped_lines):
-
-                
-                    dialogue_surface = self.font.render(line, True, self.dialogue_text_color)
- 
-                    x, y = dialogue_rect.bottomleft 
-
-                    virtual_work.blit(dialogue_surface, (x + text_padding + xpos, y + text_padding +  6  + i * line_height))
-
-        
-
-    
-    def wrap_text(self, text, font, max_width):
- 
-        words = text.split(' ')
-        lines = []
-        current_line = []
-
-        for word in words:
-            current_line.append(word)
-        
-            line_surface = font.render(' '.join(current_line), True, self.dialogue_text_color)
-            if line_surface.get_width() > max_width:
-               
-                current_line.pop()
-                lines.append(' '.join(current_line))
-                current_line = [word]
-
-        if current_line:
-            lines.append(' '.join(current_line))
-
-        return lines
+             
+            textbox.draw_dialogue_box(
+                virtual_work,
+                dialogue,
+                character,
+                self.dialog_box_color,
+                self.dialogue_box_text_color
+            )
 
 
     def parse_dialogue(self, line: str):
@@ -546,7 +503,7 @@ class VNEngine:
                  
       
  
-    def render(self):
+    def render(self, textbox = None):
 
         try:
             window_size = pygame.display.get_window_size()
@@ -554,7 +511,10 @@ class VNEngine:
             if not self.needs_update:
                 return
             
-            # full screen may not work for some reason
+            if textbox is None:
+                return
+            
+            
             virtual_work = pygame.Surface(window_size)
             virtual_work = virtual_work.convert_alpha()
         
@@ -564,13 +524,14 @@ class VNEngine:
                 virtual_work.blit(bg_scaled, (0, 0))
 
                 
-            for sprite_surface,  sprite_size, sprite_pos, zoom in self.current_sprites:
-                
+            for _, sprite_surface, sprite_size, sprite_position_string, zoom in self.current_sprites:
+
                 scaled_size = (
                     sprite_size[0] * virtual_work.get_width() / self.screen_size[0],
                     sprite_size[1] * virtual_work.get_height() / self.screen_size[1]
                 )
 
+                sprite_position = self.calculate_positions(scaled_size)
                 sprite = None
                 if zoom:
                     sprite_scaled = pygame.transform.smoothscale(sprite_surface, scaled_size)
@@ -580,26 +541,21 @@ class VNEngine:
                 
                 # TODO Implement a position system for sprites
                 # for the moment put the sprite at the left
-                virtual_work.blit(sprite, (0,0))
+                virtual_work.blit(sprite, sprite_position[sprite_position_string])
 
+       
+            # pass the textbox to display_dialogue
+            self.display_dialogue(virtual_work, textbox)
             
-            
-            self.display_dialogue(virtual_work)
 
             self.screen.blit(virtual_work, (0,0)) 
-            if self.needs_update:
-                pygame.display.flip()
-                self.needs_update = False
+
+            # we need update in everymoment...
+            pygame.display.update()
+         
         except Exception as e:
             print(e)
             raise ValueError(f"{e}")
-
-         
-    def Box(self, size, color):
-
-        bx = pygame.Surface(size, pygame.SRCALPHA)
-        bx.fill(color)
-        return bx
     
     def new_screen_context(self, size, flags):
         self.screen = pygame.display.set_mode(size, flags, 32, vsync=1)
@@ -688,11 +644,13 @@ class VNEngine:
         Log(f'video mode size: ({pygame.display.Info().current_w},{pygame.display.Info().current_h})')
   
         try:
+            # Initialice the textbox here, because in the loop has bugs!
+            textbox = TextBox(30, self.typing_speed, self.char_index)
             
             while self.running:
                 self.handle_events()
                 if self.needs_update:
-                    self.render()
+                    self.render(textbox)
 
                 if self.current_line < len(self.script):
                     if not self.dialogue_queue:

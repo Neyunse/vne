@@ -4,7 +4,7 @@
 @game_title "Sample Visual Novel"
 
 # Define characters
-@char Sayuri
+@char Sayuri = miki
 
 # Define background images
 @background park = park.png
@@ -13,20 +13,42 @@
 @sprite miki = Miki_Casual_Smile.png
 @sprite miki_openSmile = Miki_Casual_OpenSmile.png
 
-#@game_textbox_background_color 0 0 0 128
+@game_textbox_background_color 0 0 0 128
 
 @game_version 1.0.0
+
+# @remove_sprite can be used in line with @show_sprite if @show_sprite 
+# don't has any modifier like pos=left
+# ex: @show_sprite miki_openSmile @remove_sprite miki
  
 @scene start
-    @bg park
-    @show_sprite miki 
+    @bg park 
+    
+    @show_sprite miki
+    
     : Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book.
 
     Sayuri: Hello, World! {game_version} 
+    
     Sayuri: This is a sample visual novel script.
+    
     Sayuri: You can customize it to create your own story.
-    @show_sprite miki_openSmile
-    #@remove_sprite miki
-    Sayuri: Enjoy the journey!
+    
+    @show_sprite miki_openSmile pos=left 
+    @remove_sprite miki
+    
+    Sayuri: I'm in the left
+
+    @show_sprite miki 
+    @remove_sprite miki_openSmile
+
+    Sayuri: I'm in the center
+
+    @show_sprite miki_openSmile pos=right
+    @remove_sprite miki
+
+    Sayuri: I'm in the right
+
+
     
     @endScene # finish the scene or close the game
