@@ -9,7 +9,7 @@ import platform
 # This class `VNEngine` is used for initializing a visual novel engine with specified script and
 # configuration paths, as well as optional game and base folders.
 
-version = "0.0.0-alpha.6"
+version = "0.0.0-alpha.7"
 version_name = "N/a"
 builded_file_name = "vne"
 
