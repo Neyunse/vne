@@ -74,7 +74,7 @@ class DialogueBox:
         surface.blit(box_surface, (0, box_y))
 
         name_surface = self.namebox_font.render(character_name, True, text_color)
-        namebox_width = name_surface.get_rect().width * padding // (padding - 1)
+        namebox_width = max(100, min(name_surface.get_rect().width * padding // (padding - 1), 520))
         namebox_height = 30
         
         namebox_surface = pygame.Surface((namebox_width, namebox_height), pygame.SRCALPHA)

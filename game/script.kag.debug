@@ -4,7 +4,7 @@
 @game_title "Sample Visual Novel"
 
 # Define characters
-@char Sayuri = miki
+@char Sayuri = Miki
 
 # Define background images
 @background park = park.png
