@@ -5,15 +5,15 @@
 > [!IMPORTANT]  
 > The engine name may change
 
+>[!NOTE]
+>Read the doc [here](https://github.com/Neyunse/vne/wiki)
+
 ## Features
 
 - **Easy setup**: Define variables, characters, backgrounds, sprites, and more using simple commands in a script file.
 - **Pygame-based engine**: Rendering of graphics and event handling via Pygame.
 - **Flow logic support**: Use of labels, scene jumps, and conditions to control the narrative flow. (beta)
 - **Debugging tools**: Automatic event logging and error handling support.
-
->[!NOTE]
->Read the doc [here](https://github.com/Neyunse/vne/wiki)
 
 ## Installation (build)
 
