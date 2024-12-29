@@ -777,7 +777,7 @@ VNE v%(engineVersion)s
         traceback_details = {
             'message' : e,
             'plataform': f"{platform.system()}-{platform.version()}",
-            'engineVersion': version
+            'engineVersion': version+prefix_version
         }    
 
         Log(f"Script was failed. Check the traceback-error.txt file for more information.")
