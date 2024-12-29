@@ -92,8 +92,7 @@ class VNEngine:
         'setVar',
         'game_title',
         'game_icon',
-        'game_dialogue_color',
-        'game_character_color',
+        'game_textbox_font_color',
         'game_textbox_background_color',
         'game_version',
         'pass',
@@ -160,13 +159,9 @@ class VNEngine:
                     raise ValueError("Error: The game version must be of type float")
                 self.variables["game_version"] = self.parse_value(v)
             
-            case "game_dialogue_color":
+            case "game_textbox_font_color":
                 rgb = self.parse_rbg_color(parts)
-                self.dialogue_text_color = rgb
-            
-            case "game_character_color":
-                rgb = self.parse_rbg_color(parts)
-                self.character_name_color = rgb
+                self.dialogue_box_text_color = rgb
             
             case "game_textbox_background_color":
                 rgb = self.parse_rbg_color(parts)
