@@ -1,3 +1,7 @@
+# Copyright 2024 Neyunse
+#
+# VNengine is licensed under Creative Commons Attribution-NoDerivatives 4.0 International. 
+# To view a copy of this license, visit https://creativecommons.org/licenses/by-nd/4.0/
 import os
 import sys
 os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
@@ -6,9 +10,13 @@ from datetime import datetime
 from dialogue_box import DialogueBox as TextBox
 import platform
 
-version = "0.0.0-alpha.8"
+version = "0.0.0"
+prefix_version = "-alpha.8"
 version_name = "N/a"
 builded_file_name = "vne"
+product_name = "VNEngine"
+product_description = "A visual novel SDK engine"
+copyright = "Neyunse"
 
 class VNEngine:
     
@@ -94,8 +102,8 @@ class VNEngine:
     ]
   
     RESERVED_VARIABLES = [
-        ('engine.version', f"VNE v{version}"),
-        ('engine.version_only', f"v{version}"),
+        ('engine.version', f"VNE v{version}{prefix_version}"),
+        ('engine.version_only', f"v{version}{prefix_version}"),
         ('engine.version_name', f"{version_name}"),
         ('engine.current_plataform', f"{platform.system()}")
     ]
@@ -621,7 +629,7 @@ class VNEngine:
         if not self.show_window:
             self.new_screen_context(self.default_screen_size, self.pygame_flags)
 
-            pygame.display.set_caption(f"VNEngine - {version}")
+            pygame.display.set_caption(f"VNEngine - {version}{prefix_version}")
             if os.path.exists(os.path.join(base_folder, 'icon.png')):
                 pygame.display.set_icon(pygame.image.load(os.path.join(base_folder, 'icon.png')))
                 Log("game icon was loaded")
@@ -724,7 +732,7 @@ VNE v%(engineVersion)s
     init_log_template_data = {
         'createdAt': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
         'plataform': f"{platform.system()}-{platform.version()}",
-        'engineVersion': version,
+        'engineVersion': f"{version}{prefix_version}",
     }
 
     with open('log.txt', 'w') as f:

@@ -9,3 +9,7 @@ __pycache__
 *.txt
 compile_sdk.py
 build_sdk.py
+engine.onefile-build
+engine.dist
+engine.build
+update_copyright.py
