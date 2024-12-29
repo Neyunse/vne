@@ -21,7 +21,9 @@
 # don't has any modifier like pos=left
 # ex: @show_sprite miki_openSmile @remove_sprite miki
 
-menu main_menu not implemented yet
+#@menu main_menu #not implemented yet
+
+#@loquesea
 
 @scene start
     @bg park 

@@ -4,10 +4,7 @@ os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 import pygame
 from datetime import datetime
 from dialogue_box import DialogueBox as TextBox
-import traceback
 import platform
-# This class `VNEngine` is used for initializing a visual novel engine with specified script and
-# configuration paths, as well as optional game and base folders.
 
 version = "0.0.0-alpha.8"
 version_name = "N/a"
@@ -49,15 +46,10 @@ class VNEngine:
         self.display_info = None
         self.typing_speed=50
         self.char_index = 0 
-    
-    
- 
 
         self.game_folder = game_folder
         self.base_folder = base_folder
 
-
-        # TODO FOR PYGAME
         self.current_background = None
         self.current_sprites = []
         self.dialogue_queue = []
@@ -67,7 +59,6 @@ class VNEngine:
 
         self.dialog_box_color = (0,0,0, 128)
  
-
         self.chars_displayed = 0
         self.dialogue_start_time = None
  
@@ -83,7 +74,6 @@ class VNEngine:
         'scene', 
         'show_sprite',
         'remove_sprite',
-        'label', 
         'change_scene', 
         'return',  
         'endScene',
@@ -100,7 +90,7 @@ class VNEngine:
         'game_textbox_background_color',
         'game_version',
         'pass',
-        "menu"
+        #"menu"
     ]
   
     RESERVED_VARIABLES = [
@@ -308,6 +298,7 @@ class VNEngine:
             case "menu":
                 menu = parts[1]
                 self.current_menu = menu
+
             case _:
                 raise ValueError(f"Error: Unknown command ({cmd})")
     
@@ -415,19 +406,15 @@ class VNEngine:
         if not self.sprites[sprite_key]:
             raise ValueError(f"Error: Sprite not defined: {sprite_key}")
         
-        try:
-            sprite_surface = self.sprites[sprite_key][1]
-            sprite_width, sprite_height = sprite_surface.get_size()
+        sprite_surface = self.sprites[sprite_key][1]
+        sprite_width, sprite_height = sprite_surface.get_size()
 
+        zoom_factor = 0.7 # for the moment 0.7
+
+        self.current_sprites.append((sprite_key, sprite_surface, (sprite_width, sprite_height), modifiers["pos="], zoom_factor))
+        self.needs_update = True
+        Log(f"Sprite '{sprite_key}' displayed.")
     
-            zoom_factor = 0.7 # for the moment 0.7
-
-            self.current_sprites.append((sprite_key, sprite_surface, (sprite_width, sprite_height), modifiers["pos="], zoom_factor))
-            self.needs_update = True
-            Log(f"Sprite '{sprite_key}' displayed.")
-        except Exception as e:
-            print(e)
-
     def display_dialogue(self, virtual_work, textbox):
 
         if self.dialogue_queue:
@@ -468,11 +455,11 @@ class VNEngine:
             return value.strip('"')
         try:
             if '.' in value:
-                return float(value)
-            return int(value)
-        except ValueError:
+                return value
             return value
-
+        except Exception as e:
+            raise Exception(f"{e}")
+            
     def evaluate_condition(self, condition: str) -> bool:
          
         try:
@@ -516,8 +503,6 @@ class VNEngine:
             if textbox is None:
                 return
             
-            
-        
             if self.current_background:
                 bg_scaled = pygame.transform.smoothscale(self.current_background, window_size)
                 
@@ -538,8 +523,6 @@ class VNEngine:
                 else:
                     sprite = pygame.transform.smoothscale(sprite_surface, scaled_size)
                 
-                # TODO Implement a position system for sprites
-                # for the moment put the sprite at the left
                 virtual_work.blit(sprite, sprite_position[sprite_position_string])
 
        
@@ -553,8 +536,6 @@ class VNEngine:
         except Exception as e:
             return e
     
- 
-
     def render(self, textbox = None):
         window_size = pygame.display.get_window_size()
         virtual_work = pygame.Surface(window_size)
@@ -566,6 +547,7 @@ class VNEngine:
         self.screen.blit(virtual_work, (0,0)) 
         # we need update in everymoment...
         pygame.display.update()
+
     def new_screen_context(self, size, flags):
         self.screen = pygame.display.set_mode(size, flags, 32, vsync=1)
         self.needs_update = True
@@ -672,10 +654,7 @@ class VNEngine:
                 self.clock.tick(30)
         except Exception as e:
             raise ValueError(f"{e}")
-        finally:
-            pygame.quit()
-            sys.exit()
-
+    
     def run_for_console(self):
         """Run the visual novel script."""
         self.load_script()
@@ -738,8 +717,7 @@ if __name__ == "__main__":
     base_folder = os.path.join(dirname)
     game_folder = os.path.join(base_folder, 'game')
 
-    init_log_template = """
-created at: %(createdAt)s
+    init_log_template = """created at: %(createdAt)s
 Plataform: %(plataform)s
 VNE v%(engineVersion)s
 """
@@ -780,8 +758,7 @@ VNE v%(engineVersion)s
 
     
     except Exception as e:
-        traceback_template = '''
-Exception error:
+        traceback_template = '''Exception error:
   %(message)s\n
 
   %(plataform)s
@@ -794,7 +771,7 @@ Exception error:
             'engineVersion': version
         }    
 
-        Log(f"Script was failed. Check the error.txt file for more information.")
+        Log(f"Script was failed. Check the traceback-error.txt file for more information.")
         
         print(traceback_template % traceback_details)
 
