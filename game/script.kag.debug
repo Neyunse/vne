@@ -20,7 +20,9 @@
 # @remove_sprite can be used in line with @show_sprite if @show_sprite 
 # don't has any modifier like pos=left
 # ex: @show_sprite miki_openSmile @remove_sprite miki
- 
+
+@menu main_menu
+
 @scene start
     @bg park 
     
@@ -49,6 +51,4 @@
 
     Sayuri: I'm in the right
 
-
-    
     @endScene # finish the scene or close the game

@@ -61,6 +61,7 @@ class VNEngine:
         self.current_background = None
         self.current_sprites = []
         self.dialogue_queue = []
+        self.current_menu = None
         self.running = True
         self.dialogue_box_text_color = (255, 255, 255)
 
@@ -97,7 +98,9 @@ class VNEngine:
         'game_dialogue_color',
         'game_character_color',
         'game_textbox_background_color',
-        'game_version'
+        'game_version',
+        'pass',
+        "menu"
     ]
   
     RESERVED_VARIABLES = [
@@ -107,7 +110,6 @@ class VNEngine:
         ('engine.current_plataform', f"{platform.system()}")
     ]
 
- 
     def load_script(self):
  
         
@@ -118,7 +120,6 @@ class VNEngine:
             self.script = [line.strip() for line in f.readlines() if line.strip() and not line.strip().startswith(self.COMMENT_PREFIX)]
             Log(f"Script loaded...")
 
- 
     def parse_line(self, line: str):
  
         if line.startswith(self.COMMAND_PREFIX):  # Command
@@ -130,8 +131,7 @@ class VNEngine:
             raise ValueError(f"Invalid script syntax: {line}")
 
     def execute_command(self, command: str):
- 
-         
+
         parts = command.split()
         cmd = parts[0]
 
@@ -289,15 +289,25 @@ class VNEngine:
                 condition = ' '.join(parts[1:])
                 if not self.evaluate_condition(condition):
                     self.skip_to_endif()
-
+            
             # End of conditional block @endif
             case "endif":
                 pass  # End of conditional block
 
+            case "pass": # do nothing
+                pass
+
             # End of Label @endScene
             case "endScene":
                 self.current_line = len(self.script)  # End the script
+                # reset current data
+                self.current_background = None
+                self.current_sprites = []
+                self.dialogue_queue = []
             
+            case "menu":
+                menu = parts[1]
+                self.current_menu = menu
             case _:
                 raise ValueError(f"Error: Unknown command ({cmd})")
     
@@ -365,7 +375,6 @@ class VNEngine:
  
         return key, image
 
- 
     def return_from_jump(self):        
         if hasattr(self, 'last_jump_line'):
             self.current_line = self.last_jump_line
@@ -401,7 +410,6 @@ class VNEngine:
         self.needs_update = True
         Log(f"Background '{image_key}' displayed.")
 
-
     def display_sprite(self, sprite_key, modifiers):
 
         if not self.sprites[sprite_key]:
@@ -420,7 +428,6 @@ class VNEngine:
         except Exception as e:
             print(e)
 
-
     def display_dialogue(self, virtual_work, textbox):
 
         if self.dialogue_queue:
@@ -433,7 +440,6 @@ class VNEngine:
                 self.dialog_box_color,
                 self.dialogue_box_text_color
             )
-
 
     def parse_dialogue(self, line: str):
         
@@ -500,14 +506,10 @@ class VNEngine:
                         break
                     else:
                         nested_ifs -= 1
-                 
-      
- 
-    def render(self, textbox = None):
 
+    def in_game_render(self,virtual_work, window_size, textbox = None):
         try:
-            window_size = pygame.display.get_window_size()
-
+            
             if not self.needs_update:
                 return
             
@@ -515,15 +517,12 @@ class VNEngine:
                 return
             
             
-            virtual_work = pygame.Surface(window_size)
-            virtual_work = virtual_work.convert_alpha()
         
             if self.current_background:
                 bg_scaled = pygame.transform.smoothscale(self.current_background, window_size)
                 
                 virtual_work.blit(bg_scaled, (0, 0))
-
-                
+                            
             for _, sprite_surface, sprite_size, sprite_position_string, zoom in self.current_sprites:
 
                 scaled_size = (
@@ -550,13 +549,23 @@ class VNEngine:
 
             self.screen.blit(virtual_work, (0,0)) 
 
-            # we need update in everymoment...
-            pygame.display.update()
          
         except Exception as e:
-            print(e)
-            raise ValueError(f"{e}")
+            return e
     
+ 
+
+    def render(self, textbox = None):
+        window_size = pygame.display.get_window_size()
+        virtual_work = pygame.Surface(window_size)
+        virtual_work = virtual_work.convert_alpha()
+
+        # render the game process
+        self.in_game_render(virtual_work, window_size, textbox)
+
+        self.screen.blit(virtual_work, (0,0)) 
+        # we need update in everymoment...
+        pygame.display.update()
     def new_screen_context(self, size, flags):
         self.screen = pygame.display.set_mode(size, flags, 32, vsync=1)
         self.needs_update = True
@@ -568,12 +577,12 @@ class VNEngine:
                 pygame.quit()
                 sys.exit()
             if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1: 
-                
+            
                 if self.dialogue_queue:
                     self.dialogue_queue.pop(0)
                 elif self.current_line >= len(self.script):
-                
                     self.running = False
+
             if event.type == pygame.WINDOWRESIZED:
                 self.needs_update = True
             if event.type == pygame.WINDOWRESTORED:
@@ -597,9 +606,6 @@ class VNEngine:
                 pygame.quit()
                 sys.exit()
                     
-
-               
-
     def run(self):
  
         # set internal variables or reserved variables
@@ -651,8 +657,7 @@ class VNEngine:
             
             while self.running:
                 self.handle_events()
-                if self.needs_update:
-                    self.render(textbox)
+                self.render(textbox)
 
                 if self.current_line < len(self.script):
                     if not self.dialogue_queue:
@@ -671,7 +676,6 @@ class VNEngine:
             pygame.quit()
             sys.exit()
 
-    
     def run_for_console(self):
         """Run the visual novel script."""
         self.load_script()
@@ -679,7 +683,6 @@ class VNEngine:
             line = self.script[self.current_line]
             self.parse_line(line)
             self.current_line += 1
-
 
 def Log(log):
     
