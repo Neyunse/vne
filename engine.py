@@ -15,7 +15,6 @@ prefix_version = "-alpha.8"
 version_name = "N/a"
 builded_file_name = "vne"
 product_name = "VNEngine"
-product_description = "A visual novel SDK engine"
 copyright = "Neyunse"
 
 class VNEngine:
