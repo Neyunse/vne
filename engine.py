@@ -4,7 +4,7 @@ os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 import pygame
 from datetime import datetime
 from dialogue_box import DialogueBox as TextBox
-
+import traceback
 import platform
 # This class `VNEngine` is used for initializing a visual novel engine with specified script and
 # configuration paths, as well as optional game and base folders.
@@ -522,7 +522,7 @@ class VNEngine:
                 bg_scaled = pygame.transform.smoothscale(self.current_background, window_size)
                 
                 virtual_work.blit(bg_scaled, (0, 0))
-                            
+
             for _, sprite_surface, sprite_size, sprite_position_string, zoom in self.current_sprites:
 
                 scaled_size = (
@@ -778,10 +778,8 @@ VNE v%(engineVersion)s
         )
         engine.run()
 
-        
-    except Exception as e:
-        
     
+    except Exception as e:
         traceback_template = '''
 Exception error:
   %(message)s\n
