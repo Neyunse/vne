@@ -177,9 +177,9 @@ class VNEngine:
                 check = self.check_reserved_variables(key)
                 
                 if check:
-                    self.variables[key] = self.parse_value(value)
-                else:
                     raise ValueError(f"Error: The variable '{key}' is reserved by the engine.")
+                else:
+                    self.variables[key] = self.parse_value(value)
 
             # Character definition @char <char> or @char <char> = <value>
             case "char":
@@ -221,6 +221,14 @@ class VNEngine:
             # Set variable @setVar <var> = <value>
             case "setVar":
                 key, value = self.parse_variables(parts, 3)
+
+                check = self.check_reserved_variables(key)
+                
+                if check:
+                    raise ValueError(f"Error: The variable '{key}' is reserved by the engine.")
+                else:
+                    self.variables[key] = self.parse_value(value)
+                
                 self.variables[key] = self.parse_value(value)
 
             # show sprite image @show_sprite <key>
