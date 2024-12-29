@@ -176,4 +176,8 @@ Feel free to fork and contribute to this engine.
 
 ---
 
+## Extra info
+
 Some icons by Icons8 ([https://icons8.com/icon/391/box](https://icons8.com/icon/391/box))
+
+EXE builded with [Nuitka](https://nuitka.net)
