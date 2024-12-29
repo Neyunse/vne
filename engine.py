@@ -623,7 +623,7 @@ class VNEngine:
 
         self.monitor_size = (self.display_info.current_w, self.display_info.current_h)
 
-        Log(f'desktop size: ({self.monitor_size})')
+        Log(f'desktop size: {self.monitor_size}')
  
         if not self.show_window:
             self.new_screen_context(self.default_screen_size, self.pygame_flags)
