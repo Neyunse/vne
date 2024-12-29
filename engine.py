@@ -229,7 +229,6 @@ class VNEngine:
                 else:
                     self.variables[key] = self.parse_value(value)
                 
-                self.variables[key] = self.parse_value(value)
 
             # show sprite image @show_sprite <key>
             case "show_sprite":
