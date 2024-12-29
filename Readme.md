@@ -12,7 +12,7 @@
 - **Flow logic support**: Use of labels, scene jumps, and conditions to control the narrative flow. (beta)
 - **Debugging tools**: Automatic event logging and error handling support.
 
->![NOTE]
+>[!NOTE]
 >Read the doc [here](https://github.com/Neyunse/vne/wiki)
 
 ## Installation (build)
