@@ -2,7 +2,6 @@
 
 **VNEngine** is a visual novel engine developed in Python using Pygame. It offers a flexible and simple way to create visual novels with support for characters, backgrounds, sprites, dialogues, conditions, and labels.
 
->INFO: The name of the engine is temporary!
 
 ## Features
 
@@ -11,7 +10,7 @@
 - **Flow logic support**: Use of labels, scene jumps, and conditions to control the narrative flow. (beta)
 - **Debugging tools**: Automatic event logging and error handling support.
 
->![INFORMATION]
+>![IMFORMATION]
 >Read the doc [here](https://github.com/Neyunse/vne/wiki)
 
 ## Installation (build)
