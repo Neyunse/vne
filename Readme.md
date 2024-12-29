@@ -175,3 +175,5 @@ VNengine © 2024 by Neyunse is licensed under Creative Commons Attribution-NoDer
 Feel free to fork and contribute to this engine.
 
 ---
+
+Some icons by Icons8 ([https://icons8.com/icon/391/box](https://icons8.com/icon/391/box))
