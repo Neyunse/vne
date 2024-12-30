@@ -17,3 +17,6 @@ update_copyright.py
 *.cer
 *.pfx
 *.crt
+*.cert
+*.pfx
+*.csr
