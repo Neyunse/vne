@@ -13,10 +13,4 @@ engine.onefile-build
 engine.dist
 engine.build
 update_copyright.py
-*.pvk
-*.cer
-*.pfx
-*.crt
-*.cert
-*.pfx
-*.csr
+cert
