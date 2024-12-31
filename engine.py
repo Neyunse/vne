@@ -16,6 +16,7 @@ version_name = "N/a"
 builded_file_name = "vne"
 product_name = "VNEngine"
 copyright = "Neyunse"
+sdk_icon_name = "sdk_icon"
 
 class VNEngine:
     
