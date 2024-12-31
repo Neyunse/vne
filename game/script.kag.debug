@@ -4,33 +4,10 @@
 # To view a copy of this license, visit https://creativecommons.org/licenses/by-nd/4.0/
 
 # This is a sample script file.
-        
-# Settings
-@game_title "Sample Visual Novel"
 
-# Define characters
-@char Sayuri = Miki
-
-# Define background images
-@background park = park.png
-
-# Define sprite images
-@sprite miki = Miki_Casual_Smile
-@sprite miki_openSmile = Miki_Casual_OpenSmile
-
-@game_textbox_background_color 0 0 0 128
-
-@game_version 1.0.0
-
-# @remove_sprite can be used in line with @show_sprite if @show_sprite 
-# don't has any modifier like pos=left
-# ex: @show_sprite miki_openSmile @remove_sprite miki
-
-#@menu main_menu #not implemented yet
-
-#@loquesea
 
 @scene start
+    @import config
     @bg park 
     
     @show_sprite miki

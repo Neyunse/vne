@@ -97,6 +97,7 @@ class VNEngine:
         'game_textbox_background_color',
         'game_version',
         'pass',
+        'import'
         #"menu"
     ]
   
@@ -108,14 +109,47 @@ class VNEngine:
     ]
 
     def load_script(self):
- 
-        
         if not os.path.exists(self.script_path):
             raise FileNotFoundError(f"Script file not found: {self.script_path}")
 
         with open(self.script_path, 'r', encoding='utf-8') as f:
-            self.script = [line.strip() for line in f.readlines() if line.strip() and not line.strip().startswith(self.COMMENT_PREFIX)]
-            Log(f"Script loaded...")
+            main_script = [line.strip() for line in f.readlines() if line.strip() and not line.strip().startswith(self.COMMENT_PREFIX)]
+            
+        self.script = self.process_imports(main_script)
+        Log("Script loaded...")
+    
+    def process_imports(self, script_lines):
+        processed_lines = []
+
+        for line in script_lines:
+            if line.startswith(f"{self.COMMAND_PREFIX}import"):
+                parts = line.split()
+                if len(parts) != 2:
+                    raise ValueError(f"Invalid @import syntax: {line}")
+                
+                import_path_debug = os.path.join(self.game_folder, f"{parts[1]}.kag.debug")
+                import_path_def = os.path.join(self.game_folder, f"{parts[1]}.kag")
+
+                import_path = None
+                
+                if os.path.exists(import_path_debug):
+                    import_path = import_path_debug
+                elif os.path.exists(import_path_def):
+                    import_path = import_path_def
+                else:
+                    raise FileNotFoundError(f"The '{parts[1]}' script was not found and could not be imported.")
+
+                with open(import_path, 'r', encoding='utf-8') as f:
+                    imported_lines = [
+                        l.strip() for l in f.readlines() 
+                        if l.strip() and not l.strip().startswith(self.COMMENT_PREFIX)
+                    ]
+
+                processed_lines.extend(self.process_imports(imported_lines))
+            else:
+                processed_lines.append(line)
+
+        return processed_lines
 
     def parse_line(self, line: str):
  
@@ -168,6 +202,9 @@ class VNEngine:
                 rgb = self.parse_rbg_color(parts)
                 
                 self.dialog_box_color = rgb
+
+            case "import":
+                raise ValueError("@import commands should be resolved during script loading.")
                 
             
             # Variable definition @var <key> = <value>
@@ -682,15 +719,19 @@ def Log(log):
         f.write(log)
         f.close()
 
+def write_file_in_game_folder(file, content):
+    with open(f'game/{file}', 'w') as f:
+        f.write(content)
+        f.close()
+
+        Log(f"{file} generated successfully.")
+
 def generate_files():
     Log("Generating game files...")
     os.makedirs('game', exist_ok=True)
     os.makedirs(os.path.join('game', 'assets', 'bg'), exist_ok=True)
     os.makedirs(os.path.join('game', 'assets', 'sprites'), exist_ok=True)
-    with open('game/script.kag', 'w') as f:
-        f.write("""# This is a sample script file.
-
-# Settings
+    write_file_in_game_folder("config.kag", """# Settings
 @game_title "Sample Visual Novel"
 
 # Define characters
@@ -701,7 +742,11 @@ def generate_files():
 
 # Define sprite images
 # @sprite <key> = <image name>
-        
+        """)
+    write_file_in_game_folder("script.kag", """# This is a sample script file.
+
+@import config        
+
 @scene start
     Sayuri: Hello, World!
     Sayuri: This is a sample visual novel script.
@@ -710,8 +755,10 @@ def generate_files():
     
     @endScene # finish the scene or close the game
         """)
-        f.close()
-        Log("Game files generated successfully.")
+    
+    Log(f"Game files generated successfully.")
+    
+    
 
 if __name__ == "__main__":
     
