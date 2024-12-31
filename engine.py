@@ -346,6 +346,8 @@ class VNEngine:
         return int(r), int(g), int(b)
     
     def load_sprite(self, key, image):
+        if image.endswith('.png'):
+            raise ValueError(f"Error: The sprite '{key}' not need extension .png")
 
 
         character_image = os.path.join(self.game_folder, 'assets','sprites', f"{image}.png")
