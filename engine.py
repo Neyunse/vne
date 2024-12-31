@@ -731,21 +731,25 @@ def generate_files():
     os.makedirs('game', exist_ok=True)
     os.makedirs(os.path.join('game', 'assets', 'bg'), exist_ok=True)
     os.makedirs(os.path.join('game', 'assets', 'sprites'), exist_ok=True)
-    write_file_in_game_folder("config.kag", """# Settings
-@game_title "Sample Visual Novel"
-
-# Define characters
-@char Sayuri
-
-# Define background images
+    write_file_in_game_folder("assets.kag", """# Define background images
 # @background <key> = <image name>
 
 # Define sprite images
 # @sprite <key> = <image name>
         """)
+    write_file_in_game_folder("config.kag", """# Settings
+@game_title "Sample Visual Novel"
+        """)
     write_file_in_game_folder("script.kag", """# This is a sample script file.
 
-@import config        
+@import config
+@import assets
+                                                    
+# Define characters
+@char Sayuri
+
+
+        
 
 @scene start
     Sayuri: Hello, World!
