@@ -11,7 +11,7 @@ from dialogue_box import DialogueBox as TextBox
 import platform
 
 version = "0.0.0"
-prefix_version = "-alpha.9"
+prefix_version = "-alpha.10"
 version_name = "N/a"
 builded_file_name = "vne"
 product_name = "VNEngine"
