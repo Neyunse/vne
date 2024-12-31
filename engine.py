@@ -752,8 +752,7 @@ def generate_files():
     Sayuri: This is a sample visual novel script.
     Sayuri: You can customize it to create your own story.
     Sayuri: Enjoy the journey!
-    
-    @endScene # finish the scene or close the game
+@endScene # finish the scene or close the game
         """)
     
     Log(f"Game files generated successfully.")
