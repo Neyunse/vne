@@ -347,7 +347,7 @@ class VNEngine:
     def load_sprite(self, key, image):
 
 
-        character_image = os.path.join(self.game_folder, 'assets','sprites', image)
+        character_image = os.path.join(self.game_folder, 'assets','sprites', f"{image}.png")
 
         if not os.path.exists(character_image):
             raise FileNotFoundError(f"Error: Character image not found in {character_image}")

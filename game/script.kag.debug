@@ -15,8 +15,8 @@
 @background park = park.png
 
 # Define sprite images
-@sprite miki = Miki_Casual_Smile.png
-@sprite miki_openSmile = Miki_Casual_OpenSmile.png
+@sprite miki = Miki_Casual_Smile
+@sprite miki_openSmile = Miki_Casual_OpenSmile
 
 @game_textbox_background_color 0 0 0 128
 
