@@ -5,9 +5,10 @@
 
 # This is a sample script file.
 
+@import config
 
 @scene start
-    @import config
+    
     @bg park 
     
     @show_sprite miki
