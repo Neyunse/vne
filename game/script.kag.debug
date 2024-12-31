@@ -36,4 +36,7 @@
 
     Sayuri: I'm in the right
 
-    @endScene # finish the scene or close the game
+    @change_scene test # jump to test in file import
+@endScene # finish the scene or close the game
+
+@import hello

@@ -1,0 +1,3 @@
+@scene test
+    : testing import
+@endScene
