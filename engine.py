@@ -748,9 +748,6 @@ def generate_files():
 # Define characters
 @char Sayuri
 
-
-        
-
 @scene start
     Sayuri: Hello, World!
     Sayuri: This is a sample visual novel script.
