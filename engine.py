@@ -932,18 +932,6 @@ class VNEngine:
             if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
                 pygame.quit()
                 sys.exit()
-    def create_default_main_menu(self):
-        """
-        Create a default 'main_menu' scene if it does not exist.
-        """
-        Log("Creating default 'main_menu' scene...")
-        self.script.insert(0, "@scene main_menu")
-        self.script.insert(1, "   : Welcome to the Visual Novel Engine!")
-        self.script.insert(2, "   : Use this scene to set up your main menu.")
-        self.script.insert(3, "   : Add your options and customization here.")
-        self.script.insert(4, "@change_scene start")
-        self.script.insert(5, "@endScene")
-        self.preprocess_script()
 
     def run(self):
         """
