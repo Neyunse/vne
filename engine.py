@@ -873,6 +873,7 @@ class VNEngine:
         virtual_work = virtual_work.convert_alpha()
 
         # render the game process
+        
         self.in_game_render(virtual_work, window_size, textbox)
 
         self.screen.blit(virtual_work, (0,0)) 

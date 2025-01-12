@@ -6,9 +6,8 @@
 # This is a sample script file.
 
 @import config
-@import hello
 
-@scene start:
+@scene start
     
     @bg park 
     
@@ -36,6 +35,5 @@
     @remove_sprite miki
 
     Sayuri: I'm in the right
-
-    @change_scene test # jump to test in file import
+ 
 @endScene # finish the scene or close the game
