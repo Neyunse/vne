@@ -167,6 +167,8 @@ class VNEngine:
                 current_scene = line.split()[1]
                 start_line = idx
                 scene_boundaries[current_scene] = {"start": start_line}
+                print(scene_boundaries)
+
             elif line.startswith(f"{self.COMMAND_PREFIX}endScene"):
                 # End of the current scene
                 if current_scene:

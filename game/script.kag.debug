@@ -6,6 +6,7 @@
 # This is a sample script file.
 
 @import config
+@import hello
 
 @scene start:
     
