@@ -69,6 +69,8 @@ class VNEngine:
  
         self.chars_displayed = 0
         self.dialogue_start_time = None
+        self.scene_boundaries = {}
+         
  
     COMMAND_PREFIX = '@'
     COMMENT_PREFIX = '#'
@@ -110,17 +112,68 @@ class VNEngine:
 
     def load_script(self):
         """
-        The `load_script` function loads a script file, processes imports, and logs that the script has
-        been loaded.
+        Load the script file, excluding preloaded resources and comments.
         """
         if not os.path.exists(self.script_path):
             raise FileNotFoundError(f"Script file not found: {self.script_path}")
 
         with open(self.script_path, 'r', encoding='utf-8') as f:
-            main_script = [line.strip() for line in f.readlines() if line.strip() and not line.strip().startswith(self.COMMENT_PREFIX)]
-            
+            main_script = [
+                line.strip() for line in f.readlines()
+                if line.strip() and not line.strip().startswith(self.COMMENT_PREFIX)
+                and not any(line.strip().startswith(f"{self.COMMAND_PREFIX}{cmd}") for cmd in ["background", "sprite", "var"])
+            ]
+
         self.script = self.process_imports(main_script)
         Log("Script loaded...")
+    
+    def preprocess_script(self):
+        """
+        Preprocess the script to load resources and map scene boundaries.
+        """
+        scene_boundaries = {}
+        current_scene = None
+        start_line = None
+        for idx, line in enumerate(self.script):
+            if line.startswith(f"{self.COMMAND_PREFIX}background"):
+                # Load background resource
+                parts = line.split(maxsplit=2)
+                if len(parts) == 3 and "=" in parts[2]:
+                    key, path = parts[1], parts[2].split("=", 1)[1].strip()
+                    self.images[key] = self.load_background(key, path)
+                else:
+                    raise ValueError(f"Invalid background syntax at line {idx + 1}: {line}")
+            elif line.startswith(f"{self.COMMAND_PREFIX}sprite"):
+                # Load sprite resource
+                parts = line.split(maxsplit=2)
+                if len(parts) == 3 and "=" in parts[2]:
+                    key, path = parts[1], parts[2].split("=", 1)[1].strip()
+                    self.sprites[key] = self.load_sprite(key, path)
+                else:
+                    raise ValueError(f"Invalid sprite syntax at line {idx + 1}: {line}")
+            elif line.startswith(f"{self.COMMAND_PREFIX}var"):
+                # Initialize variables
+                parts = line.split(maxsplit=2)
+                if len(parts) == 3 and "=" in parts[2]:
+                    key, value = parts[1], parts[2].split("=", 1)[1].strip()
+                    self.variables[key] = self.parse_value(value)
+                else:
+                    raise ValueError(f"Invalid variable syntax at line {idx + 1}: {line}")
+            elif line.startswith(f"{self.COMMAND_PREFIX}scene"):
+                # Start of a new scene
+                if current_scene:
+                    # Save the previous scene's end line
+                    scene_boundaries[current_scene]["end"] = idx - 1
+                current_scene = line.split()[1]
+                start_line = idx
+                scene_boundaries[current_scene] = {"start": start_line}
+            elif line.startswith(f"{self.COMMAND_PREFIX}endScene"):
+                # End of the current scene
+                if current_scene:
+                    scene_boundaries[current_scene]["end"] = idx
+                    current_scene = None
+
+        self.scene_boundaries = scene_boundaries
     
     def process_imports(self, script_lines):
         """
@@ -197,8 +250,6 @@ class VNEngine:
 
         parts = command.split()
         cmd = parts[0]
-
-        print(cmd, parts)
 
         if cmd not in self.COMMAND_LIST:
             raise ValueError(f"Invalid command: {cmd}")
@@ -524,28 +575,12 @@ class VNEngine:
             raise ValueError("Error: Not previous scene point detected.")
 
     def jump_to_label(self, label: str):
-        """
-        The function `jump_to_label` searches for a specific scene label in a script and updates the
-        current line accordingly.
-        
-        :param label: The `label` parameter in the `jump_to_label` method is a string that represents
-        the scene label to which you want to jump in the script. The method searches for a line in the
-        script that matches the format `@scene {label}` and updates the current line index accordingly.
-        If the
-        :type label: str
-        :return: The `jump_to_label` method returns the index of the line in the script where the
-        specified scene label is found. If the scene label is found, the method updates the
-        `current_line` attribute to the index of that line and sets the `last_jump_line` attribute to
-        the previous `current_line`. If the scene label is not found in the script, a `ValueError` is
-        raised
-        """
 
-        for idx, line in enumerate(self.script):
-            if line == f"@scene {label}":
-                self.last_jump_line = self.current_line
-                self.current_line = idx
-                return
-        raise ValueError(f"Error: The scene '{label}' was not found, and the @change_scene cannot be executed.")
+        if label not in self.scene_boundaries:
+            
+            raise ValueError(f"Error: The scene '{label}' was not found, and the @change_scene cannot be executed.")
+        
+        self.current_line = self.scene_boundaries[label]["start"]
     
     def calculate_positions(self, size):
         """
@@ -897,36 +932,31 @@ class VNEngine:
             if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
                 pygame.quit()
                 sys.exit()
-                    
+    def create_default_main_menu(self):
+        """
+        Create a default 'main_menu' scene if it does not exist.
+        """
+        Log("Creating default 'main_menu' scene...")
+        self.script.insert(0, "@scene main_menu")
+        self.script.insert(1, "   : Welcome to the Visual Novel Engine!")
+        self.script.insert(2, "   : Use this scene to set up your main menu.")
+        self.script.insert(3, "   : Add your options and customization here.")
+        self.script.insert(4, "@change_scene start")
+        self.script.insert(5, "@endScene")
+        self.preprocess_script()
+
     def run(self):
         """
-        This Python function initializes a game engine, loads necessary resources, sets up the game
-        window, handles events, and renders text boxes for dialogue.
-        :return: The `run` method does not explicitly return any value. It either prints a message and
-        exits early if there is no script to execute, or it raises an exception if an error occurs
-        during execution.
+        Main game loop with script preprocessing.
         """
- 
-        # set internal variables or reserved variables
-
-        for vars in self.RESERVED_VARIABLES:
-            key, value = vars
-            self.variables[key] = value
-        
-        # set default version for the game
-        self.variables["game_version"] = self.game_version
-            
         self.load_script()
-     
-
         if not self.script:
             print("No script to execute. Please check the script path.")
             return
-        
-        os.environ["SDL_VIDEO_CENTERED"] = "1"
-        # LOAD PYGAME
-        pygame.init()
 
+        os.environ["SDL_VIDEO_CENTERED"] = "1"
+        pygame.init()
+        
         self.font = pygame.font.Font(None, 33)
         self.clock = pygame.time.Clock()
         self.display_info = pygame.display.Info()
@@ -934,26 +964,28 @@ class VNEngine:
         self.monitor_size = (self.display_info.current_w, self.display_info.current_h)
 
         Log(f'desktop size: {self.monitor_size}')
- 
+
         if not self.show_window:
             self.new_screen_context(self.default_screen_size, self.pygame_flags)
 
             pygame.display.set_caption(f"VNEngine - {version}{prefix_version}")
-            if os.path.exists(os.path.join(base_folder, 'icon.png')):
-                pygame.display.set_icon(pygame.image.load(os.path.join(base_folder, 'icon.png')))
+            if os.path.exists(os.path.join(self.base_folder, 'icon.png')):
+                pygame.display.set_icon(pygame.image.load(os.path.join(self.base_folder, 'icon.png')))
                 Log("game icon was loaded")
 
-       
             self.screen.fill((0, 0, 0))
             pygame.display.flip()
             self.show_window = True
-        
+
         Log(f'video mode size: ({pygame.display.Info().current_w},{pygame.display.Info().current_h})')
-  
+
+        # Preprocess the script here, and avoid
+        
+        self.preprocess_script()
+
         try:
-            # Initialice the textbox here, because in the loop has bugs!
             textbox = TextBox(30, self.typing_speed, self.char_index)
-            
+
             while self.running:
                 self.handle_events()
                 self.render(textbox)
@@ -962,12 +994,11 @@ class VNEngine:
                     if not self.dialogue_queue:
                         line = self.script[self.current_line]
                         self.parse_line(line)
-                        self.current_line +=1
+                        self.current_line += 1
                 else:
-                    if not self.dialogue_queue:  
+                    if not self.dialogue_queue:
                         self.running = False
 
-                
                 self.clock.tick(30)
         except Exception as e:
             raise ValueError(f"{e}")
