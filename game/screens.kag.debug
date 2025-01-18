@@ -1,0 +1,18 @@
+@menu main_menu
+    
+    fragment:
+        align "horizontal" # coloca el contenido en horizontal, tambien recibe vertical
+        
+        # posicionar en el centro
+        
+        xpos 0.5 
+        ypos 0.5
+
+        button:
+            text "New Game"
+            event Start() # event llama la funcion Start() para cargar un @scene llamado start, inicialmente aqui comienza el juego por defecto. 
+
+
+          
+        
+       
