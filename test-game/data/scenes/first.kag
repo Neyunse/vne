@@ -7,6 +7,8 @@
 # define un sprite para ser usado
 # @sprite kuro = "kuro_normal" # buscara park dentro de la carpeta images/sprites/kuro_normal.png
 
+@var test = "Hola mundo"
+
 # muestra un fondo/bg
 # @bg park
 
@@ -15,7 +17,7 @@ Comence una nueva etapa en esta academia
 
 # @show kuro
 # The same as above, but associated with character "Kuro"
-K: hola! mi nombre es {K}
+K: {test}! mi nombre es {K}
 
 # Special symbols and special line in scenario 
 # 

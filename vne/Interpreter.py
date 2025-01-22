@@ -10,7 +10,8 @@ class Interpreter:
         self.lexer = lexer
         self.renderer = renderer
         self.config = config
-        self.characters = {}
+        self.characters = {}  # Nombres de personajes
+        self.variables = {}   # Variables generales
         self.command_table = {
             "@bg": self.set_background,
             "@show": self.show_sprite,
@@ -18,6 +19,7 @@ class Interpreter:
             "@process_scene": self.process_scene,
             "@Load": self.load_file,
             "@scene": self.define_scene,
+            "@var": self.define_variable,  # Manejar variables
             "dialogue": self.show_dialogue,
         }
 
@@ -60,6 +62,25 @@ class Interpreter:
             arguments = parts[1] if len(parts) > 1 else ""
             return {"command": command, "arguments": arguments}
         return {"command": "dialogue", "arguments": command_line}
+    
+    def define_variable(self, parsed_command):
+        """Defines a variable."""
+        if "=" not in parsed_command["arguments"]:
+            raise ValueError(f"Invalid variable definition: {parsed_command['arguments']}")
+
+        key, value = parsed_command["arguments"].split("=", 1)
+        key = key.strip()
+        value = value.strip().strip('"')
+
+        # Procesa valores numéricos o booleanos
+        if value.isdigit():
+            value = int(value)
+        elif value.lower() in ["true", "false"]:
+            value = value.lower() == "true"
+
+        self.variables[key] = value
+        print(f"Variable defined: {key} -> {value}")  # Debugging
+
 
     def define_scene(self, parsed_command):
         """Defines a scene and registers it in the assets."""
@@ -97,15 +118,45 @@ class Interpreter:
         self.lexer.load_additional(full_path)
 
     def show_dialogue(self, parsed_command):
-        """Displays a line of dialogue."""
+        """Displays a line of dialogue with proper variable and character name resolution."""
         dialogue_text = parsed_command["arguments"]
 
-        # Reemplazar variables en el texto del diálogo
-        for key, value in self.characters.items():
-            dialogue_text = dialogue_text.replace(f"{{{key}}}", value)
+        # Depuración: mostrar el contenido actual de personajes y variables
+        print(f"Characters: {self.characters}")  # Debugging
+        print(f"Variables: {self.variables}")  # Debugging
 
-        print(f"Dialogue: {dialogue_text}")  # Debugging
+        # Verifica si el diálogo pertenece a un personaje
+        if ":" in dialogue_text:
+            character_key, dialogue = dialogue_text.split(":", 1)
+            character_key = character_key.strip()
+            dialogue = dialogue.strip()
+
+            # Depuración: mostrar el personaje identificado
+            print(f"Character key: {character_key}")  # Debugging
+
+            # Resuelve el alias del personaje o usa la clave si no hay alias
+            character_name = self.characters.get(character_key, character_key)
+
+            # Depuración: mostrar el nombre del personaje resuelto
+            print(f"Resolved character name: {character_name}")  # Debugging
+
+            # Reemplaza variables en el texto del diálogo
+            for key, value in {**self.characters, **self.variables}.items():
+                dialogue = dialogue.replace(f"{{{key}}}", str(value))
+
+            # Reconstruye el texto del diálogo con el alias del personaje
+            dialogue_text = f"{character_name}: {dialogue}"
+        else:
+            # Si no hay personaje, reemplaza variables en el diálogo general
+            for key, value in {**self.characters, **self.variables}.items():
+                dialogue_text = dialogue_text.replace(f"{{{key}}}", str(value))
+
+        # Depuración: mostrar el diálogo final procesado
+        print(f"Final dialogue text: {dialogue_text}")  # Debugging
+
+        # Renderiza el cuadro de diálogo
         self.renderer.draw_dialogue_box(dialogue_text)
+
 
     def set_background(self, parsed_command):
         """Sets the background."""
@@ -127,8 +178,14 @@ class Interpreter:
         """Defines a character."""
         if " as " in parsed_command["arguments"]:
             key, name = parsed_command["arguments"].split(" as ", 1)
-            self.characters[key.strip()] = name.strip('"')
+            key = key.strip()
+            name = name.strip('"').strip()
+            self.characters[key] = name
         else:
             key = parsed_command["arguments"].strip()
-            self.characters[key] = key
+            self.characters[key] = key  # Usa la clave como nombre por defecto
         print(f"Character defined: {key} -> {self.characters[key]}")  # Debugging
+
+
+
+
