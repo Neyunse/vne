@@ -13,9 +13,7 @@ class Lexer:
         self.assets = {
             "backgrounds": {},
             "sprites": {},
-            "scenes": {
-                "first": "scenes/first.kag",
-            },
+            "scenes": {},
         }
 
     def load(self, file_path):
@@ -30,7 +28,6 @@ class Lexer:
         except FileNotFoundError:
             raise FileNotFoundError(f"Script file not found: {full_path}")
 
-
     def get_current_state(self):
         """Returns the current command or None if at the end of the script."""
         if self.current_line_index < len(self.script_lines):
@@ -41,27 +38,24 @@ class Lexer:
         """Moves to the next line in the script."""
         if self.current_line_index < len(self.script_lines):
             self.current_line_index += 1
-    
+
     def load_additional(self, file_path):
         """Loads an additional script and appends it to the current script."""
         full_path = os.path.normpath(file_path)
-        print(f"Loading additional script from: {full_path}")  # Depuración
+        print(f"Loading additional script from: {full_path}")  # Debugging
 
         try:
             with open(full_path, 'r', encoding='utf-8') as file:
                 additional_lines = [line.strip() for line in file if line.strip() and not line.startswith('#')]
-            
-            # Inserta las líneas adicionales después del índice actual
+
             insertion_index = self.current_line_index + 1
             self.script_lines = (
                 self.script_lines[:insertion_index] +
                 additional_lines +
                 self.script_lines[insertion_index:]
             )
-            print(f"Added {len(additional_lines)} lines at index {insertion_index}")  # Depuración
-            print(f"Updated script_lines: {self.script_lines}")  # Depuración
+
+            print(f"Added {len(additional_lines)} lines at index {insertion_index}")  # Debugging
+            print(f"Updated script_lines: {self.script_lines}")  # Debugging
         except FileNotFoundError:
             raise FileNotFoundError(f"File not found: {file_path}")
-
-
-

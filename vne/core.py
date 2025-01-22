@@ -57,3 +57,5 @@ class VNEngine:
 
             pygame.display.flip()
             self.clock.tick(self.config.FPS)
+
+        pygame.quit()
