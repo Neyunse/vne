@@ -47,9 +47,6 @@ class Interpreter:
         print(f"Advanced to line {self.lexer.current_line_index}: {self.lexer.get_current_state()}")  # Debugging
         return True
 
-
-
-
     def parse_command(self, command_line):
         """Parses a command line into a dictionary with command and arguments."""
         if command_line.startswith('@'):
@@ -106,10 +103,11 @@ class Interpreter:
 
         full_scene_path = os.path.normpath(os.path.join(self.config.base_game, "data", scene_path))
         print(f"Loading scene file: {full_scene_path}")  # Debugging
-        self.lexer.load(full_scene_path)  # Esto reinicia script_lines y current_line_index
-
         # Asegúrate de que comience desde el primer comando del nuevo script
         self.lexer.current_line_index = 0
+        
+        self.lexer.load(full_scene_path)  # Esto reinicia script_lines y current_line_index
+
 
     def load_file(self, parsed_command):
         """Handles the @Load command to load additional scripts."""
