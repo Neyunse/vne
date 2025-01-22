@@ -1,8 +1,3 @@
-K: Comence una nueva etapa en esta academia
-K: {test}! mi nombre es {K}
+K: I started a new stage in this academy
 
-# Special symbols and special line in scenario 
-# 
-# @ (At-the-Rate sign) - usado para ejecutar comandos o definirlos (tambien se usa en otros scripts).
-# # (hashtag) viene al principio de la línea, que desea ser ignorado . En otras palabras, puedes usarlo para escribir comentarios. (tambien se usa en otros scripts).
-# {} usado para mostrar una variable, definicion de personaje (para mostrar el nombre o la definicion)
+K: {test}! my name is {K}

@@ -29,16 +29,18 @@ class Lexer:
             raise FileNotFoundError(f"Script file not found: {full_path}")
 
     def get_current_state(self):
-        """Returns the current command or None if at the end of the script."""
-        if self.current_line_index < len(self.script_lines):
+        """Obtiene la línea actual del script."""
+        if self.current_line_index is not None and self.current_line_index < len(self.script_lines):
             return self.script_lines[self.current_line_index]
         return None
 
     def advance(self):
-        """Moves to the next line in the script."""
-        if self.current_line_index < len(self.script_lines):
+        """Avanza al siguiente comando en el script."""
+        if self.current_line_index is not None and self.current_line_index < len(self.script_lines) - 1:
             self.current_line_index += 1
-        print(f"Advanced to line {self.current_line_index}: {self.get_current_state()}")  # Debugging
+        else:
+            self.current_line_index = None  # Indica que no hay más líneas.
+
 
 
     def load_additional(self, file_path):
