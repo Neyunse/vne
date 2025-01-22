@@ -41,7 +41,7 @@ engine/
 │             ├── main_menu.png      # imagen del menú principal.
 │        ├── scenes/                 # contiene los scripts de las escenas del juego. 
 │               └── first.kag        # script de escena de ejemplo con dialogos.
-│        ├── system/                 # contiene los script que conforman la interfaz del juego. como el menú principal, menu de elección, etc.
+│        ├── system/                 # contiene los script que conforman el juego. como el menú principal, menu de elección, etc.
 │               ├── ui.kag           # script de interfaz de usuario con los menus del juego (main menu, save/load, etc).
 │               ├── config.kag       # script con las variables de configuración del juego.
 │               └── ...              # Otros script del juego.
