@@ -1,0 +1,24 @@
+# define un personaje 
+@char Kuro 
+# tambien se puede asignar un nombre personalizado 
+# @char Kuro as "Kuro"
+# define un fondo/bg para ser usado
+# @background park = "park" # buscara park dentro de la carpeta images/bg/park.**
+# define un sprite para ser usado
+# @sprite kuro = "kuro_normal" # buscara park dentro de la carpeta images/sprites/kuro_normal.png
+
+# muestra un fondo/bg
+# @bg park
+
+# Dialogo sin personaje asignado
+Comence una nueva etapa en esta academia
+
+# @show kuro
+# The same as above, but associated with character "Kuro"
+Kuro: hola! mi nombre es {Kuro}
+
+# Special symbols and special line in scenario 
+# 
+# @ (At-the-Rate sign) - usado para ejecutar comandos o definirlos (tambien se usa en otros scripts).
+# # (hashtag) viene al principio de la línea, que desea ser ignorado . En otras palabras, puedes usarlo para escribir comentarios. (tambien se usa en otros scripts).
+# {} usado para mostrar una variable, definicion de personaje (para mostrar el nombre o la definicion)

@@ -1,0 +1,9 @@
+# Load initial configurations
+# @import system/config
+
+
+@Load("system/scenes.kag")
+
+
+# Process the first scene
+@process_scene first

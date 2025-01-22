@@ -1,0 +1,64 @@
+engine/
+│
+├── vne/
+│   ├── __init__.py     # Inicializa el paquete vne. / This file ensures that renpy packages will be imported in the right order.
+│   ├── core.py         # Contiene la clase principal del motor (VNEngine).
+│   ├── lexer.py        # Maneja la carga y el procesamiento del script.
+│   ├── events.py       # Define los eventos y su manejo.
+│   └── renderer.py     # Encargado de renderizar sprites, fondos y diálogos.
+│   └── config.py       # This is the config module, where game configuration settings are stored. This includes both simple settings (like the screen dimensions) and methods that perform standard tasks, like the say and menu methods.
+│   └── ...             # Otros módulos y directorios del motor.
+│
+├── test-game/          # carpeta del juego de prueba.
+│   ├── game.exe | game.app | game.sh  # ejecutable del juego que se genera cuando el juego se empaqueta.   
+│   ├── data.pkg        # archivo que se genera cuando el juego se empaqueta, contiene todo el contenido de la carpeta data
+│   |── **/**.pkg       # tambien se podria separar el contenido de la carpeta data en varios archivos .pkg, pero por simplicidad se ha dejado en un solo archivo. 
+│   ├── log.txt         # archivo de log del juego que se genera cuando se ejecuta el juego.
+|   ├── traceback.txt   # archivo de traceback del juego cuando se produce un error o excepción.
+│   ├── saves/          # carpeta donde se guardan las partidas del juego (se genera cuando se guarda una partida la primera vez).
+│   ├── data/           # carpeta del juego donde estarán los scripts y recursos del juego.
+|        ├── i18n/      # carpeta donde se generan/almacenan los archivos de localización del juego.
+│             ├── default/     # contiene los archivos de localización por defecto.
+│                  ├── system.kag  # archivo de localización que contiene las traducciones de las interfaces del juego (menus, botones, etc). 
+│             ├── es/           # contiene los archivos de localización (por ejemplo español).
+│                  ├── system.kag  # archivo de localización que contiene las traducciones de las interfaces del juego (menus, botones, etc). 
+│                  ├── scenes/     # contiene los archivos de localización de las escenas del juego.
+│                        └── first.kag  # archivo de localización de la escena de ejemplo.
+│        ├── images/            # contiene los recursos del juego (BG y sprites).
+│             ├── bg/           # contiene los fondos del juego.
+│             ├── sprites/      # contiene los sprites del juego.
+│             └── assets.kag    # script que contiene las definiciones de los recursos
+│        ├── audio/         #  contiene los archivos de audio del juego.
+│              ├── bgm/     # contiene la música de fondo del juego.
+│              ├── sfx/     # contiene los efectos de sonido del juego.
+│              ├── voice/   # contiene las voces de los personajes del juego.
+│        ├── ui/            # contiene los recursos de la interfaz de usuario del juego.   
+│             ├── buttons/  # contiene las imagenes de los botones del juego.
+│             ├── fonts/    # contiene las fuentes del juego.
+│             |── window_icon.png    # icono de la ventana del juego.
+│             ├── textbox.png        # imagen del cuadro de diálogo.
+│             ├── namebox.png        # imagen del cuadro de nombre.
+│             ├── main_menu.png      # imagen del menú principal.
+│        ├── scenes/                 # contiene los scripts de las escenas del juego. 
+│               └── first.kag        # script de escena de ejemplo con dialogos.
+│        ├── system/                 # contiene los script que conforman la interfaz del juego. como el menú principal, menu de elección, etc.
+│               ├── ui.kag           # script de interfaz de usuario con los menus del juego (main menu, save/load, etc).
+│               ├── config.kag       # script con las variables de configuración del juego.
+│               └── ...              # Otros script del juego.
+│        ├── startup.kag             # script de inicio del juego, se encarga de inicializar, ejecutar y cargar los recursos del juego.       
+│
+│
+├── build.py  # script para compilar el motor (no el juego) el motor una vez compilado debe ser capaz de compilar el juego sin necesidad de este script.
+├── run.py    # script para probar el motor sin necesidad de compilarlo, usa command line para ejecutar un proyecto de prueba (mas info en detalles extras).
+└── ...       # otros scripts que puedan ser necesarios para el desarrollo del motor.
+
+detalles extras:
+- El motor se compila en un solo archivo ejecutable (engine.exe | engine.app | engine.sh) que se genera con el script build.py.
+- El motor se usa mediante command line, por lo que no tiene interfaz gráfica por el momento.
+       - Para compilar el juego: engine.exe distribute test-game (crea una carpeta dist/ y coloca el juego compilado ahí).
+         - engine.exe distribute <game_folder|game_folder_path>
+       - para probar el juego: engine.exe debug test-game (ejecuta el juego sin compilar).
+         - engine.exe run <game_folder|game_folder_path>
+       - para inicializar un proyecto nuevo: engine.exe init my-game (crea una carpeta my-game con la estructura de un juego básico).
+         - engine.exe init <game_folder|game_folder_path>
+- Para ejecutar el juego una vez empaquetado: dist/test-game/game.exe | dist/test-game/game.app | dist/test-game/game.sh
