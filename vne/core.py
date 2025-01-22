@@ -36,7 +36,7 @@ class VNEngine:
         self.interpreter = Interpreter(self.lexer, self.renderer, self.config)
 
     def run(self, project_folder):
-        """Main game loop with dialogue interaction."""
+        """Main game loop with interaction."""
         self.config.base_game = os.path.abspath(project_folder)
         print(f"Base game path set to: {self.config.base_game}")
 
@@ -48,33 +48,42 @@ class VNEngine:
         self.lexer.load(startup_script)
 
         dialogue_active = False
-        dialogue_text = ""
 
         while self.running:
-            self.screen.fill((0, 0, 0))  # Clear screen
+            self.screen.fill((0, 0, 0))  # Clear the screen
+
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     self.running = False
-                elif event.type == pygame.KEYDOWN:
-                    if event.key == pygame.K_SPACE and dialogue_active:
-                        dialogue_active = False  # Ready for the next command
+                if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1: 
+                        # Avanza al siguiente comando cuando el jugador presiona ESPACIO
+                        self.lexer.advance()
+                        dialogue_active = False
 
             if not dialogue_active:
-                # Execute the next command
+                # Ejecuta el siguiente comando
                 if not self.interpreter.execute_next_command():
+                    print("No more commands to execute. Press ESC to quit.")
+                    self.wait_for_exit()
                     self.running = False
                 else:
+                    # Verifica si el comando actual es un diálogo
                     command = self.lexer.get_current_state()
                     if command and command.startswith("dialogue"):
                         dialogue_active = True
-                        dialogue_text = command.split("dialogue ", 1)[-1]
 
-            # Render dialogue if active
-            if dialogue_active:
-                self.renderer.draw_dialogue_box(dialogue_text)
-
+            # Renderizar cuadro de diálogo o cualquier elemento visual activo
             pygame.display.flip()
             self.clock.tick(self.config.FPS)
 
         pygame.quit()
+
+    def wait_for_exit(self):
+        """Keeps the window open until the player presses ESC or closes the window."""
+        waiting = True
+        while waiting:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT or (event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE):
+                    waiting = False
+
 

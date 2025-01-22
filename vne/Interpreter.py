@@ -37,12 +37,15 @@ class Interpreter:
         if parsed_command["command"] in self.command_table:
             print(f"Executing: {parsed_command['command']}")  # Debugging
             self.command_table[parsed_command["command"]](parsed_command)
+            # Avanzar solo si no es diálogo (requiere interacción del jugador)
+            if parsed_command["command"] != "dialogue":
+                self.lexer.advance()
         else:
             raise ValueError(f"Unknown command: {parsed_command['command']}")
 
-        self.lexer.advance()
-        print(f"Advanced to index {self.lexer.current_line_index}")  # Debugging
         return True
+
+
 
     def parse_command(self, command_line):
         """Parses a command line into a dictionary with command and arguments."""
@@ -96,6 +99,11 @@ class Interpreter:
     def show_dialogue(self, parsed_command):
         """Displays a line of dialogue."""
         dialogue_text = parsed_command["arguments"]
+
+        # Reemplazar variables en el texto del diálogo
+        for key, value in self.characters.items():
+            dialogue_text = dialogue_text.replace(f"{{{key}}}", value)
+
         print(f"Dialogue: {dialogue_text}")  # Debugging
         self.renderer.draw_dialogue_box(dialogue_text)
 

@@ -1,5 +1,5 @@
 # define un personaje 
-@char Kuro 
+@char K as "Kuro" 
 # tambien se puede asignar un nombre personalizado 
 # @char Kuro as "Kuro"
 # define un fondo/bg para ser usado
@@ -15,7 +15,7 @@ Comence una nueva etapa en esta academia
 
 # @show kuro
 # The same as above, but associated with character "Kuro"
-Kuro: hola! mi nombre es {Kuro}
+K: hola! mi nombre es {K}
 
 # Special symbols and special line in scenario 
 # 
