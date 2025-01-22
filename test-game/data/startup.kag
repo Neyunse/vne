@@ -1,9 +1,8 @@
 # Load initial configurations
 
+@Load("system/scenes.kag")
 @Load("system/characters.kag")
 @Load("system/var.kag")
-@Load("system/scenes.kag")
-
 
 # Process the first scene
 @process_scene first
