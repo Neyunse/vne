@@ -1,28 +1,17 @@
 import pygame
 
 class Renderer:
-    """
-    Handles rendering of backgrounds, sprites, and dialogue for the Visual Novel Engine.
-    """
+    def __init__(self, screen):
+        self.screen = screen
+        self.font = pygame.font.Font(None, 36)  # Fuente predeterminada
 
-    def __init__(self):
-        self.background = None
-        self.sprites = []
+    def draw_text(self, text, pos, color=(255, 255, 255)):
+        """Render text on the screen."""
+        text_surface = self.font.render(text, True, color)
+        self.screen.blit(text_surface, pos)
 
-    def render(self, screen, current_state):
-        """Render the current frame."""
-        screen.fill((0, 0, 0))  # Black background
-
-        # Render the background
-        if self.background:
-            screen.blit(self.background, (0, 0))
-
-        # Render sprites
-        for sprite, x, y in self.sprites:
-            screen.blit(sprite, (x, y))
-
-        # Render current state as text (basic for now)
-        if current_state:
-            font = pygame.font.Font(None, 36)
-            text_surface = font.render(current_state, True, (255, 255, 255))
-            screen.blit(text_surface, (50, 50))
+    def draw_dialogue_box(self, text):
+        """Draw a basic dialogue box with text."""
+        pygame.draw.rect(self.screen, (0, 0, 0), (50, 500, 1180, 180))  # Box background
+        pygame.draw.rect(self.screen, (255, 255, 255), (50, 500, 1180, 180), 2)  # Box border
+        self.draw_text(text, (70, 520))  # Draw text inside the box

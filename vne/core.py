@@ -18,9 +18,9 @@ class VNEngine:
         self.screen = None
         self.clock = None
         self.event_manager = EventManager()
-        self.renderer = Renderer()
-        self.lexer = Lexer(self.config)
-        self.interpreter = Interpreter(self.lexer, self.renderer, self.config)
+        self.renderer = None
+        self.lexer = None
+        self.interpreter = None
 
     def initialize(self):
         """Initialize the engine and set up pygame."""
@@ -31,29 +31,49 @@ class VNEngine:
         )
         pygame.display.set_caption(self.config.WINDOW_TITLE)
         self.clock = pygame.time.Clock()
+        self.renderer = Renderer(self.screen)
+        self.lexer = Lexer(self.config)
+        self.interpreter = Interpreter(self.lexer, self.renderer, self.config)
 
     def run(self, project_folder):
-        """Main game loop."""
+        """Main game loop with dialogue interaction."""
         self.config.base_game = os.path.abspath(project_folder)
-        print(f"Base game path set to: {self.config.base_game}")  # Debug
+        print(f"Base game path set to: {self.config.base_game}")
 
         startup_script = os.path.join(self.config.base_game, "data", "startup.kag")
-
-        # Verify if the startup.kag file exists
         if not os.path.exists(startup_script):
             raise FileNotFoundError(f"startup.kag not found in {startup_script}")
 
         self.initialize()
-
-        # Load the initial script
         self.lexer.load(startup_script)
 
+        dialogue_active = False
+        dialogue_text = ""
+
         while self.running:
+            self.screen.fill((0, 0, 0))  # Clear screen
             self.event_manager.process_events()
 
-            # Delegate command execution to the interpreter
-            if not self.interpreter.execute_next_command():
-                self.running = False
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    self.running = False
+                elif event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_SPACE and dialogue_active:
+                        dialogue_active = False  # Ready for the next command
+
+            if not dialogue_active:
+                # Execute the next command
+                if not self.interpreter.execute_next_command():
+                    self.running = False
+                else:
+                    command = self.lexer.get_current_state()
+                    if command and command.startswith("dialogue"):
+                        dialogue_active = True
+                        dialogue_text = command.split("dialogue ", 1)[-1]
+
+            # Render dialogue if active
+            if dialogue_active:
+                self.renderer.draw_dialogue_box(dialogue_text)
 
             pygame.display.flip()
             self.clock.tick(self.config.FPS)

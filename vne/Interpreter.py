@@ -97,6 +97,7 @@ class Interpreter:
         """Displays a line of dialogue."""
         dialogue_text = parsed_command["arguments"]
         print(f"Dialogue: {dialogue_text}")  # Debugging
+        self.renderer.draw_dialogue_box(dialogue_text)
 
     def set_background(self, parsed_command):
         """Sets the background."""
