@@ -52,8 +52,6 @@ class VNEngine:
 
         while self.running:
             self.screen.fill((0, 0, 0))  # Clear screen
-            self.event_manager.process_events()
-
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     self.running = False
@@ -79,3 +77,4 @@ class VNEngine:
             self.clock.tick(self.config.FPS)
 
         pygame.quit()
+
