@@ -1,22 +1,4 @@
-# define un personaje 
-@char K as "Kuro" 
-# tambien se puede asignar un nombre personalizado 
-# @char Kuro as "Kuro"
-# define un fondo/bg para ser usado
-# @background park = "park" # buscara park dentro de la carpeta images/bg/park.**
-# define un sprite para ser usado
-# @sprite kuro = "kuro_normal" # buscara park dentro de la carpeta images/sprites/kuro_normal.png
-
-@var test = "Hola mundo"
-
-# muestra un fondo/bg
-# @bg park
-
-# Dialogo sin personaje asignado
-Comence una nueva etapa en esta academia
-
-# @show kuro
-# The same as above, but associated with character "Kuro"
+K: Comence una nueva etapa en esta academia
 K: {test}! mi nombre es {K}
 
 # Special symbols and special line in scenario 

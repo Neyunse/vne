@@ -1,7 +1,7 @@
 # Load initial configurations
-# @import system/config
 
-
+@Load("system/characters.kag")
+@Load("system/var.kag")
 @Load("system/scenes.kag")
 
 

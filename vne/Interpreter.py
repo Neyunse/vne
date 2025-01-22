@@ -39,13 +39,14 @@ class Interpreter:
         if parsed_command["command"] in self.command_table:
             print(f"Executing: {parsed_command['command']}")  # Debugging
             self.command_table[parsed_command["command"]](parsed_command)
-            # Avanzar solo si no es diálogo (requiere interacción del jugador)
-            if parsed_command["command"] != "dialogue":
-                self.lexer.advance()
+            # Asegúrate de avanzar el índice después de ejecutar un comando
+            self.lexer.advance()
         else:
             raise ValueError(f"Unknown command: {parsed_command['command']}")
 
+        print(f"Advanced to line {self.lexer.current_line_index}: {self.lexer.get_current_state()}")  # Debugging
         return True
+
 
 
 
@@ -105,7 +106,10 @@ class Interpreter:
 
         full_scene_path = os.path.normpath(os.path.join(self.config.base_game, "data", scene_path))
         print(f"Loading scene file: {full_scene_path}")  # Debugging
-        self.lexer.load(full_scene_path)
+        self.lexer.load(full_scene_path)  # Esto reinicia script_lines y current_line_index
+
+        # Asegúrate de que comience desde el primer comando del nuevo script
+        self.lexer.current_line_index = 0
 
     def load_file(self, parsed_command):
         """Handles the @Load command to load additional scripts."""

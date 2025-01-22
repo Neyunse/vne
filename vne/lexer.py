@@ -38,6 +38,8 @@ class Lexer:
         """Moves to the next line in the script."""
         if self.current_line_index < len(self.script_lines):
             self.current_line_index += 1
+        print(f"Advanced to line {self.current_line_index}: {self.get_current_state()}")  # Debugging
+
 
     def load_additional(self, file_path):
         """Loads an additional script and appends it to the current script."""
