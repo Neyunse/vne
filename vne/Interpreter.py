@@ -29,7 +29,7 @@ class Interpreter:
             print("No more commands to execute.")  # Depuración
             return False
 
-        print(f"Executing command: {command}")  # Depuración
+        print(f"Executing command at index {self.lexer.current_line_index}: {command}")  # Depuración
 
         parsed_command = self.parse_command(command)
         print(f"Parsed command: {parsed_command}")  # Depuración
@@ -40,7 +40,9 @@ class Interpreter:
         else:
             raise ValueError(f"Unknown command: {parsed_command['command']}")
 
+        # Avanza al siguiente comando
         self.lexer.advance()
+        print(f"Advanced to index {self.lexer.current_line_index}")  # Depuración
         return True
 
     def parse_command(self, command_line):

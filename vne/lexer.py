@@ -51,15 +51,17 @@ class Lexer:
             with open(full_path, 'r', encoding='utf-8') as file:
                 additional_lines = [line.strip() for line in file if line.strip() and not line.startswith('#')]
             
-            # Inserta las líneas después de la posición actual
+            # Inserta las líneas adicionales después del índice actual
             insertion_index = self.current_line_index + 1
             self.script_lines = (
                 self.script_lines[:insertion_index] +
                 additional_lines +
                 self.script_lines[insertion_index:]
             )
-            print(f"Added {len(additional_lines)} lines from {file_path} at index {insertion_index}")  # Depuración
+            print(f"Added {len(additional_lines)} lines at index {insertion_index}")  # Depuración
+            print(f"Updated script_lines: {self.script_lines}")  # Depuración
         except FileNotFoundError:
             raise FileNotFoundError(f"File not found: {file_path}")
+
 
 
