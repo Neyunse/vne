@@ -102,7 +102,7 @@ class Interpreter:
 
         scene_path = self.lexer.assets["scenes"].get(scene_key)
         if not scene_path:
-            raise ValueError(f"Scene '{scene_key}' not defined in assets.")
+            raise ValueError(f"Scene '{scene_key}' not defined.")
 
         full_scene_path = os.path.normpath(os.path.join(self.config.base_game, "data", scene_path))
         print(f"Loading scene file: {full_scene_path}")  # Debugging
