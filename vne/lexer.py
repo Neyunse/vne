@@ -5,20 +5,22 @@ class ScriptLexer:
     Lee y parsea el script (por ejemplo, startup.kag), uniendo las líneas que
     están indentadas después de un comando de bloque (aquellos que terminan en ":").
     """
-    def __init__(self, game_path):
+    def __init__(self, game_path, engine):
         self.game_path = game_path
+        self.engine = engine
         self.commands = []
         self.current = 0
         self.load_scripts()
     
     def load_scripts(self):
-        script_path = f"{self.game_path}/data/startup.kag"
+        base_name = "startup"  # sin extensión
         try:
-            with open(script_path, "r", encoding="utf-8") as f:
-                content = f.read()
+            file_bytes = self.engine.resource_manager.get_script_bytes(base_name)
+            content = file_bytes.decode("utf-8")
             self.commands = self.parse_script(content)
-        except Exception as e:
-            print(f"[Lexer] Error al cargar {script_path}: {e}")
+        except FileNotFoundError:
+            print(f"[Lexer] No se encontró ni 'startup.kagc' ni 'startup.kag' en pkg o disco.")
+            self.commands = []
             
     def parse_script(self, content):
         lines = content.splitlines()

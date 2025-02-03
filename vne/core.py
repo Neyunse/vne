@@ -1,10 +1,12 @@
 # engine/vne/core.py
+import os
 import pygame
 import pygame_gui
 from vne.lexer import ScriptLexer
 from vne.renderer import Renderer
 from vne.events import EventManager
 from vne.config import CONFIG
+from vne.rm import ResourceManager
 
 class VNEngine:
     def __init__(self, game_path):
@@ -23,7 +25,8 @@ class VNEngine:
         print(f"Iniciando el juego desde {self.game_path}...")
         self.load_game_resources()
         
-        self.lexer = ScriptLexer(self.game_path)
+        self.resource_manager = ResourceManager(data_folder=os.path.join(self.game_path, "data"), pkg_path="data.pkg")
+        self.lexer = ScriptLexer(self.game_path, self)
         self.event_manager = EventManager()
         self.renderer = Renderer(self)
         self.clock = pygame.time.Clock()

@@ -178,35 +178,32 @@ class EventManager:
             raise Exception("[ERROR] Formato inválido en @def. Se esperaba: @def alias = \"valor\"")
     
     def handle_process_scene(self, arg, engine):
-        """
-        Procesa la escena de inicio o la invocada desde Start(...).
-        Se espera que se pase el alias de la escena.
-        Busca en engine.scenes la definición y carga el archivo:
-          <game_path>/data/scenes/<archivo>.kag
-        Procesa sus líneas.
-        """
-        parts = [p.strip() for p in arg.split("|") if p.strip()]
-        if len(parts) == 1:
-            scene_alias = parts[0]
-            if scene_alias in engine.scenes:
-                scene_file_name = engine.scenes[scene_alias]
-                scene_file_path = os.path.join(engine.game_path, "data", "scenes", f"{scene_file_name}.kag")
-                print(f"[process_scene] Procesando escena '{scene_alias}' desde: {scene_file_path}")
-                try:
-                    with open(scene_file_path, "r", encoding="utf-8") as f:
-                        content = f.read()
-                    scene_commands = [line.strip() for line in content.splitlines() if line.strip() and not line.strip().startswith("#")]
-                    for cmd in scene_commands:
-                        print(f"[process_scene] Comando de escena: {cmd}")
-                        engine.event_manager.handle(cmd, engine)
-                    engine.wait_for_keypress()
-                except Exception as e:
-                    raise Exception(f"[process_scene] Error al cargar la escena '{scene_alias}': {e}")
-            else:
-                raise Exception(f"[ERROR] Escena '{scene_alias}' no está definida en system/scenes.kag.")
-        else:
-            raise Exception("[ERROR] Formato extendido en @process_scene no implementado.")
-    
+        import os
+        from vne.lexer import ScriptLexer
+
+        # Ej. arg = "first", o "second"
+        arg = arg.strip()
+        if arg.startswith("(") and arg.endswith(")"):
+            arg = arg[1:-1].strip()
+        # quitar comillas si las hay
+        if (arg.startswith('"') and arg.endswith('"')) or (arg.startswith("'") and arg.endswith("'")):
+            arg = arg[1:-1].strip()
+
+        scene_alias = arg
+        base_name = os.path.join("scenes", scene_alias)  # e.g. "scenes/first"
+        try:
+            file_bytes = engine.resource_manager.get_script_bytes(base_name)
+            content = file_bytes.decode("utf-8")
+        except FileNotFoundError:
+            raise Exception(f"[ERROR] No se encontró la escena '{scene_alias}' ni compilada (.kagc) ni normal (.kag).")
+
+        print(f"[process_scene] Procesando escena '{scene_alias}'.")
+        scene_commands = ScriptLexer(engine.game_path, engine).parse_script(content)
+        for cmd in scene_commands:
+            print(f"[process_scene] Comando de escena: {cmd}")
+            engine.event_manager.handle(cmd, engine)
+        engine.wait_for_keypress()
+
     def handle_jump_scene(self, arg, engine):
         """
         Salta a otra escena sin esperar keypress.

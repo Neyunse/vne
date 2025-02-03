@@ -93,6 +93,36 @@ def distribute_game(game_path):
     
     print(f"Juego empaquetado en: {dest_path}")
 
+ 
+def xor_data(data: bytes, key: bytes) -> bytes:
+    out = bytearray(len(data))
+    key_len = len(key)
+    for i, b in enumerate(data):
+        out[i] = b ^ key[i % key_len]
+    return bytes(out)
+
+def compile_kag(source_file, target_file, key=b"MyXorKey"):
+    """
+    'Compila' un .kag -> .kagc usando XOR con la clave dada.
+    """
+    with open(source_file, "r", encoding="utf-8") as sf:
+        plain_text = sf.read()
+    # Convertir el texto a bytes
+    plain_bytes = plain_text.encode("utf-8")
+    # Ofuscar con XOR
+    compiled_bytes = xor_data(plain_bytes, key)
+    # Guardar .kagc en binario
+    with open(target_file, "wb") as tf:
+        tf.write(compiled_bytes)
+
+def compile_all_kag_in_folder(data_folder, key=b"MyXorKey"):
+    for root, dirs, files in os.walk(data_folder):
+        for file in files:
+            if file.endswith(".kag"):
+                source_path = os.path.join(root, file)
+                target_path = os.path.splitext(source_path)[0] + ".kagc"
+                print(f"Compilando {source_path} -> {target_path} con XOR")
+                compile_kag(source_path, target_path, key=key)
 
 
 if __name__ == "__main__":
@@ -104,9 +134,12 @@ if __name__ == "__main__":
     command = sys.argv[1]
     game_path = sys.argv[2]
     project_folder = os.path.join(os.path.dirname(__file__), sys.argv[2])
+    data_folder = os.path.join(os.path.dirname(__file__), sys.argv[2], "data")
+
     
     if command in ("run", "debug"):
         core = Core(project_folder)
+        compile_all_kag_in_folder(data_folder, key=b"MyXorKey")
         core.run()
     elif command == "init":
         init_game(project_folder)
