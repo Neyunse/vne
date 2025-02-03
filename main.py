@@ -40,59 +40,37 @@ def init_game(game_path):
 
 def distribute_game(game_path):
     """
-    Empaqueta el juego ubicado en 'game_path' generando:
-      - Una carpeta 'dist' en el directorio actual.
-      - Dentro de 'dist', se crea una carpeta con el mismo nombre del juego.
-      - Se copia todo el contenido del juego a esa carpeta, pero en lugar de copiar la carpeta 'data',
-        se la comprime en un archivo 'data.pkg'.
-      
-    Esto permite generar un paquete con todos los recursos y archivos necesarios para distribuir el juego.
+    1) (Opcional) compila scripts .kag -> .kagc
+    2) crea data.pkg
+    3) copia binario actual (engine.exe) renombrado a game.exe
     """
-    print(f"Empaquetando juego desde {game_path}...")
-    
-    # Determinar ruta absoluta del juego y del directorio de distribución.
-    game_path = os.path.abspath(game_path)
-    game_name = os.path.basename(game_path)
-    current_dir = os.getcwd()
-    dist_dir = os.path.join(current_dir, "dist")
-    
-    # Crear el directorio 'dist' si no existe.
-    if not os.path.exists(dist_dir):
-        os.makedirs(dist_dir)
-    
-    # Definir la carpeta de destino dentro de 'dist'
-    dest_path = os.path.join(dist_dir, game_name)
-    
-    # Si la carpeta de destino ya existe, se elimina.
-    if os.path.exists(dest_path):
-        shutil.rmtree(dest_path)
-    os.makedirs(dest_path)
-    
-    # Recorrer todos los elementos en la carpeta del juego.
-    for item in os.listdir(game_path):
-        s = os.path.join(game_path, item)
-        d = os.path.join(dest_path, item)
-        
-        # Si es la carpeta 'data', la comprimimos en 'data.pkg'
-        if os.path.isdir(s) and item.lower() == "data":
-            pkg_path = os.path.join(dest_path, "data.pkg")
-            print(f"Empaquetando carpeta 'data' en {pkg_path}...")
-            with zipfile.ZipFile(pkg_path, "w", zipfile.ZIP_DEFLATED) as pkg:
-                for root, dirs, files in os.walk(s):
-                    for file in files:
-                        file_path = os.path.join(root, file)
-                        # Se obtiene la ruta relativa para mantener la estructura
-                        rel_path = os.path.relpath(file_path, s)
-                        pkg.write(file_path, rel_path)
-        else:
-            # Si es una carpeta (que no sea 'data') se copia recursivamente
-            if os.path.isdir(s):
-                shutil.copytree(s, d)
-            else:
-                shutil.copy2(s, d)
-    
-    print(f"Juego empaquetado en: {dest_path}")
+    import os
+    import shutil
+    import sys
+    import zipfile
 
+    # game_path absoluto
+    game_path = os.path.abspath(game_path)
+    data_folder = os.path.join(game_path, "data")
+
+    # 1) compila (si así lo deseas)
+    compile_all_kag_in_folder(data_folder)
+
+    # 2) empaquetar data/
+    pkg_path = os.path.join(game_path, "data.pkg")
+    with zipfile.ZipFile(pkg_path, "w", zipfile.ZIP_DEFLATED) as pkg:
+        for root, dirs, files in os.walk(data_folder):
+            for file in files:
+                file_path = os.path.join(root, file)
+                rel_path = os.path.relpath(file_path, data_folder)
+                pkg.write(file_path, rel_path)
+
+    # 3) copiar engine.exe renombrado a game.exe
+    exe_source = os.path.abspath(sys.executable)  # El binario actual
+    exe_dest = os.path.join(game_path, "game.exe")
+    shutil.copy2(exe_source, exe_dest)
+
+    print(f"¡Distribución completada! El usuario final puede ejecutar 'game.exe' en '{game_path}' junto a data.pkg.")
  
 def xor_data(data: bytes, key: bytes) -> bytes:
     out = bytearray(len(data))

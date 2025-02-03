@@ -16,3 +16,5 @@ update_copyright.py
 cert
 old
 *.kagc
+*.exe
+*.pkg
