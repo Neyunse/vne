@@ -26,6 +26,7 @@ class ScriptLexer:
             line = line.strip()
             if not line or line.startswith("#"):
                 continue
+            print("[DEBUG] Línea leída:", line)  # Depuración
             lines.append(line)
         return lines
 

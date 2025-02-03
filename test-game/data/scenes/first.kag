@@ -1,5 +1,9 @@
-inicio: Bienvenido a la novela visual
-say: Narrador, Esta es una línea de diálogo de prueba.
-bg: fondo_prueba.jpg
-menu: Comenzar | Salir
-exit: Juego terminado
+# Dialogo sin personaje definido
+Hola Mundo
+
+# dialogos con personajes definidos
+K: I started a new stage in this academy
+K: my name is {K}
+
+# cierra el juego
+@exit

@@ -8,10 +8,8 @@ class EventManager:
         self.register_default_events()
 
     def register_default_events(self):
-        # Eventos “clásicos”
-        self.register_event("inicio", self.handle_inicio)
         self.register_event("say", self.handle_say)
-        self.register_event("menu", self.handle_menu)
+        #self.register_event("menu", self.handle_menu)
         self.register_event("bg", self.handle_bg)
         self.register_event("exit", self.handle_exit)
         # Nuevos comandos especiales (prefijados con @)
@@ -31,6 +29,7 @@ class EventManager:
         # Si comienza con @, es un comando especial
         if command.startswith("@"):
             stripped = command[1:].strip()
+            import re
             match = re.match(r"(\w+)(.*)", stripped)
             if match:
                 event_name = match.group(1)
@@ -40,11 +39,19 @@ class EventManager:
                 arg = ""
             self.dispatch(event_name, arg, engine)
         elif ':' in command:
+            # Separamos por ":" y obtenemos el token de la izquierda.
             event_name, arg = command.split(":", 1)
-            self.dispatch(event_name.strip(), arg.strip(), engine)
+            event_name = event_name.strip()
+            arg = arg.strip()
+            # Si el token obtenido no es un comando registrado, se asume diálogo.
+            if event_name in self.event_handlers:
+                self.dispatch(event_name, arg, engine)
+            else:
+                # Se trata la línea completa como diálogo.
+                self.handle_say(command, engine)
         else:
-            # Por defecto, se asume un diálogo
             self.dispatch("say", command.strip(), engine)
+
 
     def dispatch(self, event_name, arg, engine=None):
         handlers = self.event_handlers.get(event_name, [])
@@ -53,23 +60,30 @@ class EventManager:
         for handler in handlers:
             handler(arg, engine)
 
-    # ---------- Manejadores “clásicos” ----------
-
-    def handle_inicio(self, arg, engine):
-        print("Evento 'inicio':", arg)
-        engine.current_dialogue = arg
-        engine.wait_for_keypress()
-        engine.current_dialogue = ""
-
     def handle_say(self, arg, engine):
-        if ',' in arg:
-            character, dialogue = arg.split(',', 1)
-            full_text = f"{character.strip()}: {dialogue.strip()}"
+        """
+        Procesa un diálogo. Se espera la sintaxis:
+        <speaker>: <dialogue text>
+        Además, si el texto contiene marcadores del tipo {alias}, se reemplazan
+        por el nombre definido para ese personaje.
+        """
+        import re
+        if ':' in arg:
+            speaker, dialogue = arg.split(":", 1)
+            speaker = speaker.strip()
+            dialogue = dialogue.strip()
+            # Función para sustituir {alias} por el display name del personaje
+            def replacer(match):
+                key = match.group(1).strip()
+                return engine.characters.get(key, match.group(0))
+            dialogue = re.sub(r"\{([^}]+)\}", replacer, dialogue)
+            full_text = f"{speaker}: {dialogue}"
         else:
             full_text = arg
         engine.current_dialogue = full_text
         engine.wait_for_keypress()
         engine.current_dialogue = ""
+
 
     def handle_menu(self, arg, engine):
         options = [opt.strip() for opt in arg.split('|')]
@@ -191,16 +205,24 @@ class EventManager:
 
     def handle_char(self, arg, engine):
         """
-        Define un personaje. Se espera el formato:
-            alias as "Nombre"
-        Ejemplo:
-            @char K as "Kuro"
+        Define un personaje. Se permiten dos formatos:
+        1) @char K as "Kuro"   -> Define el alias "K" con display name "Kuro".
+        2) @char K            -> Define el alias "K" y se usa "K" como nombre a mostrar.
         """
-        parts = arg.split(" as ")
-        if len(parts) == 2:
-            alias = parts[0].strip()
-            display_name = parts[1].strip().strip('"')
-            engine.characters[alias] = display_name
-            print(f"[char] Definido personaje: alias '{alias}', nombre '{display_name}'")
+        if " as " in arg:
+            parts = arg.split(" as ")
+            if len(parts) == 2:
+                alias = parts[0].strip()
+                display_name = parts[1].strip().strip('"')
+                engine.characters[alias] = display_name
+                print(f"[char] Definido personaje: alias '{alias}', nombre '{display_name}'")
+            else:
+                print("[char] Formato inválido. Se esperaba: @char alias as \"nombre\"")
         else:
-            print("[char] Formato inválido. Se esperaba: @char alias as \"nombre\"")
+            alias = arg.strip()
+            if alias:
+                engine.characters[alias] = alias  # Usa el alias como nombre por defecto
+                print(f"[char] Definido personaje: alias '{alias}', nombre '{alias}'")
+            else:
+                print("[char] Formato inválido. Se esperaba: @char alias [as \"nombre\"]")
+

@@ -1,2 +1,4 @@
 # define un personaje 
 @char K as "Kuro" 
+# o puede ser
+# @char K
