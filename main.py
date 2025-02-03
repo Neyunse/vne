@@ -137,7 +137,7 @@ if __name__ == "__main__":
     data_folder = os.path.join(os.path.dirname(__file__), sys.argv[2], "data")
 
     
-    if command in ("run", "debug"):
+    if command in ("debug"):
         core = Core(project_folder)
         compile_all_kag_in_folder(data_folder, key=b"MyXorKey")
         core.run()

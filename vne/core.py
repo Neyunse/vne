@@ -74,7 +74,3 @@ class VNEngine:
             pygame.display.update()
         pygame.quit()
         print("Juego finalizado.")
-
-if __name__ == '__main__':
-    engine = VNEngine("test-game")
-    engine.run()
