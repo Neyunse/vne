@@ -1,7 +1,7 @@
 engine/
 │
 ├── vne/
-│   ├── __init__.py     # Inicializa el paquete vne. / This file ensures that renpy packages will be imported in the right order.
+│   ├── __init__.py     # Inicializa el paquete vne. / This file ensures that vne packages will be imported in the right order.
 │   ├── core.py         # Contiene la clase principal del motor (VNEngine).
 │   ├── lexer.py        # Maneja la carga y el procesamiento del script.
 │   ├── events.py       # Define los eventos y su manejo.
