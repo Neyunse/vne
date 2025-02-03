@@ -1,8 +1,9 @@
 # Load initial configurations
 
+# Carga/importa las definiciones de las escenas
 @Load("system/scenes.kag")
+# Carga/importa las definiciones de los personajes
 @Load("system/characters.kag")
-@Load("system/var.kag")
 
-# Process the first scene
+# Llama/procesa/importa la primera escena
 @process_scene first

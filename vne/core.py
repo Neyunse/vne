@@ -1,89 +1,87 @@
-import os
+# engine/vne/core.py
+
 import pygame
-from .config import Config
-from .lexer import Lexer
-from .events import EventManager
-from .renderer import Renderer
-from .Interpreter import Interpreter
+from vne.lexer import ScriptLexer
+from vne.renderer import Renderer
+from vne.events import EventManager
+from vne.config import CONFIG
 
 class VNEngine:
-    """
-    Core class for the Visual Novel Engine.
-    Handles game initialization, script execution, and interaction coordination.
-    """
-
-    def __init__(self):
-        self.config = Config()
+    def __init__(self, game_path):
+        self.game_path = game_path
         self.running = True
-        self.screen = None
-        self.clock = None
+        # Estados del juego:
+        self.current_bg = None          # Imagen de fondo (Surface de Pygame)
+        self.current_dialogue = ""      # Texto a mostrar en el recuadro de diálogo
+        self.current_menu = None        # Lista de opciones (cuando se activa un menú)
+        
+        print(f"Iniciando el juego desde {self.game_path}...")
+        self.load_game_resources()
+
+        self.lexer = ScriptLexer(self.game_path)
         self.event_manager = EventManager()
-        self.renderer = None
-        self.lexer = None
-        self.interpreter = None
-
-    def initialize(self):
-        """Initialize the engine and set up pygame."""
-        pygame.init()
-        os.environ['SDL_VIDEO_CENTERED'] = '1'
-        self.screen = pygame.display.set_mode(
-            self.config.SCREEN_SIZE, self.config.PYGAME_FLAGS
-        )
-        pygame.display.set_caption(self.config.WINDOW_TITLE)
+        self.renderer = Renderer(self)
         self.clock = pygame.time.Clock()
-        self.renderer = Renderer(self.screen)
-        self.lexer = Lexer(self.config)
-        self.interpreter = Interpreter(self.lexer, self.renderer, self.config)
 
-    def run(self, project_folder):
-        """Main game loop with interaction."""
-        self.config.base_game = os.path.abspath(project_folder)
-        print(f"Base game path set to: {self.config.base_game}")
+    def load_game_resources(self):
+        # Aquí podrías cargar sonidos, música u otros recursos globales
+        print("Cargando recursos del juego...")
 
-        startup_script = os.path.join(self.config.base_game, "data", "startup.kag")
-        if not os.path.exists(startup_script):
-            raise FileNotFoundError(f"startup.kag not found in {startup_script}")
-
-        self.initialize()
-        self.lexer.load(startup_script)
-
-        dialogue_active = False
-
-        while self.running:
-            self.screen.fill((0, 0, 0))  # Clear the screen
-
+    def wait_for_keypress(self):
+        """
+        Pausa la ejecución hasta que el usuario presione una tecla.
+        """
+        waiting = True
+        while waiting and self.running:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     self.running = False
-                if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1: 
-                        # Avanza al siguiente comando cuando el jugador presiona ESPACIO
-                        self.lexer.advance()
-                        dialogue_active = False
-
-            if not dialogue_active:
-                # Ejecuta el siguiente comando
-                if not self.interpreter.execute_next_command():
-                    print("No more commands to execute. Press ESC to quit.")
-                    self.wait_for_exit()
-                    self.running = False
-                else:
-                    # Verifica si el comando actual es un diálogo
-                    command = self.lexer.get_current_state()
-                    if command and command.startswith("dialogue"):
-                        dialogue_active = True
-
-            # Renderizar cuadro de diálogo o cualquier elemento visual activo
-            pygame.display.flip()
-            self.clock.tick(self.config.FPS)
-
-        pygame.quit()
-
-    def wait_for_exit(self):
-        """Keeps the window open until the player presses ESC or closes the window."""
-        waiting = True
-        while waiting:
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT or (event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE):
+                    return
+                if event.type == pygame.KEYDOWN:
                     waiting = False
+            self.renderer.render()
+            self.clock.tick(30)
 
+    def wait_for_menu_selection(self):
+        """
+        Espera a que el usuario presione una tecla numérica (1-9) correspondiente a una opción.
+        Retorna el índice (0 basado) de la opción seleccionada.
+        """
+        selection = None
+        while selection is None and self.running:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    self.running = False
+                    return None
+                if event.type == pygame.KEYDOWN:
+                    # Se asume que las teclas numéricas del 1 al 9 se usan para seleccionar
+                    if pygame.K_1 <= event.key <= pygame.K_9:
+                        num = event.key - pygame.K_0
+                        if num <= len(self.current_menu):
+                            selection = num - 1
+            self.renderer.render()
+            self.clock.tick(30)
+        return selection
 
+    def run(self):
+        print("Ejecutando juego. Cierre la ventana para salir.")
+        while self.running:
+            # Procesa eventos de Pygame (por ejemplo, cierre de ventana)
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    self.running = False
+
+            # Obtiene el siguiente comando del script
+            command = self.lexer.get_next_command()
+            if command is None:
+                # Si se han procesado todos los comandos, esperar unos segundos y salir
+                pygame.time.wait(2000)
+                self.running = False
+            else:
+                # Procesa el comando (se invocan los handlers correspondientes)
+                self.event_manager.handle(command, self)
+            
+            self.renderer.render()
+            self.clock.tick(30)
+        pygame.quit()
+        print("Juego finalizado.")

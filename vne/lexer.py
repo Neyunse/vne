@@ -1,65 +1,37 @@
-import os
-from .config import Config
-class Lexer:
-    """
-    Handles the loading and processing of script files.
-    Provides commands to the interpreter sequentially.
-    """
+# engine/vne/lexer.py
 
-    def __init__(self, config):
-        self.script_lines = []
-        self.current_line_index = 0
-        self.config = config
-        self.assets = {
-            "backgrounds": {},
-            "sprites": {},
-            "scenes": {},
-        }
+class ScriptLexer:
+    """
+    Lee y parsea el script del juego.
+    """
+    def __init__(self, game_path):
+        self.game_path = game_path
+        self.commands = []
+        self.current = 0
+        self.load_scripts()
 
-    def load(self, file_path):
-        """Loads a script file into memory."""
-        full_path = os.path.normpath(os.path.join(self.config.base_game, file_path))
-        print(f"Loading script from: {full_path}")  # Debugging
+    def load_scripts(self):
+        # Se asume que el script de inicio está en <game_path>/data/startup.kag
+        script_path = f"{self.game_path}/data/startup.kag"
         try:
-            with open(full_path, 'r', encoding='utf-8') as file:
-                self.script_lines = [line.strip() for line in file if line.strip() and not line.startswith('#')]
-            self.current_line_index = 0
-            print(f"Script loaded with {len(self.script_lines)} lines.")  # Debugging
-        except FileNotFoundError:
-            raise FileNotFoundError(f"Script file not found: {full_path}")
+            with open(script_path, "r", encoding="utf-8") as f:
+                content = f.read()
+                self.commands = self.parse_script(content)
+        except Exception as e:
+            print("Error al cargar el script:", e)
 
-    def get_current_state(self):
-        """Obtiene la línea actual del script."""
-        if self.current_line_index is not None and self.current_line_index < len(self.script_lines):
-            return self.script_lines[self.current_line_index]
+    def parse_script(self, content):
+        lines = []
+        for line in content.splitlines():
+            line = line.strip()
+            if not line or line.startswith("#"):
+                continue
+            lines.append(line)
+        return lines
+
+    def get_next_command(self):
+        if self.current < len(self.commands):
+            cmd = self.commands[self.current]
+            self.current += 1
+            return cmd
         return None
-
-    def advance(self):
-        """Avanza al siguiente comando en el script."""
-        if self.current_line_index is not None and self.current_line_index < len(self.script_lines) - 1:
-            self.current_line_index += 1
-        else:
-            self.current_line_index = None  # Indica que no hay más líneas.
-
-
-
-    def load_additional(self, file_path):
-        """Loads an additional script and appends it to the current script."""
-        full_path = os.path.normpath(file_path)
-        print(f"Loading additional script from: {full_path}")  # Debugging
-
-        try:
-            with open(full_path, 'r', encoding='utf-8') as file:
-                additional_lines = [line.strip() for line in file if line.strip() and not line.startswith('#')]
-
-            insertion_index = self.current_line_index + 1
-            self.script_lines = (
-                self.script_lines[:insertion_index] +
-                additional_lines +
-                self.script_lines[insertion_index:]
-            )
-
-            print(f"Added {len(additional_lines)} lines at index {insertion_index}")  # Debugging
-            print(f"Updated script_lines: {self.script_lines}")  # Debugging
-        except FileNotFoundError:
-            raise FileNotFoundError(f"File not found: {file_path}")
