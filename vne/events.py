@@ -11,7 +11,6 @@ class EventManager:
         # Registro de comandos
         self.register_event("say", self.handle_say)
         # self.register_event("menu", self.handle_menu)  # Descomenta si es necesario
-        self.register_event("bg", self.handle_bg)
         self.register_event("exit", self.handle_exit)
         # Comandos especiales definidos con @
         self.register_event("Load", self.handle_Load)
@@ -98,22 +97,8 @@ class EventManager:
         engine.wait_for_keypress()
         engine.current_dialogue = ""
 
-
-    def handle_bg(self, arg, engine):
-        bg_path = os.path.join(engine.game_path, "data", "images", "bg", arg)
-        if os.path.exists(bg_path):
-            try:
-                image = pygame.image.load(bg_path)
-                image = pygame.transform.scale(image, (engine.renderer.screen.get_width(),
-                                                         engine.renderer.screen.get_height()))
-                engine.current_bg = image
-            except Exception as e:
-                print("Error al cargar la imagen de fondo:", e)
-        else:
-            raise Exception(f"[ERROR] Imagen de fondo no encontrada: {bg_path}")
-
     def handle_exit(self, arg, engine):
-        print("Evento 'exit':", arg)
+        print("Evento 'exit'", arg)
         engine.running = False
 
     def handle_Load(self, arg, engine):
