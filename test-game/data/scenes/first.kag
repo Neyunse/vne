@@ -1,5 +1,4 @@
 Hola Mundo
 K: I started a new stage in this academy
-K: my name is {K}
-@jump_scene second
+K: my name is {K}. {test}
 @exit

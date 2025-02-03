@@ -4,6 +4,8 @@
 @Load("system/scenes.kag")
 # Carga/importa las definiciones de los personajes
 @Load("system/characters.kag")
+# Carga/importa las variables
+@Load("system/vars.kag")
 
 # Llama/procesa/importa la primera escena
 # @process_scene <scene_name>

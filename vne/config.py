@@ -2,22 +2,21 @@
 
 # Configuración del motor
 # engine/vne/config.py
-
 CONFIG = {
     "screen_width": 800,
     "screen_height": 600,
     "fullscreen": False,
     "font_name": "Arial",
     "font_size": 24,
-    # Color de fondo (si no se carga imagen)
-    "bg_color": (0, 0, 0),
-    # Color y posición del recuadro de diálogo
+    "bg_color": (0, 0, 0),  # Color de fondo en ausencia de imagen
     "dialogue_rect": { 
          "x": 50, "y": 450, "width": 700, "height": 120,
          "bg_color": (50, 50, 50),
          "border_color": (255, 255, 255)
     }
 }
+
+
 
 
 def say(character, dialogue):
