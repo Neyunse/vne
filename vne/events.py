@@ -17,6 +17,7 @@ class EventManager:
         self.register_event("process_scene", self.handle_process_scene)
         self.register_event("char", self.handle_char)
         self.register_event("scene", self.handle_scene)
+        self.register_event("jump_scene", self.handle_jump_scene)
 
     def register_event(self, event_name, handler):
         if event_name not in self.event_handlers:
@@ -61,41 +62,64 @@ class EventManager:
 
     def handle_say(self, arg, engine):
         """
-        Procesa un diálogo. Se espera la sintaxis:
-        <speaker>: <dialogue text>
-        Además, si el texto contiene marcadores del tipo {alias}, se reemplazan
-        por el nombre definido para ese personaje. Si el speaker o cualquier marcador
-        no está definido, se lanza un error.
+        Procesa un diálogo. Se espera la siguiente sintaxis:
+        - Con speaker: <speaker>: <dialogue text>
+        - Sin speaker: <dialogue text>
+        
+        En ambos casos, si el texto contiene marcadores del tipo {alias},
+        se reemplazan por el valor definido para ese alias en engine.characters o, 
+        en su defecto, en engine.scenes.
+        
+        Si en el caso con speaker el alias (lo que aparece antes de ":") no está definido en
+        engine.characters, se lanza un error. De igual forma, si algún marcador no está definido
+        en ninguno de los diccionarios, se lanza un error.
         """
         import re
         if ':' in arg:
+            # Se procesa la línea como diálogo con speaker.
             speaker, dialogue = arg.split(":", 1)
             speaker = speaker.strip()
             dialogue = dialogue.strip()
             
-            # Verificar que el speaker esté definido
+            # Verificar que el speaker esté definido en engine.characters.
             if speaker not in engine.characters:
-                raise Exception(f"[ERROR] El personaje '{speaker}' no está definido.")
+                raise Exception(f"[ERROR] El personaje '{speaker}' (speaker) no está definido.")
             else:
-                # Se reemplaza el speaker por su display name
+                # Se reemplaza el speaker por su display name.
                 speaker = engine.characters[speaker]
             
-            # Función para sustituir {alias} por el display name del personaje.
+            # Función para reemplazar marcadores {alias} en el diálogo.
             def replacer(match):
                 key = match.group(1).strip()
-                if key not in engine.characters:
-                    raise Exception(f"[ERROR] No está definido el personaje para '{key}'.")
-                replacement = engine.characters[key]
-                print(f"[DEBUG] Reemplazando '{{{key}}}' por '{replacement}'")
-                return replacement
+                if key in engine.characters:
+                    return engine.characters[key]
+                elif key in engine.scenes:
+                    return engine.scenes[key]
+                else:
+                    raise Exception(f"[ERROR] No está definida la variable para '{key}'.")
             
             dialogue = re.sub(r"\{([^}]+)\}", replacer, dialogue)
             full_text = f"{speaker}: {dialogue}"
         else:
-            full_text = arg
+            # Se procesa la línea como diálogo sin speaker.
+            dialogue = arg.strip()
+            
+            def replacer(match):
+                key = match.group(1).strip()
+                if key in engine.characters:
+                    return engine.characters[key]
+                elif key in engine.scenes:
+                    return engine.scenes[key]
+                else:
+                    raise Exception(f"[ERROR] No está definida la variable para '{key}'.")
+            
+            dialogue = re.sub(r"\{([^}]+)\}", replacer, dialogue)
+            full_text = dialogue
+
         engine.current_dialogue = full_text
         engine.wait_for_keypress()
         engine.current_dialogue = ""
+
 
     def handle_exit(self, arg, engine):
         print("Evento 'exit'", arg)
@@ -200,3 +224,41 @@ class EventManager:
                 print(f"[char] Definido personaje: alias '{alias}', nombre '{alias}'")
             else:
                 raise Exception("[ERROR] Formato inválido en @char. Se esperaba: @char alias [as \"nombre\"]")
+    
+    def handle_jump_scene(self, arg, engine):
+        """
+        Procesa el salto a otra escena. Se espera que se pase el alias de la escena a la que se desea saltar.
+        Busca en engine.scenes la definición correspondiente y carga el archivo:
+        <game_path>/data/scenes/<archivo>.kag
+        que se procesa línea por línea.
+        
+        Ejemplo de uso:
+        @jump_scene first
+        """
+        # Se espera que el argumento sea solo el alias de la escena
+        parts = [p.strip() for p in arg.split("|") if p.strip()]
+        if len(parts) != 1:
+            raise Exception("[ERROR] Formato inválido en @jump_scene. Se esperaba: @jump_scene alias")
+        
+        scene_alias = parts[0]
+        
+        if scene_alias not in engine.scenes:
+            raise Exception(f"[ERROR] Escena '{scene_alias}' no está definida en system/scenes.kag.")
+        
+        # Obtener el nombre del archivo de la escena a partir de la definición
+        scene_file_name = engine.scenes[scene_alias]  # Por ejemplo, "first"
+        scene_file_path = os.path.join(engine.game_path, "data", "scenes", f"{scene_file_name}.kag")
+        
+        print(f"[jump_scene] Saltando a escena '{scene_alias}' desde: {scene_file_path}")
+        
+        try:
+            with open(scene_file_path, "r", encoding="utf-8") as f:
+                content = f.read()
+            # Procesar cada línea del archivo (ignorando líneas vacías y comentarios)
+            scene_commands = [line.strip() for line in content.splitlines() if line.strip() and not line.strip().startswith("#")]
+            for cmd in scene_commands:
+                print(f"[jump_scene] Comando de escena: {cmd}")
+                engine.event_manager.handle(cmd, engine)
+        except Exception as e:
+            raise Exception(f"[jump_scene] Error al cargar la escena '{scene_alias}': {e}")
+
