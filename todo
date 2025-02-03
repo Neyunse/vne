@@ -1,2 +1,6 @@
 * {} muestra / renderiza variables o los valores de una definicion
 * @ ejecuta un comando
+
+@menu:
+    button "Iniciar juego" action Start("start") # al hacer click, iniciara en el archivo scene/start.kag o cualquiera que se le indique en Start("<scene_alias>") que este definido en system/scenes.kag
+    button "Cerrar" action Quit() # cierra el juego.
