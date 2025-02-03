@@ -5,7 +5,6 @@ from vne.config import CONFIG
 
 class Renderer:
     def __init__(self, engine):
-        # Inicializa Pygame (si aún no lo está) y crea la ventana
         pygame.init()
         self.engine = engine
         self.screen = pygame.display.set_mode(
@@ -27,20 +26,17 @@ class Renderer:
                                         rect_cfg["width"], rect_cfg["height"])
             pygame.draw.rect(self.screen, rect_cfg["bg_color"], dialogue_rect)
             pygame.draw.rect(self.screen, rect_cfg["border_color"], dialogue_rect, 2)
-            # Renderizar el texto (se puede mejorar para saltos de línea, etc.)
             text_surface = self.font.render(self.engine.current_dialogue, True, (255, 255, 255))
             self.screen.blit(text_surface, (dialogue_rect.x + 10, dialogue_rect.y + 10))
 
     def draw_menu(self):
         if self.engine.current_menu:
-            # Dibuja un recuadro semitransparente en el centro de la pantalla
             menu_options = self.engine.current_menu
             menu_rect = pygame.Rect(100, 100, CONFIG["screen_width"] - 200, CONFIG["screen_height"] - 200)
             s = pygame.Surface((menu_rect.width, menu_rect.height), pygame.SRCALPHA)
             s.fill((80, 80, 80, 200))
             self.screen.blit(s, (menu_rect.x, menu_rect.y))
             pygame.draw.rect(self.screen, (255, 255, 255), menu_rect, 2)
-            # Dibuja cada opción
             y = menu_rect.y + 20
             for idx, option in enumerate(menu_options):
                 option_text = f"{idx + 1}. {option}"

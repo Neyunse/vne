@@ -11,7 +11,7 @@ class ScriptLexer:
         self.load_scripts()
 
     def load_scripts(self):
-        # Se asume que el script de inicio está en <game_path>/data/startup.kag
+        # Se asume que el script de partida se encuentra en: <game_path>/data/startup.kag
         script_path = f"{self.game_path}/data/startup.kag"
         try:
             with open(script_path, "r", encoding="utf-8") as f:

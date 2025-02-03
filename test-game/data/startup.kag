@@ -6,4 +6,5 @@
 @Load("system/characters.kag")
 
 # Llama/procesa/importa la primera escena
+# @process_scene <scene_name>
 @process_scene first
