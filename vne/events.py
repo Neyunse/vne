@@ -110,38 +110,39 @@ class EventManager:
     def handle_Load(self, arg, engine):
         """
         Carga un archivo dado en formato: @Load("ruta/al/archivo.kag")
-        Se almacena el contenido en engine.loaded_files.
-        Además, si se carga 'system/scenes.kag' o 'system/characters.kag', se procesa
-        cada línea que defina una escena o un personaje.
+        Almacena el contenido en engine.loaded_files y procesa dinámicamente
+        cada línea que sea un comando (aquellas que comienzan con '@').
         """
+        # Limpieza del argumento: quitar paréntesis y comillas
+        arg = arg.strip()
         if arg.startswith("(") and arg.endswith(")"):
             arg = arg[1:-1].strip()
         arg = arg.strip(' "\'')
+        
+        # Construir la ruta completa del archivo usando el path recibido
         file_path = os.path.join(engine.game_path, "data", arg)
+        
         try:
             with open(file_path, "r", encoding="utf-8") as f:
                 content = f.read()
-            engine.loaded_files[arg] = content
-            print(f"[Load] Archivo cargado: {file_path}")
-            # Procesar definiciones según el archivo cargado
-            if arg.lower() == "system/scenes.kag":
-                for line in content.splitlines():
-                    line = line.strip()
-                    print("[DEBUG] Línea de escenas:", line)
-                    if line.startswith("@scene"):
-                        # Se remueve el prefijo "@scene" y se procesa el resto.
-                        scene_def = line[len("@scene"):].strip()
-                        self.handle("@" + "scene " + scene_def, engine)
-            elif arg.lower() == "system/characters.kag":
-                for line in content.splitlines():
-                    line = line.strip()
-                    print("[DEBUG] Línea de personajes:", line)
-                    if line.startswith("@char"):
-                        # Se remueve el prefijo "@char" y se procesa el resto.
-                        char_def = line[len("@char"):].strip()
-                        self.handle("@" + "char " + char_def, engine)
         except Exception as e:
             print(f"[Load] Error al cargar {file_path}: {e}")
+            return  # Se detiene si ocurre algún error
+        
+        # Almacenar el contenido en engine.loaded_files para referencia futura
+        engine.loaded_files[arg] = content
+        print(f"[Load] Archivo cargado: {file_path}")
+        
+        # Procesar dinámicamente cada línea del archivo:
+        # Se recorren todas las líneas y se invoca self.handle() en las que sean comandos.
+        for line in content.splitlines():
+            line = line.strip()
+            if not line or line.startswith("#"):
+                continue  # Ignorar líneas vacías o comentarios
+            # Si la línea comienza con '@', la consideramos un comando a procesar.
+            if line.startswith("@"):
+                self.handle(line, engine)
+
 
     def handle_scene(self, arg, engine):
         """
