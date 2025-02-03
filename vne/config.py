@@ -16,8 +16,7 @@ CONFIG = {
     }
 }
 
-
-
+key = b"MyXorKey"
 
 def say(character, dialogue):
     """

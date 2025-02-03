@@ -3,3 +3,4 @@ from .core import VNEngine as Core
 from .lexer import ScriptLexer
 from .events import EventManager
 from .renderer import Renderer
+from .xor_data import xor_data
