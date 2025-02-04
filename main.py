@@ -108,7 +108,7 @@ def distribute_game(game_path):
     print(f"[distribute] data.pkg copiado a {dest_folder}")
 
     # elimina data.pkg de la carpeta principal
-    os.unlink(pkg_path)
+    #os.unlink(pkg_path)
 
     # 4) Copiar el binario actual (engine.exe) y renombrarlo a game.exe
     exe_source = os.path.abspath(sys.executable)

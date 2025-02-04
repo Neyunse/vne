@@ -61,9 +61,7 @@ class VNEngine:
         # Intentar cargar el script de inicio. Se buscan en la carpeta raíz o en scenes/
         candidates = [
             "startup.kagc",
-            "startup.kag",
-            os.path.join("scenes", "startup.kagc"),
-            os.path.join("scenes", "startup.kag")
+            "startup.kag"
         ]
         content = None
        

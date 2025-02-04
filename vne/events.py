@@ -2,6 +2,9 @@
 import os
 import pygame
 import re
+from vne.lexer import ScriptLexer
+from vne.xor_data import xor_data
+from vne.config import key
 
 class EventManager:
     def __init__(self):
@@ -126,28 +129,48 @@ class EventManager:
         engine.running = False
     
     def handle_Load(self, arg, engine):
-        """
-        Carga un archivo en formato: @Load("ruta/al/archivo.kag")
-        Almacena el contenido en engine.loaded_files y procesa cada línea que comience con '@'.
-        """
+        # Limpiar el argumento: quitar paréntesis y comillas
         arg = arg.strip()
         if arg.startswith("(") and arg.endswith(")"):
             arg = arg[1:-1].strip()
-        arg = arg.strip(' "\'')
-        file_path = os.path.join(engine.game_path, "data", arg)
+        arg = arg.strip('"').strip("'")
+        
+        # Determinar si este archivo es de definiciones (dinámico)
+        # Aquí se evalúa si en el nombre aparece "characters.kag", "vars.kag" o "scenes.kag"
+        force_compiled = any(keyword in arg.lower() for keyword in ["characters.kag", "vars.kag", "scenes.kag"])
+        
         try:
-            with open(file_path, "r", encoding="utf-8") as f:
-                content = f.read()
+            if force_compiled:
+                # Forzar el uso de la versión compilada
+                if not arg.lower().endswith(".kagc"):
+                    compiled_arg = arg[:-4] + ".kagc"
+                else:
+                    compiled_arg = arg
+                data = engine.resource_manager.get_bytes(compiled_arg)
+                from vne.xor_data import xor_data
+                from vne.config import key
+                # Descifrar el contenido
+                data = xor_data(data, key)
+                print(f"[Load] Archivo compilado cargado: {compiled_arg}")
+                engine.loaded_files[compiled_arg] = data
+                content = data.decode("utf-8", errors="replace")
+            else:
+                # Para otros recursos, cargar normalmente
+                data = engine.resource_manager.get_bytes(arg)
+                print(f"[Load] Archivo cargado: {arg}")
+                engine.loaded_files[arg] = data
+                content = data.decode("utf-8", errors="replace")
+            
+            # Procesar el contenido si parece contener directivas (líneas que comienzan con "@")
+            if any(line.strip().startswith("@") for line in content.splitlines()):
+                from vne.lexer import ScriptLexer
+                commands = ScriptLexer(engine.game_path, engine).parse_script(content)
+                for cmd in commands:
+                    print(f"[Load-Process] Ejecutando comando: {cmd}")
+                    self.handle(cmd, engine)
         except Exception as e:
-            raise Exception(f"[Load] Error al cargar {file_path}: {e}")
-        engine.loaded_files[arg] = content
-        print(f"[Load] Archivo cargado: {file_path}")
-        for line in content.splitlines():
-            line = line.strip()
-            if not line or line.startswith("#"):
-                continue
-            if line.startswith("@"):
-                self.handle(line, engine)
+            print(f"[Load] Error al cargar {arg}: {e}")
+
     
     def handle_scene(self, arg, engine):
         """
@@ -178,24 +201,34 @@ class EventManager:
             raise Exception("[ERROR] Formato inválido en @def. Se esperaba: @def alias = \"valor\"")
     
     def handle_process_scene(self, arg, engine):
-        import os
-        from vne.lexer import ScriptLexer
 
-        # Ej. arg = "first", o "second"
+        # Limpiar el argumento para extraer el alias de la escena.
         arg = arg.strip()
         if arg.startswith("(") and arg.endswith(")"):
             arg = arg[1:-1].strip()
-        # quitar comillas si las hay
         if (arg.startswith('"') and arg.endswith('"')) or (arg.startswith("'") and arg.endswith("'")):
             arg = arg[1:-1].strip()
-
+        
         scene_alias = arg
-        base_name = os.path.join("scenes", scene_alias)  # e.g. "scenes/first"
+        # Usar la definición en engine.scenes, si existe.
+        if scene_alias in engine.scenes:
+            filename = engine.scenes[scene_alias]
+        else:
+            filename = scene_alias
+
+        # Construir la ruta base: se asume que las escenas están en la carpeta "scenes".
+        base_name = os.path.join("scenes", filename)
+
+        # Primero intentamos cargar la versión compilada (".kagc").
         try:
-            file_bytes = engine.resource_manager.get_script_bytes(base_name)
-            content = file_bytes.decode("utf-8")
-        except FileNotFoundError:
-            raise Exception(f"[ERROR] No se encontró la escena '{scene_alias}' ni compilada (.kagc) ni normal (.kag).")
+            # Construir la ruta completa agregando la extensión .kagc
+            compiled_path = base_name + ".kagc"
+            file_bytes = engine.resource_manager.get_bytes(compiled_path)
+            # Aplicar XOR para descifrar el contenido.
+            content = xor_data(file_bytes, key).decode("utf-8", errors="replace")
+        except Exception as e:
+            # Si falla (por ejemplo, no se encuentra la versión compilada), se lanza error.
+            raise Exception(f"[ERROR] No se encontró la versión compilada del script para '{base_name}': {e}")
 
         print(f"[process_scene] Procesando escena '{scene_alias}'.")
         scene_commands = ScriptLexer(engine.game_path, engine).parse_script(content)
@@ -203,6 +236,8 @@ class EventManager:
             print(f"[process_scene] Comando de escena: {cmd}")
             engine.event_manager.handle(cmd, engine)
         engine.wait_for_keypress()
+
+
 
     def handle_jump_scene(self, arg, engine):
         """
@@ -231,11 +266,6 @@ class EventManager:
             raise Exception("[ERROR] Formato extendido en @jump_scene no implementado.")
     
     def handle_char(self, arg, engine):
-        """
-        Define un personaje. Permite:
-          @char K as "Kuro"  -> Define alias "K" con display name "Kuro".
-          @char K           -> Usa "K" como display name.
-        """
         if " as " in arg:
             parts = arg.split(" as ")
             if len(parts) == 2:
@@ -244,14 +274,15 @@ class EventManager:
                 engine.characters[alias] = display_name
                 print(f"[char] Definido personaje: alias '{alias}', nombre '{display_name}'")
             else:
-                raise Exception("[ERROR] Formato inválido en @char. Se esperaba: @char alias as \"nombre\"")
+                print("[char] Formato inválido. Se esperaba: @char alias as \"nombre\"")
         else:
             alias = arg.strip()
             if alias:
                 engine.characters[alias] = alias
                 print(f"[char] Definido personaje: alias '{alias}', nombre '{alias}'")
             else:
-                raise Exception("[ERROR] Formato inválido en @char. Se esperaba: @char alias [as \"nombre\"]")
+                print("[char] Formato inválido. Se esperaba: @char alias [as \"nombre\"]")
+
     
     def handle_menu(self, arg, engine):
         """

@@ -1,5 +1,6 @@
 # engine/vne/lexer.py
-
+from vne.xor_data import xor_data
+from vne.config import key
 class ScriptLexer:
     """
     Lee y parsea el script (por ejemplo, startup.kag), uniendo las líneas que
@@ -15,12 +16,20 @@ class ScriptLexer:
     def load_scripts(self):
         base_name = "startup"  # sin extensión
         try:
-            file_bytes = self.engine.resource_manager.get_script_bytes(base_name)
-            content = file_bytes.decode("utf-8")
+            # Se construye la ruta del archivo compilado
+            compiled_path = base_name + ".kagc"
+            # Se carga el contenido del archivo compilado usando get_bytes()
+            file_bytes = self.engine.resource_manager.get_bytes(compiled_path)
+            # Se descifra el contenido aplicando XOR con la clave
+            from vne.xor_data import xor_data
+            from vne.config import key
+            plain_bytes = xor_data(file_bytes, key)
+            content = plain_bytes.decode("utf-8", errors="replace")
             self.commands = self.parse_script(content)
-        except FileNotFoundError:
-            print(f"[Lexer] No se encontró ni 'startup.kagc' ni 'startup.kag' en pkg o disco.")
+        except Exception as e:
+            print(f"[Lexer] No se encontró la versión compilada de 'startup': {e}")
             self.commands = []
+
             
     def parse_script(self, content):
         lines = content.splitlines()
