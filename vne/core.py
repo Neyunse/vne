@@ -47,7 +47,9 @@ class VNEngine:
                 if event.type == pygame.QUIT:
                     self.running = False
                     return
-                if event.type == pygame.KEYDOWN:
+                
+                # uso del mause para avanzar en los dialogos
+                if event.type == pygame.MOUSEBUTTONDOWN:
                     waiting = False
             self.renderer.render()
             self.clock.tick(30)
