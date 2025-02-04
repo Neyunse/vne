@@ -53,24 +53,43 @@ def init_game(game_path):
         f"{game_path}/data",
         f"{game_path}/data/system",
         f"{game_path}/data/scenes",
-        f"{game_path}/data/images/bg",
-        f"{game_path}/data/images/sprites",
-        f"{game_path}/data/audio/bgm",
-        f"{game_path}/data/audio/sfx",
-        f"{game_path}/data/ui",
-        f"{game_path}/saves",
+        #f"{game_path}/data/images/bg",
+        #f"{game_path}/data/images/sprites",
+        #f"{game_path}/data/audio/bgm",
+        #f"{game_path}/data/audio/sfx",
+        #f"{game_path}/data/ui",
+        #f"{game_path}/saves",
     ]
     for d in directories:
         os.makedirs(d, exist_ok=True)
         print(f"Directorio creado: {d}")
 
     startup_file = os.path.join(game_path, "data", "startup.kag")
+    scenes_file = os.path.join(game_path, "data","system", "scenes.kag")
+    characters_file = os.path.join(game_path, "data","system", "characters.kag")
+    first_scene_file = os.path.join(game_path, "data","scenes", "first.kag")
+
+
     with open(startup_file, "w", encoding="utf-8") as f:
         f.write("# Script de inicio del juego\n")
         f.write("@Load(\"system/scenes.kag\")\n")
         f.write("@Load(\"system/characters.kag\")\n")
         f.write("@process_scene first\n")
-    print(f"Archivo de inicio creado: {startup_file}")
+
+    with open(scenes_file, "w", encoding="utf-8") as f:
+        f.write("@scene first = \"first\"")
+    
+    with open(characters_file, "w", encoding="utf-8") as f:
+        f.write("@char K as \"Kuro\" ")
+
+    with open(first_scene_file, "w", encoding="utf-8") as f:
+        f.write("Hola Mundo\n")
+        f.write("K: I started a new stage in this academy\n")
+        f.write("K: my name is {K}.\n")
+        f.write("@exit\n")
+
+    print(f"Archivos generados correctamente")
+
 
 def distribute_game(game_path):
     """
@@ -123,7 +142,9 @@ def run_game(game_path):
     Ejecuta el juego en modo desarrollo.
     Se espera que game_path sea la carpeta del juego (donde están data/, etc.).
     """
- 
+    data_folder = os.path.join(game_path, "data")
+    compile_all_kag_in_folder(data_folder, key)
+
     engine = Core(game_path)
     engine.run()
 
