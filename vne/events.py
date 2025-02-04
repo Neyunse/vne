@@ -147,8 +147,7 @@ class EventManager:
                 else:
                     compiled_arg = arg
                 data = engine.resource_manager.get_bytes(compiled_arg)
-                from vne.xor_data import xor_data
-                from vne.config import key
+                 
                 # Descifrar el contenido
                 data = xor_data(data, key)
                 print(f"[Load] Archivo compilado cargado: {compiled_arg}")

@@ -66,13 +66,34 @@ class ResourceManager:
     def get_script_bytes(self, base_name):
         """
         Intenta cargar el script compilado (<base_name>.kagc) y lo descifra usando XOR.
-        Si no se encuentra, lanza un error.
+        El archivo compilado debe tener un header en la primera línea con el formato:
+            VNEFILE:<identificador>;VERSION:1.0\n
+        Se verifica que el identificador coincida con lo esperado.
+        La key se obtiene de forma externa (por ejemplo, del archivo mykey.pkey).
         """
         compiled_path = base_name + ".kagc"
         try:
-            xor_content = self.get_bytes(compiled_path)
-            plain_bytes = xor_data(xor_content, key)
-            # Opcional: Validar que el contenido descifrado sea correcto
+            file_bytes = self.get_bytes(compiled_path)
+            # Separar el header de la siguiente forma:
+            header, encrypted_content = file_bytes.split(b'\n', 1)
+            # Verificar que el header comience con "VNEFILE:"
+            if not header.startswith(b"VNEFILE:"):
+                raise Exception("Header inválido en el script compilado.")
+            # Extraer el identificador (por ejemplo, "startup")
+            header_content = header.decode("utf-8").strip()  # Ejemplo: "VNEFILE:startup;VERSION:1.0"
+            parts = header_content.split(";")
+            id_part = parts[0]  # Debería ser "VNEFILE:startup"
+            if not id_part.startswith("VNEFILE:"):
+                raise Exception("Header inválido: falta 'VNEFILE:'")
+            file_identifier = id_part[len("VNEFILE:"):].strip()
+            # Aquí puedes comparar file_identifier con lo esperado, si es necesario.
+            # Por ejemplo, si base_name es "startup", verificar que file_identifier == "startup".
+            expected_identifier = os.path.basename(base_name)
+            if file_identifier != expected_identifier:
+                raise Exception(f"Identificador del archivo ('{file_identifier}') no coincide con lo esperado ('{expected_identifier}').")
+            # Usar la key externa para descifrar
+        
+            plain_bytes = xor_data(encrypted_content, key)
             if b'\x00' in plain_bytes:
                 raise Exception("El contenido descifrado contiene caracteres nulos.")
             return plain_bytes

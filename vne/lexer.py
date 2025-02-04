@@ -13,6 +13,7 @@ class ScriptLexer:
         self.current = 0
         self.load_scripts()
     
+ 
     def load_scripts(self):
         base_name = "startup"  # sin extensión
         try:
@@ -21,8 +22,7 @@ class ScriptLexer:
             # Se carga el contenido del archivo compilado usando get_bytes()
             file_bytes = self.engine.resource_manager.get_bytes(compiled_path)
             # Se descifra el contenido aplicando XOR con la clave
-            from vne.xor_data import xor_data
-            from vne.config import key
+            
             plain_bytes = xor_data(file_bytes, key)
             content = plain_bytes.decode("utf-8", errors="replace")
             self.commands = self.parse_script(content)
