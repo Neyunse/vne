@@ -67,20 +67,24 @@ class EventManager:
     
     def handle_say(self, arg, engine):
         """
-        Procesa un diálogo.
-          - Con speaker: <speaker>: <dialogue>
-          - Sin speaker: simplemente el diálogo.
-        Reemplaza marcadores {alias} buscando en engine.characters y engine.scenes.
+        Procesa un diálogo:
+        - Con speaker: <speaker>: <dialogue>
+        - Sin speaker: simplemente el diálogo.
+        Reemplaza marcadores {alias} buscando en engine.characters, engine.scenes y engine.vars.
         Si se usa un speaker que no está definido, lanza un error.
+        Asigna el nombre del personaje a engine.current_character_name y el diálogo a engine.current_dialogue.
+        Luego espera a que el usuario haga clic (en lugar de esperar una tecla).
         """
+        import re
         if ':' in arg:
             speaker, dialogue = arg.split(":", 1)
             speaker = speaker.strip()
             dialogue = dialogue.strip()
             if speaker not in engine.characters:
                 raise Exception(f"[ERROR] El personaje '{speaker}' no está definido.")
-            else:
-                speaker = engine.characters[speaker]
+            # Se asigna el nombre registrado en engine.characters (por ejemplo, "Kuro")
+            engine.current_character_name = engine.characters[speaker]
+            # Se procesa el diálogo para reemplazar marcadores {alias}
             def replacer(match):
                 key = match.group(1).strip()
                 if key in engine.characters:
@@ -88,14 +92,16 @@ class EventManager:
                 elif key in engine.scenes:
                     return engine.scenes[key]
                 elif key in engine.vars:
-                
                     return engine.vars[key]
                 else:
                     raise Exception(f"[ERROR] No está definida la variable para '{key}'.")
             dialogue = re.sub(r"\{([^}]+)\}", replacer, dialogue)
-            full_text = f"{speaker}: {dialogue}"
+            # El diálogo se asigna sin el nombre, ya que éste se mostrará en una caja aparte
+            engine.current_dialogue = dialogue
         else:
-            dialogue = arg.strip()
+            # Si no hay speaker, se asigna el diálogo y se limpia el nombre
+            engine.current_dialogue = arg.strip()
+            engine.current_character_name = ""
             def replacer(match):
                 key = match.group(1).strip()
                 if key in engine.characters:
@@ -104,12 +110,14 @@ class EventManager:
                     return engine.scenes[key]
                 else:
                     raise Exception(f"[ERROR] No está definida la variable para '{key}'.")
-            dialogue = re.sub(r"\{([^}]+)\}", replacer, dialogue)
-            full_text = dialogue
+            engine.current_dialogue = re.sub(r"\{([^}]+)\}", replacer, engine.current_dialogue)
         
-        engine.current_dialogue = full_text
+        # Esperar al clic del ratón (en lugar de wait_for_keypress)
         engine.wait_for_keypress()
+        # Limpiar después de avanzar
         engine.current_dialogue = ""
+        engine.current_character_name = ""
+
     
     def handle_bg(self, arg, engine):
         bg_path = os.path.join(engine.game_path, "data", "images", "bg", arg)
@@ -125,7 +133,7 @@ class EventManager:
             raise Exception(f"[ERROR] Imagen de fondo no encontrada: {bg_path}")
     
     def handle_exit(self, arg, engine):
-        print("Evento 'exit':", arg)
+        print("Evento 'exit'", arg)
         engine.running = False
     
     def handle_Load(self, arg, engine):

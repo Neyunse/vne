@@ -25,20 +25,18 @@ class VNEngine:
         self.config = CONFIG
         
         print(f"Iniciando el juego desde {self.game_path}...")
-        self.load_game_resources()
         
         self.resource_manager = ResourceManager(self.game_path)
         self.lexer = ScriptLexer(self.game_path, self)
         self.event_manager = EventManager()
         self.renderer = Renderer(self)
         self.clock = pygame.time.Clock()
+
+        self.current_dialogue = ""
+        self.current_character_name = ""
         
         # Inicializar el UI Manager de pygame_gui.
         self.gui_manager = pygame_gui.UIManager((CONFIG["screen_width"], CONFIG["screen_height"]))
-    
-    def load_game_resources(self):
-        print("Cargando recursos del juego...")
-        # Aquí se pueden cargar otros recursos globales si se desea.
     
     def wait_for_keypress(self):
         waiting = True
@@ -51,8 +49,10 @@ class VNEngine:
                 # uso del mause para avanzar en los dialogos
                 if event.type == pygame.MOUSEBUTTONDOWN:
                     waiting = False
+                               
             self.renderer.render()
             self.clock.tick(30)
+            
     
     def run(self):
         """
