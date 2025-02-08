@@ -3,11 +3,10 @@ import os
 import pygame
 from vne.xor_data import xor_data
 from vne.config import key
+import numpy as np
+
 class ScriptLexer:
-    """
-    Lee y parsea el script (por ejemplo, startup.kag), uniendo las líneas que
-    están indentadas después de un comando de bloque (aquellos que terminan en ":").
-    """
+ 
     def __init__(self, game_path, engine):
         self.game_path = game_path
         self.engine = engine
@@ -17,14 +16,16 @@ class ScriptLexer:
     
  
     def load_scripts(self):
-        base_name = "startup"  # sin extensión
+        """
+        The function `load_scripts` loads and parses a script file after decoding it using XOR
+        encryption.
+        """
+        base_name = "startup"   
         try:
-            # Se construye la ruta del archivo compilado
+       
             compiled_path = base_name + ".kagc"
-            # Se carga el contenido del archivo compilado usando get_bytes()
             file_bytes = self.engine.resource_manager.get_bytes(compiled_path)
-            # Se descifra el contenido aplicando XOR con la clave
-            
+             
             plain_bytes = xor_data(file_bytes, key)
             content = plain_bytes.decode("utf-8", errors="replace")
             self.commands = self.parse_script(content)
@@ -34,25 +35,36 @@ class ScriptLexer:
 
             
     def parse_script(self, content):
+        """
+        This function parses a script by splitting its content into lines, filtering out empty lines and
+        comments, and grouping consecutive non-empty lines into commands.
+        
+        :param content: The `parse_script` method you provided is designed to parse a script by
+        splitting its content into lines and extracting commands based on certain conditions. The method
+        skips empty lines and lines starting with "#" as comments. It concatenates lines that belong to
+        the same command if they meet specific criteria
+        :return: The `parse_script` method is returning a list of commands extracted from the input
+        `content` string. The method parses the content line by line, skipping empty lines and lines
+        starting with "#" comments. It concatenates lines that belong to the same command based on
+        certain conditions and appends each complete command to the `commands` list. Finally, it returns
+        the list of extracted commands.
+        """
         lines = content.splitlines()
         commands = []
         current_command = None
-        # Iterar sobre cada línea del contenido
+        
         for line in lines:
-            # Si la línea está vacía o es un comentario, se ignora
+            
             if not line.strip() or line.strip().startswith("#"):
                 continue
-            # Si no hay un comando en construcción, se inicia uno nuevo.
+             
             if current_command is None:
                 current_command = line.rstrip()
             else:
-                # Si el comando actual empieza con "@menu:" y la línea actual (después de quitar espacios)
-                # NO comienza con "@", la unimos al comando actual.
+                
                 if current_command.lstrip().startswith("@menu:") and not line.lstrip().startswith("@"):
                     current_command += "\n" + line.lstrip()
                 else:
-                    # Si la línea actual empieza con "@", es un nuevo comando.
-                    # Se guarda el comando actual y se inicia uno nuevo.
                     commands.append(current_command)
                     current_command = line.rstrip()
         if current_command is not None:
@@ -63,6 +75,11 @@ class ScriptLexer:
 
     
     def get_next_command(self):
+        """
+        The function `get_next_command` returns the next command in a list of commands if available.
+        :return: The `get_next_command` method returns the next command in the list of commands if there
+        are more commands available. If there are no more commands left to return, it returns `None`.
+        """
         if self.current < len(self.commands):
             cmd = self.commands[self.current]
             self.current += 1
@@ -71,32 +88,52 @@ class ScriptLexer:
     
     def load_image(self, relative_path):
         """
-        Intenta cargar una imagen usando el ResourceManager para soportar tanto data.pkg como la carpeta data/.
+        The function `load_image` loads an image from a relative path using Pygame, handling exceptions
+        and ensuring full opacity.
         
-        Parámetros:
-        - engine: el motor (que tiene el ResourceManager y game_path).
-        - relative_path: ruta relativa dentro de la carpeta de datos, por ejemplo:
-                "images/sprites/kuro.png" o "images/bg/school.png"
-                
-        Devuelve:
-        - Una superficie de Pygame con la imagen cargada.
-        
-        Si falla, intenta cargar directamente desde el sistema de archivos.
+        :param relative_path: The `load_image` method you provided seems to be a part of a class that
+        loads images for a game engine. The `relative_path` parameter is used to specify the path to the
+        image file relative to the game's data directory
+        :return: The `load_image` method returns the loaded image after processing it with full opacity.
         """
+ 
         try:
-            # Intentar cargar usando el ResourceManager (esto soporta data.pkg)
+           
             image_bytes = self.engine.resource_manager.get_bytes(relative_path)
             image_stream = io.BytesIO(image_bytes)
             image = pygame.image.load(image_stream).convert_alpha()
+            #image = self.force_full_opacity(image)
             return image
         except Exception as e:
-            # Fallback: carga directamente desde la carpeta data/
+           
             full_path = os.path.join(self.engine.game_path, "data", relative_path)
             if os.path.exists(full_path):
                 try:
-                    image = pygame.image.load(full_path).convert_alpha()
+                    image = pygame.image.load(full_path)
+                    #image = self.force_full_opacity(image)
+
                     return image
                 except Exception as e2:
                     raise Exception(f"Error al cargar la imagen desde '{full_path}': {e2}")
             else:
                 raise Exception(f"Error al cargar la imagen en '{relative_path}': {e}")
+    
+    def force_full_opacity(self, surface):
+        """
+        This Python function converts a surface to use alpha transparency and sets all alpha values to
+        full opacity.
+        
+        :param surface: The `surface` parameter in the `force_full_opacity` function is a surface object
+        representing an image or a portion of the screen in Pygame. The function converts the surface to
+        use alpha transparency, sets all alpha values to 255 (full opacity), and then returns the
+        modified surface
+        :return: the surface with full opacity, where the alpha values of all pixels in the surface have
+        been set to 255 (fully opaque).
+        """
+ 
+        surface = surface.convert_alpha()
+         
+        alpha_array = pygame.surfarray.pixels_alpha(surface)
+        alpha_array[:] = 255  
+        del alpha_array  
+        return surface

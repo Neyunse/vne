@@ -1,4 +1,3 @@
-# engine/vne/events.py
 import os
 import pygame
 import re
@@ -12,6 +11,10 @@ class EventManager:
         self.register_default_events()
     
     def register_default_events(self):
+        """
+        The function `register_default_events` registers various event handlers for different events in
+        a Python class.
+        """
         self.register_event("say", self.handle_say)
         self.register_event("bg", self.handle_bg)
         self.register_event("exit", self.handle_exit)
@@ -22,24 +25,46 @@ class EventManager:
         self.register_event("scene", self.handle_scene)
         self.register_event("def", self.handle_define)
         self.register_event("sprite", self.handle_sprite)
-        self.register_event("hide", self.handle_hide)
+        self.register_event("hide", self.handle_hide_sprite)
+        self.register_event("rename", self.handle_rename)
 
     def register_event(self, event_name, handler):
+        """
+        The function `register_event` adds a handler to a list of event handlers associated with a
+        specific event name.
+        
+        :param event_name: The `event_name` parameter is a string that represents the name of the event
+        being registered
+        :param handler: The `handler` parameter in the `register_event` method is a function or method
+        that will be called when the specified `event_name` is triggered. It is essentially the callback
+        function that will be executed when the event occurs
+        """
         if event_name not in self.event_handlers:
             self.event_handlers[event_name] = []
         self.event_handlers[event_name].append(handler)
     
     def handle(self, command, engine=None):
+        """
+        The function `handle` processes a command by extracting event name and argument, then dispatches
+        the event with the argument to the appropriate handler.
+        
+        :param command: The `command` parameter in the `handle` method is a string that represents the
+        input command to be processed. It may contain various types of commands, such as event triggers,
+        messages, or other instructions to be handled by the method. The method processes the command
+        based on its structure and content to
+        :param engine: The `engine` parameter in the `handle` method is used to specify the engine that
+        will be passed to the `dispatch` method. It is an optional parameter, meaning that if no engine
+        is provided when calling the `handle` method, it will default to `None`. The `engine`
+        """
         command = command.strip()
-        # Si el comando comienza con "@", es un comando especial.
+         
         if command.startswith("@"):
             stripped = command[1:].strip()
-            # Extraer el nombre del comando y el argumento usando regex.
+         
             match = re.match(r"(\w+)(.*)", stripped)
             if match:
                 event_name = match.group(1)
                 arg = match.group(2).strip()
-                # Si arg comienza con ":" (por ejemplo, en "@menu:"), lo quitamos.
                 arg = arg.lstrip(":").strip()
             else:
                 event_name = stripped
@@ -57,6 +82,21 @@ class EventManager:
             self.dispatch("say", command.strip(), engine)
     
     def dispatch(self, event_name, arg, engine=None):
+        """
+        The `dispatch` function takes an event name, argument, and optional engine, then calls the
+        corresponding event handlers with the argument and engine.
+        
+        :param event_name: The `event_name` parameter in the `dispatch` method is a string that
+        represents the name of the event for which you want to dispatch the handlers. It is used to look
+        up the appropriate handlers for that specific event from the `event_handlers` dictionary
+        :param arg: The `arg` parameter in the `dispatch` method represents the argument that will be
+        passed to the event handlers when the event is triggered. It could be any data or object that
+        the event handlers need to process or work with
+        :param engine: The `engine` parameter in the `dispatch` method is an optional argument that
+        represents the engine or system on which the event is being dispatched. It is used to provide
+        additional context or functionality to the event handlers when they are called. If an `engine`
+        is provided, it will be passed along
+        """
         handlers = self.event_handlers.get(event_name, [])
         if not handlers:
             raise Exception(f"[ERROR] No hay manejadores para el evento '{event_name}'.")
@@ -65,24 +105,28 @@ class EventManager:
     
     def handle_say(self, arg, engine):
         """
-        Procesa un diálogo:
-        - Con speaker: <speaker>: <dialogue>
-        - Sin speaker: simplemente el diálogo.
-        Reemplaza marcadores {alias} buscando en engine.characters, engine.scenes y engine.vars.
-        Si se usa un speaker que no está definido, lanza un error.
-        Asigna el nombre del personaje a engine.current_character_name y el diálogo a engine.current_dialogue.
-        Luego espera a que el usuario haga clic (en lugar de esperar una tecla).
+        The `handle_say` function in Python processes dialogue for characters in a game engine,
+        replacing variables with their corresponding values before waiting for user input.
+        
+        :param arg: The `arg` parameter in the `handle_say` method is used to represent the input string
+        that contains the dialogue to be spoken by a character. This method handles parsing the input
+        string to extract the speaker (if specified) and the dialogue itself. If the speaker is
+        specified, it checks if
+        :param engine: The `engine` parameter in the `handle_say` method seems to be an object that
+        contains information about characters, scenes, and variables in a storytelling engine. It is
+        used to process dialogue and replace placeholders with corresponding values before displaying
+        the dialogue. The method also waits for a keypress before clearing
         """
-        import re
+ 
         if ':' in arg:
             speaker, dialogue = arg.split(":", 1)
             speaker = speaker.strip()
             dialogue = dialogue.strip()
             if speaker not in engine.characters:
                 raise Exception(f"[ERROR] El personaje '{speaker}' no está definido.")
-            # Se asigna el nombre registrado en engine.characters (por ejemplo, "Kuro")
+    
             engine.current_character_name = engine.characters[speaker]
-            # Se procesa el diálogo para reemplazar marcadores {alias}
+       
             def replacer(match):
                 key = match.group(1).strip()
                 if key in engine.characters:
@@ -94,10 +138,10 @@ class EventManager:
                 else:
                     raise Exception(f"[ERROR] No está definida la variable para '{key}'.")
             dialogue = re.sub(r"\{([^}]+)\}", replacer, dialogue)
-            # El diálogo se asigna sin el nombre, ya que éste se mostrará en una caja aparte
+ 
             engine.current_dialogue = dialogue
         else:
-            # Si no hay speaker, se asigna el diálogo y se limpia el nombre
+        
             engine.current_dialogue = arg.strip()
             engine.current_character_name = ""
             def replacer(match):
@@ -110,68 +154,149 @@ class EventManager:
                     raise Exception(f"[ERROR] No está definida la variable para '{key}'.")
             engine.current_dialogue = re.sub(r"\{([^}]+)\}", replacer, engine.current_dialogue)
         
-        # Esperar al clic del ratón (en lugar de wait_for_keypress)
+ 
         engine.wait_for_keypress()
-        # Limpiar después de avanzar
+ 
         engine.current_dialogue = ""
         engine.current_character_name = ""
 
     
     def handle_bg(self, arg, engine):
         """
-        Carga la imagen de fondo. Se espera que 'arg' sea el nombre del archivo,
-        por ejemplo, "school.png". Se busca en "images/bg/".
+        The function `handle_bg` loads and scales a background image for a game engine in Python.
+        
+        :param arg: The `arg` parameter in the `handle_bg` method seems to represent the name or
+        identifier of the background image that needs to be loaded and displayed. It is used to
+        construct the relative path to the background image file by joining the "images/bg" directory
+        with the provided argument followed by the "
+        :param engine: The `engine` parameter seems to be an object that contains information and
+        functionality related to the game engine. It likely has attributes or methods that are being
+        used in the `handle_bg` method, such as `game_path`, `renderer`, and `current_bg`
         """
+ 
         load_image = ScriptLexer(engine.game_path, engine).load_image
-        # Construir la ruta relativa para el fondo
-        relative_path = os.path.join("images", "bg", arg)
+        
+        relative_path = os.path.join("images", "bg", arg + ".jpg")
         try:
             bg_image = load_image(relative_path)
-            # Escalar la imagen al tamaño de la pantalla
+            
             bg_image = pygame.transform.scale(bg_image, (engine.renderer.screen.get_width(),
                                                         engine.renderer.screen.get_height()))
             engine.current_bg = bg_image
         except Exception as e:
             raise Exception(f"[bg] Error al cargar la imagen de fondo: {e}")
-
+        
+    def handle_sprite(self, arg, engine):
+        """
+        The function `handle_sprite` loads and stores a sprite image with a specified alias and position
+        in the game engine.
+        
+        :param arg: The `arg` parameter in the `handle_sprite` method is a string that contains
+        information about the sprite to be handled. It is expected to have the format "sprite_alias at
+        position", where:
+        :param engine: The `engine` parameter in the `handle_sprite` method seems to be an object that
+        contains information and functionality related to the game engine or game environment. It likely
+        includes attributes and methods that are used to manage game elements, such as loading images,
+        handling sprites, and storing sprite information
+        """
+ 
+        load_image = ScriptLexer(engine.game_path, engine).load_image
+ 
+        parts = arg.split(" at ")
+        sprite_alias = parts[0].strip()
+        position = parts[1].strip().lower() if len(parts) > 1 else "center"
+         
+        relative_path = os.path.join("images", "sprites", sprite_alias + ".png")
+        try:
+            sprite_image = load_image(relative_path)
+        except Exception as e:
+            raise Exception(f"[sprite] {e}")
+         
+        if not hasattr(engine, "sprites"):
+            engine.sprites = {}
+        engine.sprites[sprite_alias] = {"image": sprite_image, "position": position}
+        print(f"[sprite] Sprite '{sprite_alias}' mostrado en posición '{position}'.")
+    
+    def handle_hide_sprite(self, arg, engine):
+        """
+        This Python function handles hiding a sprite in a game engine by removing it from the engine's
+        sprites dictionary if it exists.
+        
+        :param arg: The `arg` parameter in the `handle_hide_sprite` function is expected to be a string
+        that represents the alias of a sprite that needs to be hidden. This alias is used to identify
+        the specific sprite that should be removed from the `engine.sprites` dictionary if it exists
+        :param engine: The `engine` parameter in the `handle_hide_sprite` function seems to be an object
+        that contains a dictionary attribute named `sprites`. This dictionary likely stores sprite
+        aliases as keys and corresponding sprite objects as values. The function checks if the provided
+        `sprite_alias` exists in the `engine.sprites` dictionary
+        """
+ 
+        sprite_alias = arg.strip()
+        if hasattr(engine, "sprites") and sprite_alias in engine.sprites:
+            del engine.sprites[sprite_alias]
+            print(f"[hide] Sprite '{sprite_alias}' ocultado.")
+        else:
+            print(f"[hide] No se encontró el sprite '{sprite_alias}' para ocultarlo.")
     
     def handle_exit(self, arg, engine):
+        """
+        The function `handle_exit` prints a message and sets the `running` attribute of the `engine`
+        object to `False`.
+        
+        :param arg: The `arg` parameter in the `handle_exit` method is typically used to pass any
+        additional information or arguments related to the exit event that triggered the method. It can
+        be used to provide context or specific details about the exit event being handled
+        :param engine: The `engine` parameter in the `handle_exit` method seems to be an object that
+        contains a boolean attribute `running`. This attribute is being set to `False` when the method
+        is called, likely to indicate that the engine should stop running or exit
+        """
         print("Evento 'exit'", arg)
         engine.running = False
     
     def handle_Load(self, arg, engine):
-        # Limpiar el argumento: quitar paréntesis y comillas
+        """
+        The `handle_Load` function in Python loads and processes KAG/KAGC files, handling both compiled
+        and regular files, executing commands found in the content.
+        
+        :param arg: The `arg` parameter in the `handle_Load` method is a string that represents the file
+        path or name of the resource that needs to be loaded. It is processed to handle different cases
+        such as stripping whitespace, removing quotes, and checking for specific keywords to determine
+        if the resource needs to be compiled
+        :param engine: The `engine` parameter in the `handle_Load` method seems to be an instance of
+        some class that contains methods and attributes related to resource management and script
+        execution in a game engine. It is likely used to interact with game resources, load files, and
+        execute commands within the game environment
+        """
+   
         arg = arg.strip()
         if arg.startswith("(") and arg.endswith(")"):
             arg = arg[1:-1].strip()
         arg = arg.strip('"').strip("'")
         
-        # Determinar si este archivo es de definiciones (dinámico)
-        # Aquí se evalúa si en el nombre aparece "characters.kag", "vars.kag" o "scenes.kag"
         force_compiled = any(keyword in arg.lower() for keyword in ["characters.kag", "vars.kag", "scenes.kag"])
         
         try:
             if force_compiled:
-                # Forzar el uso de la versión compilada
+                
                 if not arg.lower().endswith(".kagc"):
                     compiled_arg = arg[:-4] + ".kagc"
                 else:
                     compiled_arg = arg
                 data = engine.resource_manager.get_bytes(compiled_arg)
                  
-                # Descifrar el contenido
+         
                 data = xor_data(data, key)
                 print(f"[Load] Archivo compilado cargado: {compiled_arg}")
                 engine.loaded_files[compiled_arg] = data
                 content = data.decode("utf-8", errors="replace")
             else:
-                # Para otros recursos, cargar normalmente
+                 
                 data = engine.resource_manager.get_bytes(arg)
                 print(f"[Load] Archivo cargado: {arg}")
                 engine.loaded_files[arg] = data
                 content = data.decode("utf-8", errors="replace")
             
-            # Procesar el contenido si parece contener directivas (líneas que comienzan con "@")
+            
             if any(line.strip().startswith("@") for line in content.splitlines()):
               
                 commands = ScriptLexer(engine.game_path, engine).parse_script(content)
@@ -184,9 +309,18 @@ class EventManager:
     
     def handle_scene(self, arg, engine):
         """
-        Define una escena. Formato: @scene alias = "archivo"
-        Se almacena en engine.scenes.
+        The function `handle_scene` parses and stores scene aliases and filenames in a dictionary within
+        the engine object.
+        
+        :param arg: The `arg` parameter in the `handle_scene` method is a string that represents the
+        input provided by the user. It is expected to be in the format `alias = "filename"`, where
+        `alias` is the name or identifier for the scene, and `filename` is the name of
+        :param engine: The `engine` parameter in the `handle_scene` method seems to be an instance of a
+        class that has a `scenes` attribute. This attribute is used to store mappings between scene
+        aliases and their corresponding filenames. The method takes an argument `arg`, which is expected
+        to be in the format `
         """
+    
         parts = arg.split("=")
         if len(parts) == 2:
             alias = parts[0].strip()
@@ -198,9 +332,16 @@ class EventManager:
         
     def handle_define(self, arg, engine):
         """
-        Define una variable. Formato: @def alias = "valor"
-        Se almacena en engine.variables.
+        The function `handle_define` parses and stores variable definitions in a specified engine.
+        
+        :param arg: The `arg` parameter in the `handle_define` method is a string that represents the
+        input provided by the user. It is expected to be in the format `alias = "filename"`, where
+        `alias` is the variable name and `filename` is the value assigned to that variable
+        :param engine: The `engine` parameter in the `handle_define` method seems to be an object that
+        contains a `vars` attribute. This attribute is used to store key-value pairs where the key is an
+        alias and the value is a filename. The method takes an argument `arg`, which is expected to be
         """
+ 
         parts = arg.split("=")
         if len(parts) == 2:
             alias = parts[0].strip()
@@ -211,8 +352,21 @@ class EventManager:
             raise Exception("[ERROR] Formato inválido en @def. Se esperaba: @def alias = \"valor\"")
     
     def handle_process_scene(self, arg, engine):
+        """
+        The function `handle_process_scene` processes a scene by retrieving its compiled script, parsing
+        it, and executing the commands within the scene.
+        
+        :param arg: The `arg` parameter in the `handle_process_scene` method seems to represent a scene
+        alias or filename that needs to be processed. The method first strips any leading or trailing
+        whitespace from the input `arg`. It then checks if the `arg` is enclosed in parentheses or
+        quotes and removes them if
+        :param engine: The `engine` parameter in the `handle_process_scene` method seems to be an
+        instance of some class that contains information and functionality related to scenes, scripts,
+        and event handling in a game engine. It likely has attributes or methods related to scenes,
+        resource management, event handling, and game paths
+        """
 
-        # Limpiar el argumento para extraer el alias de la escena.
+ 
         arg = arg.strip()
         if arg.startswith("(") and arg.endswith(")"):
             arg = arg[1:-1].strip()
@@ -220,24 +374,22 @@ class EventManager:
             arg = arg[1:-1].strip()
         
         scene_alias = arg
-        # Usar la definición en engine.scenes, si existe.
+   
         if scene_alias in engine.scenes:
             filename = engine.scenes[scene_alias]
         else:
             filename = scene_alias
-
-        # Construir la ruta base: se asume que las escenas están en la carpeta "scenes".
+ 
         base_name = os.path.join("scenes", filename)
-
-        # Primero intentamos cargar la versión compilada (".kagc").
+ 
         try:
-            # Construir la ruta completa agregando la extensión .kagc
+     
             compiled_path = base_name + ".kagc"
             file_bytes = engine.resource_manager.get_bytes(compiled_path)
-            # Aplicar XOR para descifrar el contenido.
+        
             content = xor_data(file_bytes, key).decode("utf-8", errors="replace")
         except Exception as e:
-            # Si falla (por ejemplo, no se encuentra la versión compilada), se lanza error.
+      
             raise Exception(f"[ERROR] No se encontró la versión compilada del script para '{base_name}': {e}")
 
         print(f"[process_scene] Procesando escena '{scene_alias}'.")
@@ -251,9 +403,17 @@ class EventManager:
 
     def handle_jump_scene(self, arg, engine):
         """
-        Salta a otra escena sin esperar keypress.
-        Se espera el alias de la escena.
+        The function `handle_jump_scene` processes a jump scene command in a game engine, loading and
+        executing commands from a specified scene file.
+        
+        :param arg: The `arg` parameter in the `handle_jump_scene` function is expected to be a string
+        containing one or more scene aliases separated by the "|" character. The function then processes
+        this input to jump to the specified scene(s) in the game engine
+        :param engine: The `engine` parameter in the `handle_jump_scene` method seems to be an instance
+        of some game engine class that contains information about scenes and game paths. It is used to
+        access the scenes dictionary and game path within the method for handling scene jumps
         """
+   
         parts = [p.strip() for p in arg.split("|") if p.strip()]
         if len(parts) == 1:
             scene_alias = parts[0]
@@ -276,8 +436,22 @@ class EventManager:
             raise Exception("[ERROR] Formato extendido en @jump_scene no implementado.")
     
     def handle_char(self, arg, engine):
+        """
+        The function `handle_char` defines character aliases and display names in a game engine based on
+        the input arguments provided.
+        
+        :param arg: The `arg` parameter in the `handle_char` method is a string that represents the
+        input provided to define a character in the engine. It can take the form of either just an alias
+        for the character or an alias followed by "as" and the display name in double quotes. The method
+        parses
+        :param engine: The `engine` parameter in the `handle_char` method seems to be an object that
+        contains a `characters` dictionary. This dictionary is used to store aliases and display names
+        of characters. The method `handle_char` is responsible for defining characters with their
+        aliases and display names in the `engine`
+        """
+        parts = arg.split(" as ")
+        alias = arg.strip()
         if " as " in arg:
-            parts = arg.split(" as ")
             if len(parts) == 2:
                 alias = parts[0].strip()
                 display_name = parts[1].strip().strip('"')
@@ -286,47 +460,36 @@ class EventManager:
             else:
                 print("[char] Formato inválido. Se esperaba: @char alias as \"nombre\"")
         else:
-            alias = arg.strip()
             if alias:
                 engine.characters[alias] = alias
                 print(f"[char] Definido personaje: alias '{alias}', nombre '{alias}'")
             else:
                 print("[char] Formato inválido. Se esperaba: @char alias [as \"nombre\"]")
 
-    def handle_sprite(self, arg, engine):
+    def handle_rename(self, arg, engine):
         """
-        Muestra un sprite en pantalla.
-        Se espera que el comando tenga el formato:
-            @sprite kuro
-        o, opcionalmente, con posición:
-            @sprite kuro at left
-        Los valores de posición pueden ser "left", "center" o "right" (por defecto, "center").
+        The function `handle_rename` renames a character in a game engine based on the provided alias
+        and new display name.
+        
+        :param arg: The `arg` parameter in the `handle_rename` method is expected to be a string that
+        contains the command for renaming a character. The format of the command should be `@rename
+        alias as "NewName"`, where `alias` is the current name of the character to be renamed, and
+        :param engine: The `engine` parameter in the `handle_rename` method seems to be an object that
+        contains a dictionary of characters where the key is the alias of the character and the value is
+        the display name of the character. The method is designed to handle renaming a character by
+        updating the display name in the `
         """
-        parts = arg.split(" at ")
-        sprite_alias = parts[0].strip()
-        position = parts[1].strip().lower() if len(parts) > 1 else "center"
-        # Se asume que los sprites están en data/images/sprites y tienen extensión .png
-        sprite_path = os.path.join(engine.game_path, "data", "images", "sprites", sprite_alias + ".png")
-        if not os.path.exists(sprite_path):
-            raise Exception(f"[sprite] No se encontró el sprite '{sprite_alias}' en {sprite_path}.")
-        try:
-            sprite_image = pygame.image.load(sprite_path).convert_alpha()
-        except Exception as e:
-            raise Exception(f"[sprite] Error al cargar el sprite '{sprite_alias}': {e}")
-        # Almacenar el sprite en engine.sprites (un diccionario)
-        if not hasattr(engine, "sprites"):
-            engine.sprites = {}
-        engine.sprites[sprite_alias] = {"image": sprite_image, "position": position}
-        print(f"[sprite] Sprite '{sprite_alias}' mostrado en posición '{position}'.")
-    
-    def handle_hide(self, arg, engine):
-        """
-        Oculta (elimina) un sprite previamente mostrado.
-        Se espera: @hide kuro
-        """
-        sprite_alias = arg.strip()
-        if hasattr(engine, "sprites") and sprite_alias in engine.sprites:
-            del engine.sprites[sprite_alias]
-            print(f"[hide] Sprite '{sprite_alias}' ocultado.")
+ 
+        if " as " in arg:
+            parts = arg.split(" as ")
+            if len(parts) == 2:
+                alias = parts[0].strip()
+                new_display_name = parts[1].strip().strip('"')
+                if alias not in engine.characters:
+                    raise Exception(f"[rename] El personaje '{alias}' no está definido, no se puede renombrar.")
+                engine.characters[alias] = new_display_name
+                print(f"[rename] Personaje '{alias}' renombrado a '{new_display_name}'.")
+            else:
+                raise Exception("[rename] Formato inválido. Se esperaba: @rename alias as \"NuevoNombre\"")
         else:
-            print(f"[hide] No se encontró el sprite '{sprite_alias}' para ocultarlo.")
+            raise Exception("[rename] Formato inválido. Se esperaba: @rename alias as \"NuevoNombre\"")

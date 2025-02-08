@@ -10,8 +10,20 @@ from vne.config import key
 
 def compile_kag(source_file, target_file, key):
     """
-    'Compila' un archivo .kag a .kagc aplicando XOR para ofuscar.
+    The function `compile_kag` reads a source file, encodes its content using XOR operation with a given
+    key, and writes the result to a target file.
+    
+    :param source_file: The `source_file` parameter in the `compile_kag` function is the path to the
+    source file that contains the plain text data to be compiled. This function reads the content of the
+    source file, encodes it as bytes, performs an XOR operation with a given key, and then writes the
+    :param target_file: The `target_file` parameter in the `compile_kag` function is the file path where
+    the compiled data will be written to in binary format. This file will contain the result of XOR
+    operation performed on the data read from the `source_file` using the provided `key`
+    :param key: The `key` parameter in the `compile_kag` function is used as the key for performing XOR
+    encryption on the data read from the source file. XOR encryption is a simple encryption algorithm
+    that uses the bitwise XOR operation with a key to encrypt and decrypt data. In this case, the `key
     """
+ 
     with open(source_file, "r", encoding="utf-8") as sf:
         plain_text = sf.read()
     plain_bytes = plain_text.encode("utf-8")
@@ -21,6 +33,16 @@ def compile_kag(source_file, target_file, key):
     print(f"[compile_kag] {source_file} -> {target_file}")
 
 def compile_all_kag_in_folder(data_folder, key):
+    """
+    This function compiles all KAG files in a specified folder using a given key.
+    
+    :param data_folder: The `data_folder` parameter in the `compile_all_kag_in_folder` function is the
+    directory path where the KAG (Key Archive File) files are located. This function will recursively
+    search through this folder and its subfolders to find all KAG files for compilation
+    :param key: The `key` parameter in the `compile_all_kag_in_folder` function is a value that is used
+    as an input for the `compile_kag` function. It is likely used for some kind of encryption or
+    decryption process within the `compile_kag` function. The specific implementation of how
+    """
     for root, dirs, files in os.walk(data_folder):
         for file in files:
             if file.endswith(".kag"):
@@ -28,11 +50,20 @@ def compile_all_kag_in_folder(data_folder, key):
                 target_path = os.path.splitext(source_path)[0] + ".kagc"
                 compile_kag(source_path, target_path, key)
 
-# ----------------------------------------------------------------------------
-# 4. Función para Empaquetar Recursos en data.pkg (excluyendo .kag)
-# ----------------------------------------------------------------------------
-
 def create_data_pkg(source_folder, output_pkg):
+    """
+    The function `create_data_pkg` zips files from a specified folder into a package, excluding certain
+    file types.
+    
+    :param source_folder: The `source_folder` parameter in the `create_data_pkg` function refers to the
+    directory path where the data files are located that you want to package into a zip file. This
+    function will recursively walk through this folder and include all files in the zip package,
+    excluding files with the extension ".kag
+    :param output_pkg: The `output_pkg` parameter in the `create_data_pkg` function is the path to the
+    ZIP file that will be created to package the contents of the `source_folder`. This ZIP file will
+    contain all the files and directories from the `source_folder`, excluding files with the extension
+    ".kag"
+    """
     with zipfile.ZipFile(output_pkg, "w", zipfile.ZIP_DEFLATED) as pkg:
         for root, dirs, files in os.walk(source_folder):
             for file in files:
@@ -43,18 +74,22 @@ def create_data_pkg(source_folder, output_pkg):
                 pkg.write(file_path, rel_path)
     print(f"[create_data_pkg] '{source_folder}' empaquetada en '{output_pkg}' (excluyendo .kag)")
 
-# ----------------------------------------------------------------------------
-# 5. Funciones CLI: init, run, distribute
-# ----------------------------------------------------------------------------
-
 def init_game(game_path):
+    """
+    The `init_game` function initializes a game project by creating directories and generating necessary
+    script files.
+    
+    :param game_path: The `game_path` parameter in the `init_game` function represents the path where
+    the game project will be initialized. This path will be used to create directories and generate
+    files for the game project
+    """
     print(f"Inicializando proyecto en '{game_path}'...")
     directories = [
         f"{game_path}/data",
         f"{game_path}/data/system",
         f"{game_path}/data/scenes",
-        #f"{game_path}/data/images/bg",
-        #f"{game_path}/data/images/sprites",
+        f"{game_path}/data/images/bg",
+        f"{game_path}/data/images/sprites",
         #f"{game_path}/data/audio/bgm",
         #f"{game_path}/data/audio/sfx",
         #f"{game_path}/data/ui",
@@ -93,26 +128,25 @@ def init_game(game_path):
 
 def distribute_game(game_path):
     """
-    Realiza el pipeline completo de distribución para Windows:
-      1) Compila los scripts .kag a .kagc usando XOR.
-      2) Empaqueta la carpeta data/ en un archivo data.pkg (excluyendo los .kag).
-      3) Crea una carpeta de distribución en dist/<game_folder>/ y copia allí:
-         - data.pkg
-         - El propio binario actual (engine.exe) renombrado a game.exe.
+    The function `distribute_game` packages a game located at a specified path, compiles data files,
+    creates a package, copies necessary files to a distribution folder, and outputs the distribution
+    location.
+    
+    :param game_path: The `distribute_game` function takes a `game_path` parameter, which is the path to
+    the directory containing the game files that need to be distributed. The function then performs a
+    series of steps to package and distribute the game
     """
+
     print(f"Empaquetando juego desde '{game_path}'...")
     game_path = os.path.abspath(game_path)
     game_name = os.path.basename(game_path)
-
-    # 1) Compilar .kag -> .kagc en data/
+ 
     data_folder = os.path.join(game_path, "data")
     compile_all_kag_in_folder(data_folder, key)
-
-    # 2) Empaquetar data/ en data.pkg (excluyendo .kag)
+ 
     pkg_path = os.path.join(game_path, "data.pkg")
     create_data_pkg(data_folder, pkg_path)
 
-    # 3) Crear la carpeta de distribución en dist/<game_name>/
     current_dir = os.getcwd()
     dist_root = os.path.join(current_dir, "dist")
     if not os.path.exists(dist_root):
@@ -122,14 +156,11 @@ def distribute_game(game_path):
         shutil.rmtree(dest_folder)
     os.makedirs(dest_folder)
 
-    # Copiar data.pkg a la carpeta de distribución
     shutil.copy2(pkg_path, os.path.join(dest_folder, "data.pkg"))
     print(f"[distribute] data.pkg copiado a {dest_folder}")
-
-    # elimina data.pkg de la carpeta principal
+ 
     os.unlink(pkg_path)
-
-    # 4) Copiar el binario actual (engine.exe) y renombrarlo a game.exe
+ 
     exe_source = os.path.abspath(sys.executable)
     exe_dest = os.path.join(dest_folder, "game.exe")
     shutil.copy2(exe_source, exe_dest)
@@ -139,29 +170,33 @@ def distribute_game(game_path):
 
 def run_game(game_path):
     """
-    Ejecuta el juego en modo desarrollo.
-    Se espera que game_path sea la carpeta del juego (donde están data/, etc.).
+    The function `run_game` compiles all KAG files in a specified folder and then runs the game engine
+    with a specified game path in development mode.
+    
+    :param game_path: The `game_path` parameter is the path to the directory where the game files are
+    located. It is used to locate the game data folder and run the game engine from that location
     """
+ 
     data_folder = os.path.join(game_path, "data")
     compile_all_kag_in_folder(data_folder, key)
 
-    engine = Core(game_path)
+    engine = Core(game_path, devMode=True)
     engine.run()
 
-# ---------------------------------------------------------------------------
-# 5. Modo de Ejecución (CLI)
-# ---------------------------------------------------------------------------
-
 def main():
+    """
+    The `main` function in this Python script takes command line arguments to initialize, debug, or
+    distribute a game based on the specified command.
+    """
     if len(sys.argv) < 3:
-        print("Uso: engine.exe [init|run|distribute] <carpeta_del_juego>")
+        print("Uso: engine.exe [init|debug|distribute] <carpeta_del_juego>")
         sys.exit(1)
     command = sys.argv[1]
     game_path = sys.argv[2]
 
     if command == "init":
         init_game(game_path)
-    elif command in ("run", "debug"):
+    elif command in "debug":
         run_game(game_path)
     elif command == "distribute":
         distribute_game(game_path)
@@ -169,13 +204,13 @@ def main():
         print(f"Comando desconocido: {command}")
 
 if __name__ == "__main__":
-    # Si el binario se llama game.exe, se asume que es la versión final
+ 
     exe_name = os.path.basename(sys.executable).lower()
     if "game.exe" in exe_name or "game" in exe_name:
-        # Modo juego: ejecutar directamente (en producción)
+ 
  
         engine = Core(os.path.abspath("."))
         engine.run()
     else:
-        # Modo SDK: mostrar CLI
+     
         main()

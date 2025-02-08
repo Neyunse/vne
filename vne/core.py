@@ -1,4 +1,3 @@
-# engine/vne/core.py
 import os
 import pygame
 import pygame_gui
@@ -11,10 +10,11 @@ from vne.rm import ResourceManager
 from vne.xor_data import xor_data
 
 class VNEngine:
-    def __init__(self, game_path):
+    def __init__(self, game_path, devMode=False):
         self.game_path = game_path
         self.running = True
         self.current_bg = None
+        self.sprites = {}
         self.current_dialogue = ""
         self.current_menu = None
         self.menu_selection = 0
@@ -23,6 +23,7 @@ class VNEngine:
         self.scenes = {}
         self.vars = {}
         self.config = CONFIG
+        self.devMode = devMode
         
         print(f"Iniciando el juego desde {self.game_path}...")
         
@@ -39,6 +40,13 @@ class VNEngine:
         self.gui_manager = pygame_gui.UIManager((CONFIG["screen_width"], CONFIG["screen_height"]))
     
     def wait_for_keypress(self):
+        """
+        The `wait_for_keypress` function in Python uses Pygame to wait for a keypress or mouse click
+        while rendering and updating the display.
+        :return: If the event type is pygame.QUIT, the method will set self.running to False and return.
+        Otherwise, if the event type is pygame.MOUSEBUTTONDOWN, the method will set waiting to False. No
+        explicit return value is provided in this code snippet.
+        """
         waiting = True
         while waiting and self.running:
             for event in pygame.event.get():
@@ -46,7 +54,7 @@ class VNEngine:
                     self.running = False
                     return
                 
-                # uso del mause para avanzar en los dialogos
+            
                 if event.type == pygame.MOUSEBUTTONDOWN:
                     waiting = False
                                
@@ -56,23 +64,25 @@ class VNEngine:
     
     def run(self):
         """
-        Método run que mantiene la ventana activa y procesa eventos utilizando el bucle
-        que ya te funciona. Aquí se integra el proceso de lectura del script de inicio (startup).
+        This Python function runs a game by loading a script, handling events, and updating the display
+        until the game is exited.
+        :return: If the script reaches the end of the `run` method without encountering any errors, it
+        will return `None`.
         """
-        print("Ejecutando juego. Cierre la ventana para salir.")
-        # Intentar cargar el script de inicio. Se buscan en la carpeta raíz o en scenes/
+     
+        print("Ejecutando juego. Cierre la ventana para salir.") 
+
         candidates = [
             "startup.kagc",
             "startup.kag"
         ]
         content = None
-       
-        # Buscamos el primer candidato que se encuentre.
+ 
         for candidate in candidates:
             try:
                 data_bytes = self.resource_manager.get_bytes(candidate)
                 if candidate.endswith(".kagc"):
-                    # Si es compilado, descifrarlo
+                
                     plain_bytes = xor_data(data_bytes, key)
                     content = plain_bytes.decode("utf-8", errors="replace")
                 else:
@@ -86,26 +96,26 @@ class VNEngine:
             print("[VNEngine] No se encontró el script de inicio (startup). Saliendo.")
             self.running = False
             return
-        # Bucle principal (basado en tu versión que funciona)
+ 
         while self.running:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     self.running = False
-                # Procesar eventos de gui_manager si se usa (omitido aquí)
+               
             command = self.lexer.get_next_command()
             if command is None:
                 pygame.time.wait(2000)
                 self.running = False
             else:
                 try:
-                    # Se procesaría el comando (por ejemplo, con event_manager.handle())
+                    
                     self.event_manager.handle(command, self)
                     pass
                 except Exception as e:
                     print(e)
                     self.running = False
             time_delta = self.clock.tick(60) / 1000.0
-            # Si usas gui_manager y renderer, se actualizarían aquí.
+          
             pygame.display.update()
         pygame.quit()
         print("Juego finalizado.")

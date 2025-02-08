@@ -6,7 +6,7 @@ CONFIG = {
     "font_size": 24,
     "name_font": "Arial",
     "name_font_size": 20,
-    "bg_color": (0, 0, 0),  # Color de fondo en ausencia de imagen
+    "bg_color": (0, 0, 0),   
     "dialogue_rect": { 
          "x": 0,
          "y": 480,
@@ -16,13 +16,14 @@ CONFIG = {
          "border_color": (255, 255, 255)
     },
     "namebox_rect": { 
-         "x": 0,   # Posición X de la caja del nombre
-         "y": 440,  # Posición Y (justo por encima de la caja de diálogo)
+         "x": 0,    
+         "y": 440,  
          "width": 200,
          "height": 40,
          "bg_color": (50, 50, 50),
          "border_color": (255, 255, 255)
-    }
+    },
+    "sprite_scale": 0.5   
 }
 
 

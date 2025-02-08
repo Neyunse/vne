@@ -1,10 +1,14 @@
-@bg school.png
+@bg school
 Hola Mundo!
 
-#@sprite kuro
 # @sprite kuro at <left|center|right>
+@sprite kuro
 K: Hoy comienza mi nueva aventura!
-#@hide kuro
+@sprite kuro at left
+@sprite kuro_r
+@sprite kuro_d at right
+
+@rename K as Sayori
 
 K: Espero hacer muchos amigos!
 @exit
