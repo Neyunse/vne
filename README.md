@@ -15,6 +15,9 @@
 3. Edit
 4. Have fun!
 
+> [!IMPORTANT]  
+> the engine does not have an interface, it is used in CLI mode
+
 ## Installation (SRC)
 
 ### Requirements
