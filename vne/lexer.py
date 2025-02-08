@@ -1,4 +1,6 @@
-# engine/vne/lexer.py
+import io
+import os
+import pygame
 from vne.xor_data import xor_data
 from vne.config import key
 class ScriptLexer:
@@ -66,3 +68,35 @@ class ScriptLexer:
             self.current += 1
             return cmd
         return None
+    
+    def load_image(self, relative_path):
+        """
+        Intenta cargar una imagen usando el ResourceManager para soportar tanto data.pkg como la carpeta data/.
+        
+        Parámetros:
+        - engine: el motor (que tiene el ResourceManager y game_path).
+        - relative_path: ruta relativa dentro de la carpeta de datos, por ejemplo:
+                "images/sprites/kuro.png" o "images/bg/school.png"
+                
+        Devuelve:
+        - Una superficie de Pygame con la imagen cargada.
+        
+        Si falla, intenta cargar directamente desde el sistema de archivos.
+        """
+        try:
+            # Intentar cargar usando el ResourceManager (esto soporta data.pkg)
+            image_bytes = self.engine.resource_manager.get_bytes(relative_path)
+            image_stream = io.BytesIO(image_bytes)
+            image = pygame.image.load(image_stream).convert_alpha()
+            return image
+        except Exception as e:
+            # Fallback: carga directamente desde la carpeta data/
+            full_path = os.path.join(self.engine.game_path, "data", relative_path)
+            if os.path.exists(full_path):
+                try:
+                    image = pygame.image.load(full_path).convert_alpha()
+                    return image
+                except Exception as e2:
+                    raise Exception(f"Error al cargar la imagen desde '{full_path}': {e2}")
+            else:
+                raise Exception(f"Error al cargar la imagen en '{relative_path}': {e}")

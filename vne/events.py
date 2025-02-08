@@ -21,11 +21,9 @@ class EventManager:
         self.register_event("char", self.handle_char)
         self.register_event("scene", self.handle_scene)
         self.register_event("def", self.handle_define)
-        #self.register_event("menu", self.handle_menu)
-        # Registrar acciones para el menú:
-        self.register_event("Start", self.handle_process_scene)  # Start("scene_alias")
-        self.register_event("Quit", self.handle_exit)            # Quit()
-    
+        self.register_event("sprite", self.handle_sprite)
+        self.register_event("hide", self.handle_hide)
+
     def register_event(self, event_name, handler):
         if event_name not in self.event_handlers:
             self.event_handlers[event_name] = []
@@ -120,17 +118,22 @@ class EventManager:
 
     
     def handle_bg(self, arg, engine):
-        bg_path = os.path.join(engine.game_path, "data", "images", "bg", arg)
-        if os.path.exists(bg_path):
-            try:
-                image = pygame.image.load(bg_path)
-                image = pygame.transform.scale(image, (engine.renderer.screen.get_width(),
-                                                         engine.renderer.screen.get_height()))
-                engine.current_bg = image
-            except Exception as e:
-                raise Exception(f"[ERROR] Error al cargar la imagen de fondo: {e}")
-        else:
-            raise Exception(f"[ERROR] Imagen de fondo no encontrada: {bg_path}")
+        """
+        Carga la imagen de fondo. Se espera que 'arg' sea el nombre del archivo,
+        por ejemplo, "school.png". Se busca en "images/bg/".
+        """
+        load_image = ScriptLexer(engine.game_path, engine).load_image
+        # Construir la ruta relativa para el fondo
+        relative_path = os.path.join("images", "bg", arg)
+        try:
+            bg_image = load_image(relative_path)
+            # Escalar la imagen al tamaño de la pantalla
+            bg_image = pygame.transform.scale(bg_image, (engine.renderer.screen.get_width(),
+                                                        engine.renderer.screen.get_height()))
+            engine.current_bg = bg_image
+        except Exception as e:
+            raise Exception(f"[bg] Error al cargar la imagen de fondo: {e}")
+
     
     def handle_exit(self, arg, engine):
         print("Evento 'exit'", arg)
@@ -170,7 +173,7 @@ class EventManager:
             
             # Procesar el contenido si parece contener directivas (líneas que comienzan con "@")
             if any(line.strip().startswith("@") for line in content.splitlines()):
-                from vne.lexer import ScriptLexer
+              
                 commands = ScriptLexer(engine.game_path, engine).parse_script(content)
                 for cmd in commands:
                     print(f"[Load-Process] Ejecutando comando: {cmd}")
@@ -290,108 +293,40 @@ class EventManager:
             else:
                 print("[char] Formato inválido. Se esperaba: @char alias [as \"nombre\"]")
 
+    def handle_sprite(self, arg, engine):
+        """
+        Muestra un sprite en pantalla.
+        Se espera que el comando tenga el formato:
+            @sprite kuro
+        o, opcionalmente, con posición:
+            @sprite kuro at left
+        Los valores de posición pueden ser "left", "center" o "right" (por defecto, "center").
+        """
+        parts = arg.split(" at ")
+        sprite_alias = parts[0].strip()
+        position = parts[1].strip().lower() if len(parts) > 1 else "center"
+        # Se asume que los sprites están en data/images/sprites y tienen extensión .png
+        sprite_path = os.path.join(engine.game_path, "data", "images", "sprites", sprite_alias + ".png")
+        if not os.path.exists(sprite_path):
+            raise Exception(f"[sprite] No se encontró el sprite '{sprite_alias}' en {sprite_path}.")
+        try:
+            sprite_image = pygame.image.load(sprite_path).convert_alpha()
+        except Exception as e:
+            raise Exception(f"[sprite] Error al cargar el sprite '{sprite_alias}': {e}")
+        # Almacenar el sprite en engine.sprites (un diccionario)
+        if not hasattr(engine, "sprites"):
+            engine.sprites = {}
+        engine.sprites[sprite_alias] = {"image": sprite_image, "position": position}
+        print(f"[sprite] Sprite '{sprite_alias}' mostrado en posición '{position}'.")
     
-    def handle_menu(self, arg, engine):
+    def handle_hide(self, arg, engine):
         """
-        Procesa un menú definido en bloque usando la siguiente sintaxis:
-        
-        @menu
-        #Una lista de botones dentro de @menu
-        button "Iniciar juego" action Start("second")
-        button "Cerrar" action Quit()
-        @endMenu
-        
-        Esta función:
-        - Extrae las líneas entre @menu y @endMenu.
-        - Elimina comentarios inline (todo lo que sigue a "#") y líneas vacías.
-        - Verifica que cada línea siga el formato: 
-                button "Etiqueta" action <comando>
-        - Crea un panel semitransparente en el centro de la pantalla con las opciones.
-        - Permite navegar con las teclas UP/DOWN y confirmar con Enter.
-        - Una vez seleccionada la opción, añade el prefijo "@" si es necesario y ejecuta el comando.
+        Oculta (elimina) un sprite previamente mostrado.
+        Se espera: @hide kuro
         """
-        import pygame
-        import re
-
-        # Dividir el bloque en líneas
-        lines = arg.splitlines()
-        options = []
-        pattern = r'^button\s+"([^"]+)"\s+action\s+(.+)$'
-        
-        # Procesar cada línea: ignorar la línea de cierre '@endMenu'
-        for line in lines:
-            line = line.strip()
-            if not line or line.startswith("#"):
-                continue
-            if line.lower() == "@endmenu":
-                continue
-            # Eliminar comentarios inline (todo lo que aparezca después de "#")
-            if "#" in line:
-                line = line.split("#", 1)[0].strip()
-            match = re.match(pattern, line)
-            if match:
-                label = match.group(1)
-                action = match.group(2).strip()
-                options.append({"label": label, "action": action})
-            else:
-                raise Exception(f"[ERROR] Formato inválido en línea de menú: {line}")
-        
-        if not options:
-            raise Exception("[ERROR] El menú no tiene opciones definidas. Verifica la sintaxis del bloque @menu.")
-
-        # Variables para el menú personalizado
-        selected_index = 0
-        font = engine.renderer.font
-        screen = engine.renderer.screen
-        clock = engine.clock
-        running = True
-
-        # Calcular dimensiones y posición del panel de menú (centrado horizontal y verticalmente)
-        panel_width = engine.config["screen_width"] - 200
-        panel_height = len(options) * 60 + 20
-        panel_x = 100
-        panel_y = (engine.config["screen_height"] - panel_height) // 2
-        panel_rect = pygame.Rect(panel_x, panel_y, panel_width, panel_height)
-
-        while running and engine.running:
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    engine.running = False
-                    return
-                if event.type == pygame.KEYDOWN:
-                    if event.key == pygame.K_UP:
-                        selected_index = (selected_index - 1) % len(options)
-                    elif event.key == pygame.K_DOWN:
-                        selected_index = (selected_index + 1) % len(options)
-                    elif event.key == pygame.K_RETURN:
-                        running = False
-                        break
-
-            # Dibujar un overlay semitransparente para enfocar el menú
-            overlay = pygame.Surface((engine.config["screen_width"], engine.config["screen_height"]), pygame.SRCALPHA)
-            overlay.fill((0, 0, 0, 128))
-            screen.blit(overlay, (0, 0))
-            
-            # Dibujar el panel de menú
-            pygame.draw.rect(screen, (50, 50, 50), panel_rect)  # Fondo oscuro
-            pygame.draw.rect(screen, (255, 255, 255), panel_rect, 2)  # Borde blanco
-            
-            # Dibujar las opciones
-            for i, option in enumerate(options):
-                color = (255, 255, 0) if i == selected_index else (255, 255, 255)
-                text_surface = font.render(option["label"], True, color)
-                text_rect = text_surface.get_rect()
-                text_rect.centerx = panel_rect.centerx
-                text_rect.top = panel_rect.top + 10 + i * 60
-                screen.blit(text_surface, text_rect)
-            
-            pygame.display.flip()
-            clock.tick(30)
-
-        # Obtener la acción seleccionada
-        selected_action = options[selected_index]["action"]
-        # Si la acción no comienza con "@", se añade el prefijo
-        if not selected_action.startswith("@"):
-            selected_action = "@" + selected_action
-        print(f"[menu] Acción seleccionada: {selected_action}")
-        self.handle(selected_action, engine)
+        sprite_alias = arg.strip()
+        if hasattr(engine, "sprites") and sprite_alias in engine.sprites:
+            del engine.sprites[sprite_alias]
+            print(f"[hide] Sprite '{sprite_alias}' ocultado.")
+        else:
+            print(f"[hide] No se encontró el sprite '{sprite_alias}' para ocultarlo.")
