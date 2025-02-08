@@ -29,7 +29,7 @@
 
 2. Install necessary dependencies:
    ```bash
-   pip install pygame
+   pip install -r requirements.txt
    ```
 
 3. Run the engine:
