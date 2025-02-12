@@ -88,13 +88,21 @@ def init_game(game_path):
         os.makedirs(d, exist_ok=True)
         print(f"Directory created: {d}")
 
-    startup_file = os.path.join(game_path, "data", "startup.kag")
+    main_menu_file = os.path.join(game_path, "data", "system", "main_menu.kag")
     scenes_file = os.path.join(game_path, "data", "system", "scenes.kag")
     characters_file = os.path.join(game_path, "data", "system", "characters.kag")
     ui_file = os.path.join(game_path, "data", "system", "ui.kag")
+    startup_file = os.path.join(game_path, "data", "startup.kag")
 
     # scenes
     first_scene_file = os.path.join(game_path, "data", "scenes", "first.kag")
+
+    with open(ui_file, "w", encoding="utf-8") as f:
+        f.write("# Main Menu\n")
+        f.write("@menu\n")
+        f.write("@button \"Start game\" event Scene(\"first\") \n")
+        f.write("@button \"Quit\" event Quit() \n")
+        f.write("@endMenu\n")
 
     with open(ui_file, "w", encoding="utf-8") as f:
         f.write("# set the window size. eg: @Display(800,600)\n")
@@ -106,7 +114,7 @@ def init_game(game_path):
         f.write("@Load(\"system/ui.kag\")\n")
         f.write("@Load(\"system/scenes.kag\")\n")
         f.write("@Load(\"system/characters.kag\")\n")
-        f.write("@process_scene first\n")
+        f.write("@Load(\"system/main_menu.kag\")\n")
 
     with open(scenes_file, "w", encoding="utf-8") as f:
         f.write("@scene first = \"first\"")
