@@ -64,7 +64,7 @@ def create_data_pkg(source_folder, output_pkg):
             
                 rel_path = os.path.relpath(file_path, source_folder)
                 pkg.write(file_path, rel_path)
-    print(f"[create_data_pkg] '{source_folder}' empaquetado en '{output_pkg}' (excluyendo archivos .kag)")
+    print(f"[create_data_pkg] '{source_folder}' packed in '{output_pkg}' (excluding .kag files)")
 
 def init_game(game_path):
     """
