@@ -25,6 +25,7 @@ class VNEngine:
         self.devMode = devMode
         self.checkpoints = {}
         self.condition_stack = []
+        self.current_menu_buttons = []
         
         
         self.resource_manager = ResourceManager(self.game_path)

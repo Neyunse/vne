@@ -1,6 +1,18 @@
 @bg school
 @sprite kuro
-K: Hello, welcome to this engine test!
-K: my name is {K} and I am here for the sole purpose of debugging this project....
-K: everything seems to be working properly...
+K: Hola, bienvenido a esta prueba del motor!
+K: mi nombre es {K} y estoy aqui con el unico proposito de debugear este proyecto...
+K: parece que todo funciona correctamente...
+
+@menu
+@button "Encontre un bug!" event Set(chek, true)
+@button "No hay bugs" event Set(chek, false)
+@endMenu
+
+@if chek
+Oh, encontraste un bug! Muchas gracias por encontrarlo!
+@else
+tal vez se deberia volver a ver el codigo
+@endif
+
 @exit

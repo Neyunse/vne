@@ -62,7 +62,7 @@ class ScriptLexer:
         if self.current < len(self.commands):
             cmd = self.commands[self.current]
             self.current += 1
-            print(f"[get-next-command] {cmd} | current = {self.current}")
+            print(f"[get-next-command] {cmd}")
             return cmd
         return None
     

@@ -1,5 +1,7 @@
 import os
 import pygame
+import pygame_gui
+import time
 import re
 from vne.lexer import ScriptLexer
 from vne.xor_data import xor_data
@@ -39,6 +41,14 @@ class EventManager:
         self.register_event("goto", self.handle_goto)
         self.register_event("set", self.handle_set)
         self.register_event("Display", self.handle_display)
+        self.register_event("menu", self.handle_menu)
+        self.register_event("button", self.handle_button)
+        self.register_event("endMenu", self.handle_endmenu)
+
+        # Command events
+        self.register_event("Scene", self.handle_process_scene)
+        self.register_event("Set", self.handle_Set_event)
+        self.register_event("Quit",  self.handle_exit)
 
     def register_event(self, event_name, handler):
         """
@@ -91,6 +101,12 @@ class EventManager:
             raise Exception(f"[ERROR] No handlers for event '{event_name}'.")
         for handler in handlers:
             handler(arg, engine)
+
+    def substitute_variables(self, text, vars_dict):
+        def replacer(match):
+            key = match.group(1).strip()
+            return str(vars_dict.get(key, match.group(0)))
+        return re.sub(r'\{([^}]+)\}', replacer, text)
     
     def handle_say(self, arg, engine):
         """
@@ -124,6 +140,8 @@ class EventManager:
                     return engine.characters[key]
                 elif key in engine.scenes:
                     return engine.scenes[key]
+                elif key in engine.vars:
+                    return engine.vars[key]
                 else:
                     raise Exception(f"[ERROR] The variable for '{key}' is not defined.")
             engine.current_dialogue = re.sub(r"\{([^}]+)\}", replacer, engine.current_dialogue)
@@ -234,9 +252,11 @@ class EventManager:
         parts = arg.split("=")
         if len(parts) == 2:
             alias = parts[0].strip()
-            filename = parts[1].strip().strip('"')
-            engine.vars[alias] = filename
-            print(f"[variable] Variable defined: alias '{alias}', file '{filename}'")
+            var = parts[1].strip().strip('"')
+            string_var = self.substitute_variables(var, engine.vars)
+
+            engine.vars[alias] = string_var
+            print(f"[variable] Variable defined: alias '{alias}', file '{string_var}'")
         else:
             raise Exception("[ERROR] Invalid format in @def. Expected: @def alias = \"value\"")
     
@@ -354,6 +374,9 @@ class EventManager:
         new_value = parts[1].strip().strip('"')
         if var_name not in engine.vars:
             raise Exception(f"[set] The variable '{var_name}' is not defined. Use @def to define it.")
+        
+        new_value = self.substitute_variables(new_value, engine.vars)
+
         engine.vars[var_name] = new_value
         print(f"[set] Variable '{var_name}' updated to '{new_value}'.")
     
@@ -486,4 +509,150 @@ class EventManager:
         
         print(f"[Display] Window set to {width}x{height}.")
 
+    def handle_menu(self, arg, engine):
+        """
+        Starts a menu block.
+        It is expected that, after this command, @button commands will be issued to define the options.
+        """
+        engine.current_menu_buttons = []
+        print("[menu] Menu block started.")
 
+    def handle_button(self, arg, engine):
+        """
+        The function `handle_button` parses a string argument to extract a label and an event action,
+        then adds them to a list in the `engine` object.
+        
+        :param arg: The `arg` parameter in the `handle_button` function is a string that represents the
+        input provided by the user. It is expected to be in a specific format: "@button "Label" event
+        <command>". The function then processes this input to extract the label and event command
+        associated with a button
+        :param engine: The `engine` parameter in the `handle_button` method seems to be an object that is
+        used to store information related to the current menu buttons. It is used to keep track of the
+        buttons that have been added to the menu so far. The method checks if the `engine` object has an
+        """
+     
+        pattern = r'^"([^"]+)"\s+event\s+(.+)$'
+        arg = arg.strip()
+        match = re.match(pattern, arg)
+        if not match:
+            raise Exception('[button] Invalid format. Expected: @button "Label" event <command>.')
+        raw_label = match.group(1)
+        action = match.group(2).strip()
+        if not hasattr(engine, "current_menu_buttons"):
+            engine.current_menu_buttons = []
+      
+        engine.current_menu_buttons.append({"raw_label": raw_label, "event": action})
+        print(f"[button] Button added: '{raw_label}'. -> '{action}'")
+
+    def handle_endmenu(self, arg, engine):
+        """
+        The function `handle_endmenu` in Python handles the display and interaction with a menu
+        interface within a game engine.
+        
+        :param arg: The `arg` parameter in the `handle_endmenu` method seems to be unused in the
+        provided code snippet. It is defined as a parameter but not referenced or utilized within the
+        method. If you intended to use this parameter for some specific functionality or logic within
+        the method, you may need to update
+        :param engine: The `engine` parameter in the `handle_endmenu` method seems to be an object that
+        contains various properties and methods related to the game engine. It is used to access
+        configuration settings, handle events, render graphics, and manage the game state
+        """
+       
+        clock = engine.clock
+
+        if not hasattr(engine, "current_menu_buttons") or not engine.current_menu_buttons:
+            raise Exception("[endmenu] There are no buttons defined in the menu.")
+
+         
+        screen_width = engine.config.get("screen_width", 800)
+        screen_height = engine.config.get("screen_height", 600)
+        panel_width = int(screen_width * 0.5)
+        button_height = 40
+        margin = 10
+        panel_height = len(engine.current_menu_buttons) * (button_height + margin) + margin
+        panel_x = (screen_width - panel_width) // 2
+        panel_y = (screen_height - panel_height) // 2
+        panel_rect = pygame.Rect(panel_x, panel_y, panel_width, panel_height)
+        
+   
+        panel_bg_color = (50, 50, 50, 200)
+        border_color = (255, 255, 255)
+        font = engine.renderer.font
+
+   
+        buttons = []
+        for i, btn in enumerate(engine.current_menu_buttons):
+  
+            label_text = self.substitute_variables(btn["raw_label"], engine.vars)
+            text_surface = font.render(label_text, True, (255, 255, 255))
+            text_rect = text_surface.get_rect()
+            btn_y = margin + i * (button_height + margin)
+            btn_rect = pygame.Rect(0, btn_y, panel_width, button_height)
+            text_rect.center = btn_rect.center
+            buttons.append({"rect": btn_rect, "event": btn["event"], "text": text_surface, "text_rect": text_rect})
+        
+        selected_action = None
+        running_menu = True
+        while running_menu and engine.running:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    engine.running = False
+                    running_menu = False
+                elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                    mouse_x, mouse_y = event.pos
+                    if panel_rect.collidepoint(mouse_x, mouse_y):
+                        local_x = mouse_x - panel_x
+                        local_y = mouse_y - panel_y
+                        for btn in buttons:
+                            if btn["rect"].collidepoint(local_x, local_y):
+                                selected_action = btn["event"]
+                                running_menu = False
+                                break
+    
+            panel_surface = pygame.Surface((panel_width, panel_height), pygame.SRCALPHA)
+            panel_surface.fill(panel_bg_color)
+            pygame.draw.rect(panel_surface, border_color, panel_surface.get_rect(), 2)
+            for btn in buttons:
+                pygame.draw.rect(panel_surface, (100, 100, 100), btn["rect"])
+                pygame.draw.rect(panel_surface, border_color, btn["rect"], 2)
+                panel_surface.blit(btn["text"], btn["text_rect"])
+            engine.renderer.draw_background()
+            engine.renderer.screen.blit(panel_surface, (panel_x, panel_y))
+            pygame.display.update()
+            clock.tick(30)
+        
+        if selected_action:
+            if not selected_action.startswith("@"):
+                selected_action = "@" + selected_action
+            print(f"[menu] Selected action: {selected_action}")
+            self.handle(selected_action, engine)
+
+    def handle_Set_event(self, arg, engine):
+        """
+        Updates the value of a defined variable using the syntax:
+
+            Set(variable, value)
+
+        For example:
+            @button "Exit" action Set(chek, true).
+
+        This command extracts the variable name and the new value, and then assigns it in engine.vars.
+        """
+        arg = arg.strip()
+         
+        if arg.startswith("(") and arg.endswith(")"):
+            arg = arg[1:-1].strip()
+        parts = arg.split(",")
+        if len(parts) != 2:
+            raise Exception("[Set] Invalid format. Expected: Set(variable, value)")
+        
+        var_name = parts[0].strip()
+        new_value = parts[1].strip().strip('"')
+        
+        if var_name not in engine.vars:
+            raise Exception(f"[Set] The variable '{var_name}' is not defined. Use @def to define it.")
+        
+        new_value = self.substitute_variables(new_value, engine.vars)
+        
+        engine.vars[var_name] = new_value
+        print(f"[Set] Variable '{var_name}' updated to '{new_value}'.")

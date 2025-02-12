@@ -1,13 +1,7 @@
 # Load initial configurations
 
 @Load("system/ui.kag")
-# Load/import scene definitions
 @Load("system/scenes.kag")
-# Load/import character definitions
 @Load("system/characters.kag")
-# Load/import variables
 @Load("system/vars.kag")
-
-# Call/process/import first scene
-# @process_scene <scene_name>
-@process_scene first
+@Load("system/main_menu.kag")

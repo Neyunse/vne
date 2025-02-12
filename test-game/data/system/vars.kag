@@ -1,2 +1,4 @@
 @def test = "Hello World!"
+@def a = "Hello World! {test}"
+
 @def chek = false
