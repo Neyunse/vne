@@ -83,6 +83,7 @@ class ScriptLexer:
         if self.current < len(self.commands):
             cmd = self.commands[self.current]
             self.current += 1
+         
             return cmd
         return None
     

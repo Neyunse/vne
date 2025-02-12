@@ -602,4 +602,5 @@ class EventManager:
             raise Exception(f"[goto] Checkpoint '{label}' no existe.")
         print(f"[goto] Antes del salto: engine.lexer.current = {engine.lexer.current}")
         engine.lexer.current = engine.checkpoints[label]
+        
         print(f"[goto] Saltando al checkpoint '{label}' (índice {engine.lexer.current}).")
