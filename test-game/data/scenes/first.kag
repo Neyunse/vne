@@ -1,24 +1,6 @@
 @bg school
-Hola Mundo!
-
-# @sprite kuro at <left|center|right>
 @sprite kuro
-K: Hoy comienza mi nueva aventura!
-@sprite kuro at left
-@sprite kuro_r
-@sprite kuro_d at right
-
-@rename K as Sayori
-
-K: Espero hacer muchos amigos!
-
-@checkpoint savehere
-@if chek 
-@jump_scene second
-@else 
-@set chek = true
-ahora voy a regresar en el tiempo
-@goto savehere
-
-testing
+K: Hello, welcome to this engine test!
+K: my name is {K} and I am here for the sole purpose of debugging this project....
+K: everything seems to be working properly...
 @exit
