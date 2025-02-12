@@ -15,7 +15,8 @@ class EventManager:
             "characters.kag", 
             "vars.kag", 
             "scenes.kag", 
-            "ui.kag"
+            "ui.kag",
+            "main_menu.kag"
         ]
 
     def register_default_events(self):

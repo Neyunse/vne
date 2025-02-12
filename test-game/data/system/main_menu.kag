@@ -1,5 +1,5 @@
 # create a menu
 @menu
-@button "Iniciar juego" event Scene("first") 
-@button "Salir" event Quit()
+@button "Start game" event Scene("first") 
+@button "Quit" event Quit()
 @endMenu
