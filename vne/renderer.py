@@ -32,8 +32,8 @@ class Renderer:
     
     def wrap_text(self, text, font, max_width):
         """
-        Divide el texto en líneas, de modo que cada línea no exceda max_width píxeles,
-        usando la medida de la fuente.
+        Divides the text into lines, so that each line does not exceed max_width pixels,
+        using the font size.
         """
         words = text.split()
         lines = []
