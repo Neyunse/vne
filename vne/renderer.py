@@ -30,6 +30,27 @@ class Renderer:
             self.engine.config.get("name_font", "Arial"), 13
         )
     
+    def wrap_text(self, text, font, max_width):
+        """
+        Divide el texto en líneas, de modo que cada línea no exceda max_width píxeles,
+        usando la medida de la fuente.
+        """
+        words = text.split()
+        lines = []
+        current_line = ""
+        for word in words:
+            test_line = current_line + (" " if current_line else "") + word
+            if font.size(test_line)[0] <= max_width:
+                current_line = test_line
+            else:
+                if current_line:
+                    lines.append(current_line)
+                current_line = word
+        if current_line:
+            lines.append(current_line)
+        return lines
+        
+
     def draw_background(self):
         if self.engine.current_bg:
             self.screen.blit(self.engine.current_bg, (0, 0))
@@ -38,7 +59,6 @@ class Renderer:
     
     def draw_dialogue(self):
         if self.engine.current_dialogue:
-       
             rect_cfg = self.engine.config.get("dialogue_rect", {
                 "x": 0,
                 "y": self.engine.config.get("screen_height", 600) - 150,
@@ -49,9 +69,18 @@ class Renderer:
             })
             dialogue_rect = pygame.Rect(rect_cfg["x"], rect_cfg["y"], rect_cfg["width"], rect_cfg["height"])
             pygame.draw.rect(self.screen, rect_cfg["bg_color"], dialogue_rect)
-            text_surface = self.font.render(self.engine.current_dialogue, True, (255, 255, 255))
-            self.screen.blit(text_surface, (dialogue_rect.x + 10, dialogue_rect.y + 10))
-    
+             
+            
+            margin = 10
+            max_text_width = dialogue_rect.width - 2 * margin
+            lines = self.wrap_text(self.engine.current_dialogue, self.font, max_text_width)
+           
+            y_offset = dialogue_rect.y + margin
+            for line in lines:
+                text_surface = self.font.render(line, True, (255, 255, 255))
+                self.screen.blit(text_surface, (dialogue_rect.x + margin, y_offset))
+                y_offset += self.font.get_height() + 2
+
     def draw_character_name(self):
         if self.engine.current_character_name:
             namebox_cfg = self.engine.config.get("namebox_rect", {

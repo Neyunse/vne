@@ -1,3 +1,3 @@
 # set the window size. eg: @Display(800,600)
 # the recomended size is 1280x720 
-@Display()
+@Display(1280,720)

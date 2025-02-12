@@ -26,6 +26,7 @@ class VNEngine:
         self.checkpoints = {}
         self.condition_stack = []
         self.current_menu_buttons = []
+        self.typewriter_index = 0
         
         
         self.resource_manager = ResourceManager(self.game_path)
@@ -99,10 +100,11 @@ class VNEngine:
             return
  
         while self.running:
+            delta_time = self.clock.tick(30) / 1000.0
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     self.running = False
-               
+            self.typewriter_index += int(delta_time * 20)
             command = self.lexer.get_next_command()
             if command is None:
                 pygame.time.wait(2000)
