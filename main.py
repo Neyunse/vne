@@ -105,9 +105,10 @@ def init_game(game_path):
         f.write("@char K as \"Kuro\" ")
 
     with open(first_scene_file, "w", encoding="utf-8") as f:
-        f.write("Hello World\n")
-        f.write("K: I started a new stage in this academy\n")
+        f.write("K: Hello!\n")
         f.write("K: my name is {K}.\n")
+        f.write("K: start editing scenes/first.kag to add dialogues.\n")
+        f.write("K: good luck in your stories.\n")
         f.write("@exit\n")
 
     print("Files generated successfully")
