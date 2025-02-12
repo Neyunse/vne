@@ -1,5 +1,6 @@
 # Load initial configurations
 
+@Load("system/ui.kag")
 # Load/import scene definitions
 @Load("system/scenes.kag")
 # Load/import character definitions

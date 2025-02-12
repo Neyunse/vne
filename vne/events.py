@@ -9,7 +9,13 @@ class EventManager:
     def __init__(self):
         self.event_handlers = {}
         self.register_default_events()
-    
+        self.system_files = [
+            "characters.kag", 
+            "vars.kag", 
+            "scenes.kag", 
+            "ui.kag"
+        ]
+
     def register_default_events(self):
         """
         Registers various event handlers for different events.
@@ -32,6 +38,7 @@ class EventManager:
         self.register_event("checkpoint", self.handle_checkpoint)
         self.register_event("goto", self.handle_goto)
         self.register_event("set", self.handle_set)
+        self.register_event("Display", self.handle_display)
 
     def register_event(self, event_name, handler):
         """
@@ -182,7 +189,7 @@ class EventManager:
         if arg.startswith("(") and arg.endswith(")"):
             arg = arg[1:-1].strip()
         arg = arg.strip('"').strip("'")
-        force_compiled = any(keyword in arg.lower() for keyword in ["characters.kag", "vars.kag", "scenes.kag"])
+        force_compiled = any(keyword in arg.lower() for keyword in self.system_files)
         try:
             if force_compiled:
                 if not arg.lower().endswith(".kagc"):
@@ -417,3 +424,66 @@ class EventManager:
         engine.lexer.commands = engine.lexer.original_commands[found_index:]
         engine.lexer.current = 0
         print(f"[goto] Jumping to checkpoint '{label}' in the original script starting at index {found_index}.")
+
+    def handle_display(self, arg, engine):
+        """
+        Configures the window size and updates the configuration of the interface elements.
+        The syntax is expected:
+            @Display(800,800)
+        where the numbers indicate the desired width and height, but are limited to the maximum of the monitor.
+      
+        """
+        arg = arg.strip()
+        if arg.startswith("(") and arg.endswith(")"):
+            arg = arg[1:-1].strip()
+        parts = arg.split(",")
+        if len(parts) != 2:
+            raise Exception("[Display] Invalid format. Expected: @Display(width,height)")
+        try:
+            width = int(parts[0].strip())
+            height = int(parts[1].strip())
+        except ValueError:
+            raise Exception("[Display] The dimensions must be whole numbers.")
+
+    
+ 
+        engine.config["screen_width"] = width
+        engine.config["screen_height"] = height
+        
+        current_namebox_cfg = engine.config.get("namebox_rect", {})
+
+        current_dialogue_cfg = engine.config.get("dialogue_rect", {})
+        engine.config["dialogue_rect"] = {
+            "x": int(width * 0.05),
+            "y": int(height * 0.79),
+            "width": int(width * 0.90),
+            "height": int(height * 0.20),
+            "bg_color": current_dialogue_cfg.get("bg_color", (50, 50, 50)),
+            "border_color": current_dialogue_cfg.get("border_color", (255, 255, 255))
+        }
+
+
+        # Calcular el rectángulo del namebox basándose en el diálogo:
+        # Se posiciona justo encima del cuadro de diálogo, con un margen (por ejemplo, 5 píxeles).
+        namebox_height = engine.renderer.name_font.get_height()
+        margin = 23
+        # La coordenada Y se basa en dialogue_rect["y"] menos la altura del namebox y el margen.
+        namebox_y = engine.config["dialogue_rect"]["y"] - namebox_height - margin
+
+        engine.config["namebox_rect"] = {
+            "x": int(width * 0.05),
+            "y": namebox_y,
+            "width": int(width * 0.2),
+            "height": int(engine.renderer.name_font.get_height() * 2),
+            "bg_color": current_namebox_cfg.get("bg_color", (50, 50, 50)),
+            "border_color": current_namebox_cfg.get("border_color", (255, 255, 255))
+        }
+
+        
+ 
+ 
+        engine.renderer.screen = pygame.display.set_mode((width, height))
+        
+        print(f"[Display] Window set to {width}x{height}.")
+
+

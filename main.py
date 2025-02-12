@@ -81,10 +81,19 @@ def init_game(game_path):
     startup_file = os.path.join(game_path, "data", "startup.kag")
     scenes_file = os.path.join(game_path, "data", "system", "scenes.kag")
     characters_file = os.path.join(game_path, "data", "system", "characters.kag")
+    ui_file = os.path.join(game_path, "data", "system", "ui.kag")
+
+    # scenes
     first_scene_file = os.path.join(game_path, "data", "scenes", "first.kag")
+
+    with open(ui_file, "w", encoding="utf-8") as f:
+        f.write("# set the window size. eg: @Display(800,600)\n")
+        f.write("# the recomended max size is 1280x720 \n")
+        f.write("@Display()\n")
 
     with open(startup_file, "w", encoding="utf-8") as f:
         f.write("# Game startup script\n")
+        f.write("@Load(\"system/ui.kag\")\n")
         f.write("@Load(\"system/scenes.kag\")\n")
         f.write("@Load(\"system/characters.kag\")\n")
         f.write("@process_scene first\n")

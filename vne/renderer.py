@@ -1,110 +1,120 @@
+import os
 import pygame
-from vne.config import CONFIG
 
 class Renderer:
     def __init__(self, engine):
+        os.environ["SDL_VIDEO_CENTERED"] = "1"
         pygame.init()
         self.engine = engine
-        self.screen = pygame.display.set_mode((CONFIG.get("screen_width", 800), CONFIG.get("screen_height", 600)))
+        # Usar engine.config para obtener los valores actualizados de ancho y alto.
+        self.screen = pygame.display.set_mode((
+            self.engine.config.get("screen_width", 800), 
+            self.engine.config.get("screen_height", 600)
+        ))
         self.clock = pygame.time.Clock()
         self.fps = 0
 
         pygame.display.set_caption("Visual Novel Engine")
  
-        self.font = pygame.font.SysFont(CONFIG.get("font_name", "Arial"), CONFIG.get("font_size", 24))
+        self.font = pygame.font.SysFont(
+            self.engine.config.get("font_name", "Arial"), 
+            self.engine.config.get("font_size", 24)
+        )
         
-        self.name_font = pygame.font.SysFont(CONFIG.get("name_font", "Arial"), CONFIG.get("name_font_size", 20))
+        self.name_font = pygame.font.SysFont(
+            self.engine.config.get("name_font", "Arial"), 
+            self.engine.config.get("name_font_size", 20)
+        )
 
-        self.fps_font = pygame.font.SysFont(CONFIG.get("name_font", "Arial"), 13)
+        self.fps_font = pygame.font.SysFont(
+            self.engine.config.get("name_font", "Arial"), 13
+        )
     
     def draw_background(self):
-        """
-        The function `draw_background` in Python checks if there is a current background image and
-        displays it on the screen, otherwise it fills the screen with a specified background color.
-        """
         if self.engine.current_bg:
             self.screen.blit(self.engine.current_bg, (0, 0))
         else:
-            self.screen.fill(CONFIG.get("bg_color", (0, 0, 0)))
+            self.screen.fill(self.engine.config.get("bg_color", (0, 0, 0)))
     
     def draw_dialogue(self):
-        """
-        The function `draw_dialogue` in Python draws a dialogue box on the screen with text rendered
-        inside it.
-        """
         if self.engine.current_dialogue:
-        
-            rect_cfg = CONFIG.get("dialogue_rect", {
-                "x": 50,
-                "y": CONFIG.get("screen_height", 600) - 150,
-                "width": CONFIG.get("screen_width", 800) - 100,
+       
+            rect_cfg = self.engine.config.get("dialogue_rect", {
+                "x": 0,
+                "y": self.engine.config.get("screen_height", 600) - 150,
+                "width": self.engine.config.get("screen_width", 800) - 100,
                 "height": 100,
- 
-               
+                "bg_color": (50, 50, 50),
+                "border_color": (255, 255, 255)
             })
             dialogue_rect = pygame.Rect(rect_cfg["x"], rect_cfg["y"], rect_cfg["width"], rect_cfg["height"])
             pygame.draw.rect(self.screen, rect_cfg["bg_color"], dialogue_rect)
-
             text_surface = self.font.render(self.engine.current_dialogue, True, (255, 255, 255))
             self.screen.blit(text_surface, (dialogue_rect.x + 10, dialogue_rect.y + 10))
     
     def draw_character_name(self):
-        """
-        This function draws the current character's name on the screen within a specified rectangular
-        box.
-        """
         if self.engine.current_character_name:
-
-            namebox_cfg = CONFIG.get("namebox_rect", {
+            namebox_cfg = self.engine.config.get("namebox_rect", {
                 "x": 50,
-                "y": CONFIG.get("screen_height", 600) - 210,  
+                "y": self.engine.config.get("screen_height", 600) - 210,
                 "width": 200,
-                "height": 40
+                "height": 40,
+                "bg_color": (50, 50, 50),
+                "border_color": (255, 255, 255)
             })
             namebox_rect = pygame.Rect(namebox_cfg["x"], namebox_cfg["y"], namebox_cfg["width"], namebox_cfg["height"])
             pygame.draw.rect(self.screen, namebox_cfg["bg_color"], namebox_rect)
-       
             name_surface = self.name_font.render(self.engine.current_character_name, True, (255, 255, 255))
             self.screen.blit(name_surface, (namebox_rect.x + 10, namebox_rect.y + 10))
     
     def draw_sprites(self):
-        """
-        This function draws scaled sprites on the screen based on their position.
-        """
         if hasattr(self.engine, "sprites"):
+            screen_width = self.engine.config.get("screen_width", 800)
+            screen_height = self.engine.config.get("screen_height", 600)
+            
+           
+            base_low = 800
+            base_high = 1280
+            default_scale = self.engine.config.get("sprite_scale", 0.5)
+            high_scale = self.engine.config.get("sprite_scale_high", 0.40)
+            if screen_width <= base_low:
+                sprite_scale = default_scale
+            elif screen_width >= base_high:
+                sprite_scale = high_scale
+            else:
+                t = (screen_width - base_low) / (base_high - base_low)
+                sprite_scale = default_scale + t * (high_scale - default_scale)
+            
             for alias, sprite_data in self.engine.sprites.items():
                 image = sprite_data["image"]
-                position = sprite_data["position"]
-
-                sprite_scale = CONFIG.get("sprite_scale", 0.5)
-                desired_width = int(CONFIG["screen_width"] * sprite_scale)
-           
+                position = sprite_data.get("position", "center")
+                
+                desired_width = int(screen_width * sprite_scale)
                 scale_factor = desired_width / image.get_width()
                 new_width = desired_width
                 new_height = int(image.get_height() * scale_factor)
-                scaled_image = pygame.transform.smoothscale(image, (new_width, new_height))
-            
-                if position == "left":
+                zoom_factor = new_width / image.get_width()
+                scaled_image = pygame.transform.rotozoom(image, 0, zoom_factor)
+                
+                if position.lower() == "left":
                     x = 3
-                elif position == "right":
-                    x = CONFIG["screen_width"] - new_width - 3
-                else: 
-                    x = (CONFIG["screen_width"] - new_width) // 2
-             
-                y = (CONFIG["screen_height"] - new_height) // 2
+                elif position.lower() == "right":
+                    x = screen_width - new_width - 3
+                else:
+                    x = (screen_width - new_width) // 2
+
+       
+                y = sprite_data.get("y", (screen_height - new_height) // 2)
                 
                 self.screen.blit(scaled_image, (x, y))
+
     
     def render(self):
-        """
-        The `render` function in Python renders various elements of a game screen and displays the
-        frames per second if in developer mode.
-        """
         self.draw_background()
         self.draw_sprites()
         self.draw_character_name()
         self.draw_dialogue()
-        self.clock.tick()
+        self.clock.tick(30)
         self.fps = int(self.clock.get_fps())
 
         if self.engine.devMode:
@@ -112,4 +122,3 @@ class Renderer:
             self.screen.blit(counter_surface, (2, 2))
         
         pygame.display.flip()
- 

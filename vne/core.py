@@ -60,7 +60,7 @@ class VNEngine:
                     waiting = False
                                
             self.renderer.render()
-            self.clock.tick(30)
+         
             
     
     def run(self):
@@ -113,7 +113,7 @@ class VNEngine:
                 except Exception as e:
                     print(e)
                     self.running = False
-            time_delta = self.clock.tick(60) / 1000.0
+  
           
             pygame.display.update()
         pygame.quit()

@@ -86,7 +86,7 @@ class ScriptLexer:
             full_path = os.path.join(self.engine.game_path, "data", relative_path)
             if os.path.exists(full_path):
                 try:
-                    image = pygame.image.load(full_path)
+                    image = pygame.image.load(full_path).convert_alpha()
  
                     return image
                 except Exception as e2:
