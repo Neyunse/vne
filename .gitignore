@@ -19,3 +19,5 @@ old
 *.exe
 *.pkg
 build
+traceback.txt
+log.txt

@@ -179,7 +179,7 @@ class EventManager:
         if not hasattr(engine, "sprites"):
             engine.sprites = {}
         engine.sprites[sprite_alias] = {"image": sprite_image, "position": position}
-        print(f"[sprite] Sprite '{sprite_alias}' displayed at position '{position}'.")
+        engine.Log(f"[sprite] Sprite '{sprite_alias}' displayed at position '{position}'.")
     
     def handle_hide_sprite(self, arg, engine):
         """
@@ -188,15 +188,15 @@ class EventManager:
         sprite_alias = arg.strip()
         if hasattr(engine, "sprites") and sprite_alias in engine.sprites:
             del engine.sprites[sprite_alias]
-            print(f"[hide] Sprite '{sprite_alias}' hidden.")
+            engine.Log(f"[hide] Sprite '{sprite_alias}' hidden.")
         else:
-            print(f"[hide] Sprite '{sprite_alias}' not found to hide.")
+            engine.Log(f"[hide] Sprite '{sprite_alias}' not found to hide.")
     
     def handle_exit(self, arg, engine):
         """
         Prints a message and stops the engine.
         """
-        print("Event 'exit'", arg)
+        engine.Log("Event 'exit'", arg)
         engine.running = False
     
     def handle_Load(self, arg, engine):
@@ -216,21 +216,21 @@ class EventManager:
                     compiled_arg = arg
                 data = engine.resource_manager.get_bytes(compiled_arg)
                 data = xor_data(data, key)
-                print(f"[Load] Compiled file loaded: {compiled_arg}")
+                engine.Log(f"[Load] Compiled file loaded: {compiled_arg}")
                 engine.loaded_files[compiled_arg] = data
                 content = data.decode("utf-8", errors="replace")
             else:
                 data = engine.resource_manager.get_bytes(arg)
-                print(f"[Load] File loaded: {arg}")
+                engine.Log(f"[Load] File loaded: {arg}")
                 engine.loaded_files[arg] = data
                 content = data.decode("utf-8", errors="replace")
             if any(line.strip().startswith("@") for line in content.splitlines()):
                 commands = ScriptLexer(engine.game_path, engine).parse_script(content)
                 for cmd in commands:
-                    print(f"[Load-Process] Executing command: {cmd}")
+                    engine.Log(f"[Load-Process] Executing command: {cmd}")
                     self.handle(cmd, engine)
         except Exception as e:
-            print(f"[Load] Error loading {arg}: {e}")
+            raise Exception(f"[Load] Error loading {arg}: {e}")
     
     def handle_scene(self, arg, engine):
         """
@@ -241,7 +241,7 @@ class EventManager:
             alias = parts[0].strip()
             filename = parts[1].strip().strip('"')
             engine.scenes[alias] = filename
-            print(f"[scene] Scene defined: alias '{alias}', file '{filename}'")
+            engine.Log(f"[scene] Scene defined: alias '{alias}', file '{filename}'")
         else:
             raise Exception("[ERROR] Invalid format in @scene. Expected: @scene alias = \"file\"")
         
@@ -256,7 +256,7 @@ class EventManager:
             string_var = self.substitute_variables(var, engine)
 
             engine.vars[alias] = string_var
-            print(f"[variable] Variable defined: alias '{alias}', file '{string_var}'")
+            engine.Log(f"[variable] Variable defined: alias '{alias}', file '{string_var}'")
         else:
             raise Exception("[ERROR] Invalid format in @def. Expected: @def alias = \"value\"")
     
@@ -281,13 +281,13 @@ class EventManager:
             content = xor_data(file_bytes, key).decode("utf-8", errors="replace")
         except Exception as e:
             raise Exception(f"[ERROR] Compiled version of the script for '{base_name}' not found: {e}")
-        print(f"[process_scene] Processing scene '{scene_alias}'.")
+        engine.Log(f"[process_scene] Processing scene '{scene_alias}'.")
         new_lexer = ScriptLexer(engine.game_path, engine)
         new_lexer.commands = new_lexer.parse_script(content)
         new_lexer.original_commands = list(new_lexer.commands)
         new_lexer.current = 0
         engine.lexer = new_lexer
-        print(f"[process_scene] New scene loaded with {len(engine.lexer.commands)} commands.")
+        engine.Log(f"[process_scene] New scene loaded with {len(engine.lexer.commands)} commands.")
     
     def handle_jump_scene(self, arg, engine):
         """
@@ -306,13 +306,13 @@ class EventManager:
         try:
             file_bytes = engine.resource_manager.get_bytes(compiled_path)
             content = xor_data(file_bytes, key).decode("utf-8", errors="replace")
-            print(f"[jump_scene] Compiled scene '{scene_alias}' loaded from: {compiled_path}")
+            engine.Log(f"[jump_scene] Compiled scene '{scene_alias}' loaded from: {compiled_path}")
         except Exception as e:
             non_compiled_path = os.path.join(engine.game_path, "data", "scenes", f"{scene_file_name}.kag")
             try:
                 with open(non_compiled_path, "r", encoding="utf-8") as f:
                     content = f.read()
-                print(f"[jump_scene] Uncompiled scene '{scene_alias}' loaded from: {non_compiled_path}")
+                engine.Log(f"[jump_scene] Uncompiled scene '{scene_alias}' loaded from: {non_compiled_path}")
             except Exception as e2:
                 raise Exception(f"[jump_scene] Error loading scene '{scene_alias}': {e2}")
         new_lexer = ScriptLexer(engine.game_path, engine)
@@ -320,8 +320,8 @@ class EventManager:
         new_lexer.original_commands = list(new_lexer.commands)
         new_lexer.current = 0
         engine.lexer = new_lexer
-        print(f"[jump_scene] New scene loaded with {len(engine.lexer.commands)} commands.")
-        print(f"[jump_scene] Jumping to scene '{scene_alias}'.")
+        engine.Log(f"[jump_scene] New scene loaded with {len(engine.lexer.commands)} commands.")
+        engine.Log(f"[jump_scene] Jumping to scene '{scene_alias}'.")
     
     def handle_char(self, arg, engine):
         """
@@ -334,15 +334,15 @@ class EventManager:
                 alias = parts[0].strip()
                 display_name = parts[1].strip().strip('"')
                 engine.characters[alias] = display_name
-                print(f"[char] Character defined: alias '{alias}', name '{display_name}'")
+                engine.Log(f"[char] Character defined: alias '{alias}', name '{display_name}'")
             else:
-                print("[char] Invalid format. Expected: @char alias as \"name\"")
+                raise Exception("[char] Invalid format. Expected: @char alias as \"name\"")
         else:
             if alias:
                 engine.characters[alias] = alias
-                print(f"[char] Character defined: alias '{alias}', name '{alias}'")
+                engine.Log(f"[char] Character defined: alias '{alias}', name '{alias}'")
             else:
-                print("[char] Invalid format. Expected: @char alias [as \"name\"]")
+                raise Exception("[char] Invalid format. Expected: @char alias [as \"name\"]")
     
     def handle_rename(self, arg, engine):
         """
@@ -356,7 +356,7 @@ class EventManager:
                 if alias not in engine.characters:
                     raise Exception(f"[rename] Character '{alias}' is not defined, cannot rename.")
                 engine.characters[alias] = new_display_name
-                print(f"[rename] Character '{alias}' renamed to '{new_display_name}'.")
+                engine.Log(f"[rename] Character '{alias}' renamed to '{new_display_name}'.")
             else:
                 raise Exception("[rename] Invalid format. Expected: @rename alias as \"NewName\"")
         else:
@@ -386,7 +386,7 @@ class EventManager:
         new_value = self.substitute_variables(new_value, engine)
 
         engine.vars[var_name] = new_value
-        print(f"[set] Variable '{var_name}' updated to '{new_value}'.")
+        engine.Log(f"[set] Variable '{var_name}' updated to '{new_value}'.")
     
     def handle_if(self, arg, engine):
         """
@@ -401,7 +401,7 @@ class EventManager:
         else:
             condition = False
         engine.condition_stack.append(condition)
-        print(f"[if] Evaluation of '{var_name}': {condition}")
+        engine.Log(f"[if] Evaluation of '{var_name}': {condition}")
     
     def handle_else(self, arg, engine):
         """
@@ -411,7 +411,7 @@ class EventManager:
             raise Exception("[else] No open if block.")
         current = engine.condition_stack.pop()
         engine.condition_stack.append(not current)
-        print(f"[else] Condition reversed: now {not current}")
+        engine.Log(f"[else] Condition reversed: now {not current}")
     
     def handle_endif(self, arg, engine):
         """
@@ -420,7 +420,7 @@ class EventManager:
         if not hasattr(engine, "condition_stack") or not engine.condition_stack:
             raise Exception("[endif] No open if block.")
         engine.condition_stack.pop()
-        print("[endif] End of if block.")
+        engine.Log("[endif] End of if block.")
     
     def handle_checkpoint(self, arg, engine):
         """
@@ -434,7 +434,7 @@ class EventManager:
         else:
             checkpoint_line = engine.lexer.original_commands[-1]
         engine.checkpoints[label] = checkpoint_line
-        print(f"[checkpoint] Checkpoint '{label}' saved with line: {checkpoint_line}")
+        engine.Log(f"[checkpoint] Checkpoint '{label}' saved with line: {checkpoint_line}")
     
     def handle_goto(self, arg, engine):
         """
@@ -444,7 +444,7 @@ class EventManager:
         if not hasattr(engine, "checkpoints") or label not in engine.checkpoints:
             raise Exception(f"[goto] Checkpoint '{label}' does not exist.")
         checkpoint_line = engine.checkpoints[label]
-        print(f"[goto] Searching for checkpoint line: '{checkpoint_line}'")
+        engine.Log(f"[goto] Searching for checkpoint line: '{checkpoint_line}'")
         found_index = None
         for i, cmd in enumerate(engine.lexer.original_commands):
             if cmd.strip() == checkpoint_line.strip():
@@ -454,7 +454,7 @@ class EventManager:
             raise Exception(f"[goto] Checkpoint line '{checkpoint_line}' not found in the original script.")
         engine.lexer.commands = engine.lexer.original_commands[found_index:]
         engine.lexer.current = 0
-        print(f"[goto] Jumping to checkpoint '{label}' in the original script starting at index {found_index}.")
+        engine.Log(f"[goto] Jumping to checkpoint '{label}' in the original script starting at index {found_index}.")
 
     def handle_display(self, arg, engine):
         """
@@ -515,7 +515,7 @@ class EventManager:
  
         engine.renderer.screen = pygame.display.set_mode((width, height))
         
-        print(f"[Display] Window set to {width}x{height}.")
+        engine.Log(f"[Display] Window set to {width}x{height}.")
 
     def handle_menu(self, arg, engine):
         """
@@ -523,7 +523,7 @@ class EventManager:
         It is expected that, after this command, @button commands will be issued to define the options.
         """
         engine.current_menu_buttons = []
-        print("[menu] Menu block started.")
+        engine.Log("[menu] Menu block started.")
 
     def handle_button(self, arg, engine):
         """
@@ -550,7 +550,7 @@ class EventManager:
             engine.current_menu_buttons = []
       
         engine.current_menu_buttons.append({"raw_label": raw_label, "event": action})
-        print(f"[button] Button added: '{raw_label}'. -> '{action}'")
+        engine.Log(f"[button] Button added: '{raw_label}'. -> '{action}'")
 
     def handle_endmenu(self, arg, engine):
         """
@@ -632,7 +632,7 @@ class EventManager:
         if selected_action:
             if not selected_action.startswith("@"):
                 selected_action = "@" + selected_action
-            print(f"[menu] Selected action: {selected_action}")
+            engine.Log(f"[menu] Selected action: {selected_action}")
             self.handle(selected_action, engine)
 
     def handle_Set_event(self, arg, engine):
@@ -670,4 +670,4 @@ class EventManager:
         new_value = self.substitute_variables(new_value, engine)
         
         engine.vars[var_name] = new_value
-        print(f"[Set] Variable '{var_name}' updated to '{new_value}'.")
+        engine.Log(f"[Set] Variable '{var_name}' updated to '{new_value}'.")

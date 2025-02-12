@@ -3,7 +3,8 @@ import shutil
 import sys
 import zipfile
 import pyzipper
-
+from datetime import datetime
+import platform
 from vne import Core
 from vne import xor_data
 from vne import config as CONFIG
@@ -24,7 +25,10 @@ def compile_kag(source_file, target_file, key):
     compiled_bytes = xor_data(plain_bytes, key)
     with open(target_file, "wb") as tf:
         tf.write(compiled_bytes)
+    
+ 
     print(f"[compile_kag] {source_file} -> {target_file}")
+ 
 
 def compile_all_kag_in_folder(data_folder, key):
     """
@@ -176,7 +180,10 @@ def run_game(game_path):
     :param game_path: The path to the directory where the game files are located.
     """
     data_folder = os.path.join(game_path, "data")
+
+    print("---------[DEVELOPER]---------")
     compile_all_kag_in_folder(data_folder, key)
+    print("-----------------------------")
 
     engine = Core(game_path, devMode=True)
     engine.run()
@@ -201,9 +208,26 @@ def main():
         print(f"Unknown command: {command}")
 
 if __name__ == "__main__":
-    exe_name = os.path.basename(sys.executable).lower()
-    if "game.exe" in exe_name or "game" in exe_name:
-        engine = Core(os.path.abspath("."))
-        engine.run()
-    else:
-        main()
+
+    try:
+        exe_name = os.path.basename(sys.executable).lower()
+        if "game.exe" in exe_name or "game" in exe_name:
+            engine = Core(os.path.abspath("."))
+            engine.run()
+        else:
+            main()
+    except Exception as e:
+        traceback_template = '''Exception error:
+  %(message)s\n
+
+  %(plataform)s
+  '''
+        traceback_details = {
+            'message' : e,
+            'plataform': f"{platform.system()}-{platform.version()}"
+        }
+
+        print(traceback_template % traceback_details)
+        with open('engine-error.txt', 'w') as f:
+            f.write(traceback_template % traceback_details)
+            f.close()

@@ -4,8 +4,9 @@ from .xor_data import xor_data
 from .config import key
 
 class ResourceManager:
-    def __init__(self, base_path):
+    def __init__(self, base_path, log):
         self.base_path = base_path
+        self.Log = log
         self.pkg_path = os.path.join(base_path, "data.pkg")
         self.data_folder = os.path.join(base_path, "data")
         self.zipfile = None
@@ -16,12 +17,12 @@ class ResourceManager:
                 self.zipfile = pyzipper.AESZipFile(self.pkg_path, "r")
          
                 self.zipfile.setpassword(key)
-                print(f"[ResourceManager] data.pkg found at {self.pkg_path}")
+                self.Log(f"[ResourceManager] data.pkg found at {self.pkg_path}")
             except Exception as e:
-                print(f"[ResourceManager] Error opening '{self.pkg_path}': {e}")
+                self.Log(f"[ResourceManager] Error opening '{self.pkg_path}': {e}")
                 self.zipfile = None
         else:
-            print(f"[ResourceManager] '{self.pkg_path}' not found. Using loose data folder.")
+            self.Log(f"[ResourceManager] '{self.pkg_path}' not found. Using loose data folder.")
 
     def get_bytes(self, internal_path):
         """
@@ -46,7 +47,7 @@ class ResourceManager:
         if internal_path.lower().endswith(".kag"):
             alt_path = internal_path[:-4] + ".kagc"
             zip_alt_path = alt_path.replace(os.sep, "/")
-            print(f"[ResourceManager] Retrying with '{zip_alt_path}'")
+            self.Log(f"[ResourceManager] Retrying with '{zip_alt_path}'")
             if self.zipfile:
                 try:
                     return self.zipfile.read(zip_alt_path)

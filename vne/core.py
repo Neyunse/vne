@@ -7,7 +7,9 @@ from vne.config import CONFIG
 from vne.config import key
 from vne.rm import ResourceManager
 from vne.xor_data import xor_data
-
+from datetime import datetime
+import os
+import platform
 class VNEngine:
     def __init__(self, game_path, devMode=False):
         self.game_path = game_path
@@ -29,7 +31,7 @@ class VNEngine:
         self.typewriter_index = 0
         
         
-        self.resource_manager = ResourceManager(self.game_path)
+        self.resource_manager = ResourceManager(self.game_path, self.Log)
         self.lexer = ScriptLexer(self.game_path, self)
         self.event_manager = EventManager()
         self.renderer = Renderer(self)
@@ -41,7 +43,7 @@ class VNEngine:
         self.gui_manager = pygame_gui.UIManager((CONFIG["screen_width"], CONFIG["screen_height"]))
 
 
-        print(f"Starting the game from {self.game_path}...")
+        self.Log(f"Starting the game from {self.game_path}...")
     
     def wait_for_keypress(self):
         """
@@ -63,7 +65,20 @@ class VNEngine:
                                
             self.renderer.render()
          
-            
+    def Log(self, log):
+        """
+        The function `Log` appends a log message to a file named 'log.txt'.
+        
+        :param log: The `Log` function takes a parameter `log`, which is a string representing the log
+        message that you want to write to a file named `log.txt`. The function appends the log message to
+        the file
+        """
+        log_path = os.path.join(self.game_path, 'log.txt')
+        
+        with open(log_path, 'a+') as f:
+            f.write("\n")
+            f.write(log)
+            f.close()
     
     def run(self):
         """
@@ -73,7 +88,22 @@ class VNEngine:
         will return `None`.
         """
      
-        print("Running game. Close the window to exit.") 
+        self.Log("Running game. Close the window to exit.") 
+
+        init_log_template = """created at: %(createdAt)s
+Plataform: %(plataform)s
+"""
+        init_log_template_data = {
+            'createdAt': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+            'plataform': f"{platform.system()}-{platform.version()}",
+         
+        }
+
+        log_path = os.path.join(self.game_path, 'log.txt')
+
+        with open(log_path, 'w') as f:
+            f.write(init_log_template % init_log_template_data)
+            pass
 
         candidates = [
             "startup.kagc",
@@ -89,13 +119,13 @@ class VNEngine:
                     content = plain_bytes.decode("utf-8", errors="replace")
                 else:
                     content = data_bytes.decode("utf-8", errors="replace")
-                print(f"[VNEngine] Startup script loaded: {candidate}")
+                self.Log(f"[VNEngine] Startup script loaded: {candidate}")
                 break
             except FileNotFoundError:
                 continue
 
         if content is None:
-            print("[VNEngine] Startup script not found. Exiting.")
+            self.Log("[VNEngine] Startup script not found. Exiting.")
             self.running = False
             return
  
@@ -114,10 +144,29 @@ class VNEngine:
                     self.event_manager.handle(command, self)
                     pass
                 except Exception as e:
-                    print(e)
                     self.running = False
+                    traceback_template = '''Exception error:
+  %(message)s\n
+
+  %(plataform)s
+  '''
+                    self.Log(f"[Exception] Script was failed. Check the traceback.txt file for more information.")
+                    
+                    traceback_details = {
+                        'message' : e,
+                        'plataform': f"{platform.system()}-{platform.version()}"
+                    }
+                    
+                    print(traceback_template % traceback_details)
+
+                    trace_path = os.path.join(self.game_path, 'traceback.txt')
+
+
+                    with open(trace_path, 'w') as f:
+                        f.write(traceback_template % traceback_details)
+                        f.close()
   
           
             pygame.display.update()
         pygame.quit()
-        print("Game finished.")
+        self.Log("Game finished.")

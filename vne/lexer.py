@@ -29,9 +29,9 @@ class ScriptLexer:
             self.commands = self.parse_script(content)
             self.original_commands = list(self.commands)
         except Exception as e:
-            print(f"[Lexer] Compiled version of 'startup' not found: {e}")
             self.commands = []
             self.original_commands = []
+            raise Exception(f"[Lexer] Compiled version of 'startup' not found: {e}")
             
     def parse_script(self, content):
         """
@@ -62,7 +62,7 @@ class ScriptLexer:
         if self.current < len(self.commands):
             cmd = self.commands[self.current]
             self.current += 1
-            print(f"[get-next-command] {cmd}")
+            self.engine.Log(f"[get-next-command] {cmd}")
             return cmd
         return None
     
