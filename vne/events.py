@@ -1,7 +1,6 @@
 import os
 import pygame
-import pygame_gui
-import time
+from collections import ChainMap
 import re
 from vne.lexer import ScriptLexer
 from vne.xor_data import xor_data
@@ -15,8 +14,7 @@ class EventManager:
             "characters.kag", 
             "vars.kag", 
             "scenes.kag", 
-            "ui.kag",
-            "main_menu.kag"
+            "ui.kag"
         ]
 
     def register_default_events(self):
@@ -104,16 +102,10 @@ class EventManager:
             handler(arg, engine)
 
     def substitute_variables(self, text, engine):
+        mapping = ChainMap(engine.characters, engine.scenes, engine.vars)
         def replacer(match):
-                key = match.group(1).strip()
-                if key in engine.characters:
-                    return engine.characters[key]
-                elif key in engine.scenes:
-                    return engine.scenes[key]
-                elif key in engine.vars:
-                    return engine.vars[key]
-                else:
-                    raise Exception(f"[ERROR] The variable for '{key}' is not defined.")
+            key = match.group(1).strip()
+            return str(mapping.get(key, match.group(0)))
         return re.sub(r'\{([^}]+)\}', replacer, text)
     
     def handle_say(self, arg, engine):
@@ -380,8 +372,16 @@ class EventManager:
             raise Exception("[set] Invalid format. Expected: @set variable = \"new value\"")
         var_name = parts[0].strip()
         new_value = parts[1].strip().strip('"')
+
+        if var_name in engine.characters:
+            raise Exception(f"[set] The variable '{var_name}' cannot be modified as it is an already defined character!")
+        
+        if var_name in engine.scenes:
+            raise Exception(f"[set] The variable '{var_name}' cannot be modified as it is an already defined scene!")
+        
         if var_name not in engine.vars:
             raise Exception(f"[set] The variable '{var_name}' is not defined. Use @def to define it.")
+
         
         new_value = self.substitute_variables(new_value, engine)
 
@@ -657,9 +657,16 @@ class EventManager:
         var_name = parts[0].strip()
         new_value = parts[1].strip().strip('"')
         
+        if var_name in engine.characters:
+            raise Exception(f"[Set] The variable '{var_name}' cannot be modified as it is an already defined character!")
+        
+        if var_name in engine.scenes:
+            raise Exception(f"[Set] The variable '{var_name}' cannot be modified as it is an already defined scene!")
+        
         if var_name not in engine.vars:
             raise Exception(f"[Set] The variable '{var_name}' is not defined. Use @def to define it.")
         
+
         new_value = self.substitute_variables(new_value, engine)
         
         engine.vars[var_name] = new_value

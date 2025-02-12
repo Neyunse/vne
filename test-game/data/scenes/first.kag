@@ -4,9 +4,10 @@ K: Hello, welcome to this engine test!
 K: my name is {K} and I am here for the sole purpose of debugging this project....
 K: everything seems to be working properly...
 
+
 @menu
-@button "I found a bug!" event Set(chek, true)
-@button "No bugs" event Set(chek, false)
+@button "I found a bug!" event set chek = true
+@button "No bugs" event set chek = false
 @endMenu
 
 @if chek
