@@ -1,1 +1,2 @@
 @def test = "Hello World!"
+@def chek = false

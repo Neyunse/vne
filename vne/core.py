@@ -24,6 +24,8 @@ class VNEngine:
         self.vars = {}
         self.config = CONFIG
         self.devMode = devMode
+        self.checkpoints = {}
+        self.condition_stack = []
         
         
         self.resource_manager = ResourceManager(self.game_path)
@@ -59,6 +61,7 @@ class VNEngine:
             
                 if event.type == pygame.MOUSEBUTTONDOWN:
                     waiting = False
+                    print(f"Lexer índice actual: {self.lexer.current}")
                                
             self.renderer.render()
             self.clock.tick(30)

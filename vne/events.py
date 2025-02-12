@@ -28,6 +28,14 @@ class EventManager:
         self.register_event("hide", self.handle_hide_sprite)
         self.register_event("rename", self.handle_rename)
 
+        self.register_event("if", self.handle_if)
+        self.register_event("else", self.handle_else)
+        self.register_event("endif", self.handle_endif)
+        self.register_event("checkpoint", self.handle_checkpoint)
+        self.register_event("goto", self.handle_goto)
+        self.register_event("set", self.handle_set)
+
+
     def register_event(self, event_name, handler):
         """
         The function `register_event` adds a handler to a list of event handlers associated with a
@@ -97,6 +105,13 @@ class EventManager:
         additional context or functionality to the event handlers when they are called. If an `engine`
         is provided, it will be passed along
         """
+        control_commands = {"if", "else", "endif", "checkpoint", "goto"}
+        if event_name not in control_commands:
+            
+            if hasattr(engine, "condition_stack") and engine.condition_stack:
+        
+                if not all(engine.condition_stack):
+                    return
         handlers = self.event_handlers.get(event_name, [])
         if not handlers:
             raise Exception(f"[ERROR] No hay manejadores para el evento '{event_name}'.")
@@ -501,3 +516,90 @@ class EventManager:
                 raise Exception("[rename] Formato inválido. Se esperaba: @rename alias as \"NuevoNombre\"")
         else:
             raise Exception("[rename] Formato inválido. Se esperaba: @rename alias as \"NuevoNombre\"")
+    
+    def handle_set(self, arg, engine):
+        """
+        Updates the value of an already defined variable.
+        Syntax: @set variable = "new value".
+        If the variable does not exist, an error is thrown.
+        """
+        parts = arg.split("=")
+        if len(parts) != 2:
+            raise Exception("[set] Formato inválido. Se esperaba: @set variable = \"nuevo valor\"")
+        
+        var_name = parts[0].strip()
+        new_value = parts[1].strip().strip('"')
+        
+        if var_name not in engine.vars:
+            raise Exception(f"[set] La variable '{var_name}' no está definida. Use @def para definirla.")
+        
+        engine.vars[var_name] = new_value
+        print(f"[set] Variable '{var_name}' actualizada a '{new_value}'.")
+
+
+    def handle_if(self, arg, engine):
+        """
+        Evaluates the condition and marks the beginning of a conditional block.
+        It is expected that 'arg' is the name of a variable defined with @def.
+        The condition is interpreted as true if engine.vars[var] is "true" (ignoring case),
+        and false otherwise.
+        """
+        var_name = arg.strip()
+        if not hasattr(engine, "condition_stack"):
+            engine.condition_stack = []
+        
+        if var_name in engine.vars:
+            value = engine.vars[var_name].lower()
+            condition = (value == "true")
+        else:
+         
+            condition = False
+        engine.condition_stack.append(condition)
+        print(f"[if] Evaluación de '{var_name}': {condition}")
+
+    def handle_else(self, arg, engine):
+        """
+        Reverses the condition in the current conditional block.
+        """
+        if not hasattr(engine, "condition_stack") or not engine.condition_stack:
+            raise Exception("[else] No hay bloque if abierto.")
+        current = engine.condition_stack.pop()
+        engine.condition_stack.append(not current)
+        print(f"[else] Se invierte la condición: ahora {not current}")
+
+    def handle_endif(self, arg, engine):
+        """
+        Closes the current conditional block.
+        """
+        if not hasattr(engine, "condition_stack") or not engine.condition_stack:
+            raise Exception("[endif] No hay bloque if abierto.")
+        engine.condition_stack.pop()
+        print("[endif] Fin del bloque if.")
+
+    def handle_checkpoint(self, arg, engine):
+        """
+        Marca un checkpoint en el script actual.
+        Se espera la sintaxis:
+            @checkpoint <label>
+        Se guarda la posición actual del lexer (engine.lexer.current) en engine.checkpoints.
+        """
+        label = arg.strip()
+        if not hasattr(engine, "checkpoints"):
+            engine.checkpoints = {}
+     
+        engine.checkpoints[label] = engine.lexer.current
+        print(f"[checkpoint] Checkpoint '{label}' guardado en índice {engine.lexer.current}.")
+
+    def handle_goto(self, arg, engine):
+        """
+        Salta a un checkpoint previamente definido.
+        Se espera la sintaxis:
+            @goto <label>
+        Se modifica engine.lexer.current para reiniciar la ejecución del script desde el checkpoint.
+        """
+        label = arg.strip()
+        if not hasattr(engine, "checkpoints") or label not in engine.checkpoints:
+            raise Exception(f"[goto] Checkpoint '{label}' no existe.")
+        print(f"[goto] Antes del salto: engine.lexer.current = {engine.lexer.current}")
+        engine.lexer.current = engine.checkpoints[label]
+        print(f"[goto] Saltando al checkpoint '{label}' (índice {engine.lexer.current}).")
