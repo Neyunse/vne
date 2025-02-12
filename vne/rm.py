@@ -1,5 +1,5 @@
 import os
-import zipfile
+import pyzipper
 from .xor_data import xor_data
 from .config import key
 
@@ -12,7 +12,10 @@ class ResourceManager:
 
         if os.path.exists(self.pkg_path):
             try:
-                self.zipfile = zipfile.ZipFile(self.pkg_path, "r")
+                 
+                self.zipfile = pyzipper.AESZipFile(self.pkg_path, "r")
+         
+                self.zipfile.setpassword(key)
                 print(f"[ResourceManager] data.pkg found at {self.pkg_path}")
             except Exception as e:
                 print(f"[ResourceManager] Error opening '{self.pkg_path}': {e}")
@@ -22,10 +25,10 @@ class ResourceManager:
 
     def get_bytes(self, internal_path):
         """
-        The function `get_bytes` reads and returns the content of a file specified by the internal path
-        from either a zipfile or a local file system, with a fallback mechanism for specific file
-        extensions.
+        Reads and returns the content of a file specified by the internal path from either a
+        password-protected zipfile or from the loose data folder, with fallback for alternative file names.
         """
+       
         zip_internal_path = internal_path.replace(os.sep, "/")
   
         if self.zipfile:
@@ -39,6 +42,7 @@ class ResourceManager:
             with open(local_path, "rb") as f:
                 return f.read()
 
+        
         if internal_path.lower().endswith(".kag"):
             alt_path = internal_path[:-4] + ".kagc"
             zip_alt_path = alt_path.replace(os.sep, "/")
@@ -57,8 +61,8 @@ class ResourceManager:
 
     def get_script_bytes(self, base_name):
         """
-        The function `get_script_bytes` retrieves and decrypts the content of a compiled script file
-        based on a given base name.
+        Retrieves and decrypts the content of a compiled script file based on a given base name.
+        The compiled file should have a header line starting with "VNEFILE:".
         """
         compiled_path = base_name + ".kagc"
         try:
@@ -70,7 +74,7 @@ class ResourceManager:
              
             header_content = header.decode("utf-8").strip()  
             parts = header_content.split(";")
-            id_part = parts[0]   
+            id_part = parts[0]
             if not id_part.startswith("VNEFILE:"):
                 raise Exception("Invalid header: missing 'VNEFILE:'")
             file_identifier = id_part[len("VNEFILE:"):].strip()
@@ -87,15 +91,9 @@ class ResourceManager:
             raise Exception(f"[ERROR] Compiled version of the script for '{base_name}' was not found.")
 
     def close(self):
-        """
-        The `close` function closes the `zipfile` attribute if it is not `None`.
-        """
         if self.zipfile:
             self.zipfile.close()
             self.zipfile = None
 
     def __del__(self):
-        """
-        Destructor method that closes resources when the object is deleted.
-        """
         self.close()

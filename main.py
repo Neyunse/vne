@@ -2,6 +2,7 @@ import os
 import shutil
 import sys
 import zipfile
+import pyzipper
 
 from vne import Core
 from vne import xor_data
@@ -39,22 +40,31 @@ def compile_all_kag_in_folder(data_folder, key):
                 target_path = os.path.splitext(source_path)[0] + ".kagc"
                 compile_kag(source_path, target_path, key)
 
+
 def create_data_pkg(source_folder, output_pkg):
     """
-    Zips files from the specified folder into a package, excluding loose .kag files.
-    
-    :param source_folder: The directory path containing the data files to be packaged.
-    :param output_pkg: The path to the ZIP file that will be created.
+    Recursively packs the files in the source_folder into an encrypted ZIP archive,
+    excluding single .kag files (only .kagc or other files are included).
+
+    param source_folder: Path of the folder with the data to be packed.
+    :param output_pkg: Path of the ZIP file to be created.
     """
-    with zipfile.ZipFile(output_pkg, "w", zipfile.ZIP_DEFLATED) as pkg:
+    with pyzipper.AESZipFile(
+            output_pkg,
+            'w',
+            compression=pyzipper.ZIP_DEFLATED,
+            encryption=pyzipper.WZ_AES) as pkg:
+        pkg.setpassword(key)
         for root, dirs, files in os.walk(source_folder):
             for file in files:
+                
                 if file.lower().endswith(".kag") and not file.lower().endswith(".kagc"):
-                    continue  # Exclude loose .kag files
+                    continue
                 file_path = os.path.join(root, file)
+            
                 rel_path = os.path.relpath(file_path, source_folder)
                 pkg.write(file_path, rel_path)
-    print(f"[create_data_pkg] '{source_folder}' packaged into '{output_pkg}' (excluding .kag)")
+    print(f"[create_data_pkg] '{source_folder}' empaquetado en '{output_pkg}' (excluyendo archivos .kag)")
 
 def init_game(game_path):
     """
