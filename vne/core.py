@@ -1,4 +1,3 @@
-import os
 import pygame
 import pygame_gui
 from vne.lexer import ScriptLexer
@@ -37,11 +36,10 @@ class VNEngine:
         self.current_dialogue = ""
         self.current_character_name = ""
         
-        # Inicializar el UI Manager de pygame_gui.
         self.gui_manager = pygame_gui.UIManager((CONFIG["screen_width"], CONFIG["screen_height"]))
 
 
-        print(f"Iniciando el juego desde {self.game_path}...")
+        print(f"Starting the game from {self.game_path}...")
     
     def wait_for_keypress(self):
         """
@@ -58,10 +56,8 @@ class VNEngine:
                     self.running = False
                     return
                 
-            
                 if event.type == pygame.MOUSEBUTTONDOWN:
                     waiting = False
-                    print(f"Lexer índice actual: {self.lexer.current}")
                                
             self.renderer.render()
             self.clock.tick(30)
@@ -75,7 +71,7 @@ class VNEngine:
         will return `None`.
         """
      
-        print("Ejecutando juego. Cierre la ventana para salir.") 
+        print("Running game. Close the window to exit.") 
 
         candidates = [
             "startup.kagc",
@@ -87,18 +83,17 @@ class VNEngine:
             try:
                 data_bytes = self.resource_manager.get_bytes(candidate)
                 if candidate.endswith(".kagc"):
-                
                     plain_bytes = xor_data(data_bytes, key)
                     content = plain_bytes.decode("utf-8", errors="replace")
                 else:
                     content = data_bytes.decode("utf-8", errors="replace")
-                print(f"[VNEngine] Script de inicio cargado: {candidate}")
+                print(f"[VNEngine] Startup script loaded: {candidate}")
                 break
             except FileNotFoundError:
                 continue
 
         if content is None:
-            print("[VNEngine] No se encontró el script de inicio (startup). Saliendo.")
+            print("[VNEngine] Startup script not found. Exiting.")
             self.running = False
             return
  
@@ -113,7 +108,6 @@ class VNEngine:
                 self.running = False
             else:
                 try:
-                    
                     self.event_manager.handle(command, self)
                     pass
                 except Exception as e:
@@ -123,4 +117,4 @@ class VNEngine:
           
             pygame.display.update()
         pygame.quit()
-        print("Juego finalizado.")
+        print("Game finished.")
