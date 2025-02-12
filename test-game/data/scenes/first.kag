@@ -11,4 +11,5 @@ K: Hoy comienza mi nueva aventura!
 @rename K as Sayori
 
 K: Espero hacer muchos amigos!
+@jump_scene second
 @exit

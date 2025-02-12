@@ -290,7 +290,6 @@ class EventManager:
                 engine.loaded_files[compiled_arg] = data
                 content = data.decode("utf-8", errors="replace")
             else:
-                 
                 data = engine.resource_manager.get_bytes(arg)
                 print(f"[Load] Archivo cargado: {arg}")
                 engine.loaded_files[arg] = data
@@ -403,37 +402,46 @@ class EventManager:
 
     def handle_jump_scene(self, arg, engine):
         """
-        The function `handle_jump_scene` processes a jump scene command in a game engine, loading and
-        executing commands from a specified scene file.
-        
-        :param arg: The `arg` parameter in the `handle_jump_scene` function is expected to be a string
-        containing one or more scene aliases separated by the "|" character. The function then processes
-        this input to jump to the specified scene(s) in the game engine
-        :param engine: The `engine` parameter in the `handle_jump_scene` method seems to be an instance
-        of some game engine class that contains information about scenes and game paths. It is used to
-        access the scenes dictionary and game path within the method for handling scene jumps
+        Procesa el comando de salto de escena.
+        Se acepta un alias de escena (sin formato extendido). El método intenta primero
+        cargar la versión compilada (.kagc) de la escena; si no se encuentra, carga la versión sin compilar (.kag).
         """
-   
         parts = [p.strip() for p in arg.split("|") if p.strip()]
-        if len(parts) == 1:
-            scene_alias = parts[0]
-            if scene_alias in engine.scenes:
-                scene_file_name = engine.scenes[scene_alias]
-                scene_file_path = os.path.join(engine.game_path, "data", "scenes", f"{scene_file_name}.kag")
-                print(f"[jump_scene] Saltando a escena '{scene_alias}' desde: {scene_file_path}")
-                try:
-                    with open(scene_file_path, "r", encoding="utf-8") as f:
-                        content = f.read()
-                    scene_commands = [line.strip() for line in content.splitlines() if line.strip() and not line.strip().startswith("#")]
-                    for cmd in scene_commands:
-                        print(f"[jump_scene] Comando de escena: {cmd}")
-                        engine.event_manager.handle(cmd, engine)
-                except Exception as e:
-                    raise Exception(f"[jump_scene] Error al cargar la escena '{scene_alias}': {e}")
-            else:
-                raise Exception(f"[ERROR] Escena '{scene_alias}' no está definida en system/scenes.kag.")
-        else:
+        if len(parts) != 1:
             raise Exception("[ERROR] Formato extendido en @jump_scene no implementado.")
+        
+        scene_alias = parts[0]
+        
+        # Determinar el nombre del archivo de escena: si existe en engine.scenes se usa su definición;
+        # de lo contrario, se usa directamente el alias.
+        if scene_alias in engine.scenes:
+            scene_file_name = engine.scenes[scene_alias]
+        else:
+            scene_file_name = scene_alias
+
+        # Construir la ruta relativa para la versión compilada.
+        compiled_path = os.path.join("scenes", f"{scene_file_name}.kagc")
+        content = ""
+        try:
+            file_bytes = engine.resource_manager.get_bytes(compiled_path)
+            content = xor_data(file_bytes, key).decode("utf-8", errors="replace")
+            print(f"[jump_scene] Cargada escena compilada '{scene_alias}' desde: {compiled_path}")
+        except Exception as e:
+            # Si falla la carga de la versión compilada, se intenta la versión sin compilar.
+            non_compiled_path = os.path.join(engine.game_path, "data", "scenes", f"{scene_file_name}.kag")
+            try:
+                with open(non_compiled_path, "r", encoding="utf-8") as f:
+                    content = f.read()
+                print(f"[jump_scene] Cargada escena sin compilar '{scene_alias}' desde: {non_compiled_path}")
+            except Exception as e2:
+                raise Exception(f"[jump_scene] Error al cargar la escena '{scene_alias}': {e2}")
+
+        print(f"[jump_scene] Saltando a escena '{scene_alias}'.")
+        scene_commands = [line.strip() for line in content.splitlines() if line.strip() and not line.strip().startswith("#")]
+        for cmd in scene_commands:
+            print(f"[jump_scene] Comando de escena: {cmd}")
+            engine.event_manager.handle(cmd, engine)
+
     
     def handle_char(self, arg, engine):
         """

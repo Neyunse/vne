@@ -25,7 +25,6 @@ class VNEngine:
         self.config = CONFIG
         self.devMode = devMode
         
-        print(f"Iniciando el juego desde {self.game_path}...")
         
         self.resource_manager = ResourceManager(self.game_path)
         self.lexer = ScriptLexer(self.game_path, self)
@@ -38,6 +37,9 @@ class VNEngine:
         
         # Inicializar el UI Manager de pygame_gui.
         self.gui_manager = pygame_gui.UIManager((CONFIG["screen_width"], CONFIG["screen_height"]))
+
+
+        print(f"Iniciando el juego desde {self.game_path}...")
     
     def wait_for_keypress(self):
         """
