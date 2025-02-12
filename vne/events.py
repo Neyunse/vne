@@ -102,10 +102,17 @@ class EventManager:
         for handler in handlers:
             handler(arg, engine)
 
-    def substitute_variables(self, text, vars_dict):
+    def substitute_variables(self, text, engine):
         def replacer(match):
-            key = match.group(1).strip()
-            return str(vars_dict.get(key, match.group(0)))
+                key = match.group(1).strip()
+                if key in engine.characters:
+                    return engine.characters[key]
+                elif key in engine.scenes:
+                    return engine.scenes[key]
+                elif key in engine.vars:
+                    return engine.vars[key]
+                else:
+                    raise Exception(f"[ERROR] The variable for '{key}' is not defined.")
         return re.sub(r'\{([^}]+)\}', replacer, text)
     
     def handle_say(self, arg, engine):
@@ -253,7 +260,7 @@ class EventManager:
         if len(parts) == 2:
             alias = parts[0].strip()
             var = parts[1].strip().strip('"')
-            string_var = self.substitute_variables(var, engine.vars)
+            string_var = self.substitute_variables(var, engine)
 
             engine.vars[alias] = string_var
             print(f"[variable] Variable defined: alias '{alias}', file '{string_var}'")
@@ -375,7 +382,7 @@ class EventManager:
         if var_name not in engine.vars:
             raise Exception(f"[set] The variable '{var_name}' is not defined. Use @def to define it.")
         
-        new_value = self.substitute_variables(new_value, engine.vars)
+        new_value = self.substitute_variables(new_value, engine)
 
         engine.vars[var_name] = new_value
         print(f"[set] Variable '{var_name}' updated to '{new_value}'.")
@@ -583,7 +590,7 @@ class EventManager:
         buttons = []
         for i, btn in enumerate(engine.current_menu_buttons):
   
-            label_text = self.substitute_variables(btn["raw_label"], engine.vars)
+            label_text = self.substitute_variables(btn["raw_label"], engine)
             text_surface = font.render(label_text, True, (255, 255, 255))
             text_rect = text_surface.get_rect()
             btn_y = margin + i * (button_height + margin)
@@ -652,7 +659,7 @@ class EventManager:
         if var_name not in engine.vars:
             raise Exception(f"[Set] The variable '{var_name}' is not defined. Use @def to define it.")
         
-        new_value = self.substitute_variables(new_value, engine.vars)
+        new_value = self.substitute_variables(new_value, engine)
         
         engine.vars[var_name] = new_value
         print(f"[Set] Variable '{var_name}' updated to '{new_value}'.")

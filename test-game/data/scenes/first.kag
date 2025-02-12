@@ -2,7 +2,7 @@
 @sprite kuro
 K: Hola, bienvenido a esta prueba del motor!
 K: mi nombre es {K} y estoy aqui con el unico proposito de debugear este proyecto...
-K: parece que todo funciona correctamente...
+K: parece que todo funciona correctamente... {a}
 
 @menu
 @button "Encontre un bug!" event Set(chek, true)
