@@ -1,5 +1,6 @@
 # Load initial configurations
 
+
 @Load("system/vars.kag")
 @Load("system/ui.kag")
 @Load("system/scenes.kag")

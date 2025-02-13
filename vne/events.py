@@ -42,6 +42,7 @@ class EventManager:
         self.register_event("Display", self.handle_display)
         self.register_event("GameTitle", self.handle_game_title)
         self.register_event("GameIconName", self.handle_game_window_icon)
+        self.register_event("SplashScreen", self.handle_splash_screen)
         self.register_event("menu", self.handle_menu)
         self.register_event("button", self.handle_button)
         self.register_event("endMenu", self.handle_endmenu)
@@ -164,7 +165,42 @@ class EventManager:
             engine.current_bg = bg_image
         except Exception as e:
             raise Exception(f"[bg] Error loading background image: {e}")
+    
+    def handle_splash_screen(self, arg, engine):
+        arg = arg.strip()
+        if arg.startswith("(") and arg.endswith(")"):
+            arg = arg[1:-1].strip()
+        arg = arg.strip('"').strip("'")
+
+        if not arg:
+            arg = "splash"
+
+        load_image = ScriptLexer(engine.game_path, engine).load_image
+        relative_path = os.path.join("ui", arg + ".jpg")
+
+        try:
+            bg_image = load_image(relative_path)
+            bg_image = pygame.transform.scale(bg_image, (engine.renderer.screen.get_width(),
+                                                         engine.renderer.screen.get_height()))
+    
+        except Exception as e:
+            raise Exception(f"[bg] Error loading background image: {e}")
         
+        engine.renderer.screen.blit(bg_image, (0, 0))
+        pygame.display.flip()
+
+         
+        splash_duration = 2000   
+        start_time = pygame.time.get_ticks()
+        while engine.running and pygame.time.get_ticks() - start_time < splash_duration:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    engine.running = False
+                    return
+             
+                if event.type == pygame.KEYDOWN or event.type == pygame.MOUSEBUTTONDOWN:
+                    return
+     
     def handle_sprite(self, arg, engine):
         """
         Loads and stores a sprite image with a specified alias and position.
