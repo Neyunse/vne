@@ -1,0 +1,7 @@
+:layout: 404
+:orphan: true
+
+404
+===
+
+This page does not exist.

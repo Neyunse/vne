@@ -1,4 +1,5 @@
 :orphan: true
+:layout: simple
 
 .. meta::
    :description: Find out what changed between releases.

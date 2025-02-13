@@ -11,13 +11,12 @@ Features
 - **Flow logic support**: Use of labels, scene jumps, and conditions to control the narrative flow. (beta)
 - **Debugging tools**: Automatic event logging and error handling support.
 
-
-Doc Content
------------
+ 
 .. toctree::
     :maxdepth: 3
     :caption: Getting Started
-
+    :hidden:
+    
     quickstart
 
 .. .. toctree::
