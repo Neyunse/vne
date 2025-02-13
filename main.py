@@ -116,7 +116,7 @@ def init_game(game_path, project_name):
         f.write(f"@GameTitle(\"{project_name}\")\n")
         f.write("# set the gane icon. eg. @GameIconName(\"window_icon\")\n")
         f.write("# by default window_icon. \n")
-        f.write(f"@GameIconName()\n")
+        f.write(f"# @GameIconName()\n")
 
 
     with open(startup_file, "w", encoding="utf-8") as f:

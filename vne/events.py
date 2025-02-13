@@ -494,6 +494,9 @@ class EventManager:
         if arg.startswith("(") and arg.endswith(")"):
             arg = arg[1:-1].strip()
         arg = arg.strip('"').strip("'")
+
+        if not arg:
+            arg = "window_icon"
     
         load_image = ScriptLexer(engine.game_path, engine).load_image
 
