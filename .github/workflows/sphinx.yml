@@ -19,8 +19,8 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install sphinx sphinx-rtd-theme
-          # Instala otros paquetes que requieras
+          pip install sphinxawesome-theme
+ 
 
       - name: Build HTML
         uses: ammaraskar/sphinx-action@master
