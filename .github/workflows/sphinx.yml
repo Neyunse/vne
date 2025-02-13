@@ -20,13 +20,14 @@ jobs:
       - name: Install dependencies
         run: |
           pip install sphinx
-          pip install sphinxawesome_theme 
+          pip install sphinxawesome-theme 
  
 
       - name: Build HTML
-          
-        run: |
-          make html
+        uses: ammaraskar/sphinx-action@master
+        with:
+          docs-folder: sphinx        # Directorio donde se encuentra tu Makefile y configuración de Sphinx
+          build-command: make html   # Asegúrate de que esta regla exista en tu Makefile
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
