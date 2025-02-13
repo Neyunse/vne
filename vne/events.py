@@ -184,7 +184,7 @@ class EventManager:
                                                          engine.renderer.screen.get_height()))
     
         except Exception as e:
-            raise Exception(f"[bg] Error loading background image: {e}")
+            raise Exception(f"[bg] Error loading splash image: {e}")
         
         engine.renderer.screen.blit(bg_image, (0, 0))
         pygame.display.flip()
