@@ -1,3 +1,6 @@
 sphinxawesome-theme
 furo==2021.11.16
 sphinx-autobuild 
+nbsphinx
+sphinx_rtd_theme
+sphinx_rtd_dark_mode
