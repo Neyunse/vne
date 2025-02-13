@@ -26,7 +26,7 @@ jobs:
     - uses: actions/setup-node@v4
       with:
         node-version: 18
-        
+
     - uses: actions/setup-python@v5
       with:
         python-version: 3.11
@@ -41,6 +41,8 @@ jobs:
 
     - name: Upload artifact
       uses: actions/upload-pages-artifact@v3
+      with:
+          path: docs/
 
   deploy:
     environment:
