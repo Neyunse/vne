@@ -40,6 +40,8 @@ class EventManager:
         self.register_event("goto", self.handle_goto)
         self.register_event("set", self.handle_set)
         self.register_event("Display", self.handle_display)
+        self.register_event("GameTitle", self.handle_game_title)
+        self.register_event("GameIconName", self.handle_game_window_icon)
         self.register_event("menu", self.handle_menu)
         self.register_event("button", self.handle_button)
         self.register_event("endMenu", self.handle_endmenu)
@@ -455,6 +457,55 @@ class EventManager:
         engine.lexer.commands = engine.lexer.original_commands[found_index:]
         engine.lexer.current = 0
         engine.Log(f"[goto] Jumping to checkpoint '{label}' in the original script starting at index {found_index}.")
+
+    def handle_game_title(self, arg, engine):
+        """
+        The function `handle_game_title` trims and sets the game title for a Pygame window.
+        
+        :param arg: The `arg` parameter in the `handle_game_title` function is a string representing the
+        title of a game. The function is responsible for processing and setting the game title to the
+        provided argument. The function first removes any leading or trailing whitespaces from the
+        argument. Then, it checks if the argument
+        :param engine: The `handle_game_title` function takes three parameters: `self`, `arg`, and
+        `engine`. In this function, the `arg` parameter is a string representing the title of a game.
+        The function first removes any leading or trailing whitespace from the `arg` string using the
+        `strip()`
+        """
+        arg = arg.strip()
+        if arg.startswith("(") and arg.endswith(")"):
+            arg = arg[1:-1].strip()
+        arg = arg.strip('"').strip("'")
+
+        pygame.display.set_caption(arg)
+    
+    def handle_game_window_icon(self, arg, engine):
+        """
+        This function handles loading and setting the window icon for a game using Pygame in Python.
+        
+        :param arg: The `arg` parameter in the `handle_game_window_icon` function seems to represent the
+        name of the icon file without the file extension. The function then attempts to load an image
+        file with the given name from the "ui/icon" directory with a ".jpg" extension and set it as the
+        icon
+        :param engine: The `engine` parameter in the `handle_game_window_icon` function seems to be an
+        instance of some class that has a property or method called `game_path`. This property or method
+        is used to construct the path to the game resources
+        """
+        arg = arg.strip()
+        if arg.startswith("(") and arg.endswith(")"):
+            arg = arg[1:-1].strip()
+        arg = arg.strip('"').strip("'")
+    
+        load_image = ScriptLexer(engine.game_path, engine).load_image
+
+        relative_path = os.path.join("ui","icon", arg + ".jpg")
+
+        try:
+            icon = load_image(relative_path)
+            pygame.display.set_icon(icon)
+ 
+        except Exception as e:
+            raise Exception(f"[Icon] Error loading the window icon: {e}")
+        
 
     def handle_display(self, arg, engine):
         """

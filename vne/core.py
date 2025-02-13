@@ -65,7 +65,7 @@ class VNEngine:
                                
             self.renderer.render()
          
-    def Log(self, log):
+    def Log(self, log, _=None):
         """
         The function `Log` appends a log message to a file named 'log.txt'.
         

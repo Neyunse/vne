@@ -150,4 +150,8 @@ class Renderer:
             counter_surface = self.fps_font.render(f"{self.fps}", True, (0, 0, 0))
             self.screen.blit(counter_surface, (2, 2))
         
+        if os.path.exists(os.path.join(self.engine.game_path, 'icon.png')):
+            pygame.display.set_icon(pygame.image.load(os.path.join(self.engine.game_path, 'icon.png')))
+            self.engine.Log("[window] game icon was loaded")
+        
         pygame.display.flip()
