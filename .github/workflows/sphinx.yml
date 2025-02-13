@@ -11,23 +11,12 @@ jobs:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
-
-      - name: Setup Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.9'  # Ajusta según tus necesidades
-
-      - name: Install dependencies
-        run: |
-          pip install sphinx
-          pip install sphinxawesome-theme 
  
-
       - name: Build HTML
-        uses: ammaraskar/sphinx-action@master
+        uses: ammaraskar/sphinx-action@0.4
         with:
-          docs-folder: sphinx        # Directorio donde se encuentra tu Makefile y configuración de Sphinx
-          build-command: make html   # Asegúrate de que esta regla exista en tu Makefile
+          docs-folder: "sphinx/"
+          build-command: "sphinx-build -E -a source ../docs"
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
