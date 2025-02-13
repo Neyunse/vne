@@ -20,4 +20,11 @@ Doc Content
 
     quickstart
 
+.. .. toctree::
+..     :maxdepth: 1
+..     :caption: Language Syntax
+..     :glob:
+
+..     syntax/*
+
 

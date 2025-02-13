@@ -24,6 +24,7 @@ exclude_patterns = []
 extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.autosummary',
+    'myst_parser'
 ]
 autosummary_generate = True
 autosummary_imported_members = True
@@ -65,12 +66,13 @@ source_suffix = {
     '.md': 'markdown',
 }
 theme_options = ThemeOptions(
+    
     show_breadcrumbs=True,
     show_prev_next=True,
     awesome_external_links=True,
     main_nav_links={
-        "Docs": "/index", 
-        #"Changelog": "/changelog/index"
+        "Docs": "/", 
+        "Changelog": "/changelog"
     },
     extra_header_link_icons={
         "repository on GitHub": {
@@ -103,3 +105,4 @@ theme_options = ThemeOptions(
     },
 )
 html_theme_options = asdict(theme_options)
+
