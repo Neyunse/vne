@@ -1,7 +1,7 @@
 import os
 import shutil
 import sys
-import zipfile
+import argparse
 import pyzipper
 from datetime import datetime
 import platform
@@ -70,7 +70,7 @@ def create_data_pkg(source_folder, output_pkg):
                 pkg.write(file_path, rel_path)
     print(f"[create_data_pkg] '{source_folder}' packed in '{output_pkg}' (excluding .kag files)")
 
-def init_game(game_path):
+def init_game(game_path, project_name):
     """
     Initializes a game project by creating directories and generating necessary script files.
     
@@ -112,6 +112,12 @@ def init_game(game_path):
         f.write("# set the window size. eg: @Display(800,600)\n")
         f.write("# the recomended max size is 1280x720 \n")
         f.write("@Display()\n")
+        f.write("# set the game title\n")
+        f.write(f"@GameTitle(\"{project_name}\")\n")
+        f.write("# set the gane icon. eg. @GameIconName(\"window_icon\")\n")
+        f.write("# by default window_icon. \n")
+        f.write(f"@GameIconName()\n")
+
 
     with open(startup_file, "w", encoding="utf-8") as f:
         f.write("# Game startup script\n")
@@ -192,20 +198,33 @@ def main():
     """
     Parses command line arguments to initialize, debug, or distribute a game based on the specified command.
     """
-    if len(sys.argv) < 3:
-        print("Usage: game.exe [init|debug|distribute] <game_folder>")
-        sys.exit(1)
-    command = sys.argv[1]
-    game_path = sys.argv[2]
+    exe_name = os.path.basename(sys.executable).lower()
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-i', dest="new_project", default=False, action="store_true", help="initializes a new project")
+    parser.add_argument('-p', dest="project_name", default=None, type=str, help="allows you to add a name to the project if -i is present", required='-i' in sys.argv)
+    
+    parser.add_argument('-r', dest="debug_project", default=False, action="store_true", help="debug a project")
+    parser.add_argument('-d', dest="distribute_project", default=False, action="store_true", help="distribute a project")
+    
+    parser.add_argument('-f', dest="project_folder", default=None, type=str, help="Project Folder (required)", required=True)
+    
+    args = parser.parse_args()
 
-    if command == "init":
-        init_game(game_path)
-    elif command in "debug":
-        run_game(game_path)
-    elif command == "distribute":
-        distribute_game(game_path)
+    isNewProject = args.new_project
+    project_name = args.project_name
+    debug_project = args.debug_project
+    distribute_project = args.distribute_project
+    project_folder = args.project_folder
+    
+    
+    if isNewProject and project_name and project_folder and not "python.exe" in exe_name:
+        init_game(project_folder, project_name)
+    elif debug_project and project_folder:
+        run_game(project_folder)
+    elif distribute_project and project_folder and not "python.exe" in exe_name:
+        distribute_game(project_folder)
     else:
-        print(f"Unknown command: {command}")
+        raise Exception("Mising aguments or argument is invalid")
 
 if __name__ == "__main__":
 
