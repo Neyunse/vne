@@ -23,6 +23,7 @@ exe = EXE(
     a.datas,
     [],
     name='engine',
+    icon="sdk_icon.png",
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
