@@ -6,6 +6,8 @@ on:
       - dev
     paths:
       - '**.rst'
+      - 'conf.py'
+      - '_version.py'
 
   workflow_dispatch:
 
