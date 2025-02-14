@@ -125,11 +125,15 @@ def init_game(game_path, project_name):
 
     with open(startup_file, "w", encoding="utf-8") as f:
         f.write("# Game startup script\n")
-        f.write("@Load(\"system/ui.kag\")\n")
-        f.write("@Load(\"system/scenes.kag\")\n")
-        f.write("@Load(\"system/vars.kag\")\n")
-        f.write("@Load(\"system/characters.kag\")\n")
-        f.write("@Load(\"system/main_menu.kag\")\n")
+        f.write("\n")
+        f.write("# Load here somthing before that system files\n")
+        f.write("\n")
+        f.write("@LoadSystem()\n")
+        f.write("\n")
+        f.write("# Load here somthing after that system files\n")
+        f.write("\n")
+        f.write("# Load the main menu from system/\n")
+        f.write("@LoadMainMenu()\n")
 
     with open(scenes_file, "w", encoding="utf-8") as f:
         f.write("@scene first = \"first\"")
