@@ -14,7 +14,6 @@ The engine does not have a graphical interface, so most of the time it must be u
 - **-f**: If this is present, the engine expects you to provide the name of the folder where your project is located.
 - **-p**: If this option is present, the engine expects you to provide the name of your project (different from **-f**), **-f** and **-i** are required.
 
-
 Folder Structure
 ++++++++++++++++++++
  
