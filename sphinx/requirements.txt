@@ -18,3 +18,4 @@ shibuya
 pygame
 pygame_gui
 pyinstaller
+pyzipper
