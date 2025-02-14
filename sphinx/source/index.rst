@@ -9,7 +9,7 @@
 
 .. container:: buttons
 
-    `Quickstart </quickstart>`_
+    `Quickstart </quickstart/>`_
     `GitHub <https://github.com/Neyunse/vne/>`_
 
 Features
