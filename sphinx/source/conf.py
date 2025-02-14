@@ -12,10 +12,6 @@ import sys
 project = 'VNengine'
 copyright = '2025, Neyunse'
 author = 'Neyunse'
-
-sys.path.insert(0, '../..')
-from vne._version import __version__
-version = release = __version__
 GitHubPage = "https://github.com/neyunse/vne"
 
 # -- General configuration ---------------------------------------------------
@@ -50,16 +46,6 @@ html_permalinks_icon = '<span>#</span>'
 html_static_path = ['_static']
  
 exclude_patterns = ["public", "includes", "**/includes", "jupyter_execute"]
-substitutions = [
-    ":tocdepth: 3",
-    " ",
-    ".. meta::",
-    "   :author: neyunse",
-    ".. |rst| replace:: reStructuredText",
-    ".. |product| replace:: VNEngine",
-    f".. |current| replace:: {__version__}",
-]
-rst_prolog = "\n".join(substitutions)
 
  
 html_baseurl = "https://neyunse.github.io/vne/"
@@ -85,3 +71,16 @@ html_theme_options = {
     "discussion_url": "https://github.com/Neyunse/vne/discussions",
 }
 
+sys.path.insert(0, '../..')
+from main import engine_version
+version = release = engine_version
+substitutions = [
+    ":tocdepth: 3",
+    " ",
+    ".. meta::",
+    "   :author: neyunse",
+    ".. |rst| replace:: reStructuredText",
+    ".. |product| replace:: VNEngine",
+    f".. |current| replace:: {engine_version}",
+]
+rst_prolog = "\n".join(substitutions)
