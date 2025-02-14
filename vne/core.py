@@ -128,7 +128,8 @@ Plataform: %(plataform)s
             self.Log("[VNEngine] Startup script not found. Exiting.")
             self.running = False
             return
- 
+        pygame.mixer.init()
+        
         while self.running:
             delta_time = self.clock.tick(30) / 1000.0
             for event in pygame.event.get():
