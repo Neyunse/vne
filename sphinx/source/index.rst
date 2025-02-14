@@ -5,8 +5,7 @@
 
 .. rst-class:: lead
 
-    Beautiful responsive theme for Sphinx documentation generator. Great supports
-    for Jupyter extensions.
+   |product| is a visual novel engine developed in Python using Pygame. It offers a flexible and simple way to create visual novels with support for characters, backgrounds, sprites, dialogues, conditions, and labels.
 
 .. container:: buttons
 
