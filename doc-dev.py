@@ -6,6 +6,7 @@ import subprocess
 if __name__ == "__main__":
     cmd = [
         "sphinx-autobuild",
+        "-b dirhtml"
         "-E",
         "-a",
         "./sphinx/source",
