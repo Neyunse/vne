@@ -1,6 +1,9 @@
 @bg school
+@bgm 70_Love
 @sprite kuro
 K: Hello, welcome to this engine test!
+@bgm escape-ofv
+@sfx Ring
 K: my name is {K} and I am here for the sole purpose of debugging this project....
 K: everything seems to be working properly...
 

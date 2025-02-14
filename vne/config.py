@@ -23,7 +23,9 @@ CONFIG = {
          "bg_color": (50, 50, 50),
          "border_color": (255, 255, 255)
     },
-    "sprite_scale": 0.5   
+    "sprite_scale": 0.5,
+    "bgm_channel": 0,
+    "sfx_channel": 1,
 }
 
 

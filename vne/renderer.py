@@ -5,6 +5,7 @@ class Renderer:
     def __init__(self, engine):
         os.environ["SDL_VIDEO_CENTERED"] = "1"
         pygame.init()
+        pygame.mixer.init()
         self.engine = engine
         # Usar engine.config para obtener los valores actualizados de ancho y alto.
         self.screen = pygame.display.set_mode((

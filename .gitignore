@@ -22,3 +22,6 @@ build
 traceback.txt
 log.txt
 docs
+*.wav
+*.mp3
+*.ogg
