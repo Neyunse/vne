@@ -58,7 +58,7 @@ class ResourceManager:
                 with open(local_alt, "rb") as f:
                     return f.read()
 
-        raise FileNotFoundError(f"'File not found in path '{os.path.normpath(local_path)}'")
+        raise FileNotFoundError(f"'{internal_path}' not found in data.pkg nor in '{local_path}'")
 
     def get_script_bytes(self, base_name):
         """

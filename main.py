@@ -99,12 +99,13 @@ def init_game(game_path, project_name):
     scenes_file = os.path.join(game_path, "data", "system", "scenes.kag")
     characters_file = os.path.join(game_path, "data", "system", "characters.kag")
     ui_file = os.path.join(game_path, "data", "system", "ui.kag")
+    vars_file = os.path.join(game_path, "data", "system", "vars.kag")
     startup_file = os.path.join(game_path, "data", "startup.kag")
 
     # scenes
     first_scene_file = os.path.join(game_path, "data", "scenes", "first.kag")
 
-    with open(ui_file, "w", encoding="utf-8") as f:
+    with open(main_menu_file, "w", encoding="utf-8") as f:
         f.write("# Main Menu\n")
         f.write("@menu\n")
         f.write("@button \"Start game\" event Scene(\"first\") \n")
@@ -114,7 +115,7 @@ def init_game(game_path, project_name):
     with open(ui_file, "w", encoding="utf-8") as f:
         f.write("# set the window size. eg: @Display(800,600)\n")
         f.write("# the recomended max size is 1280x720 \n")
-        f.write("@Display()\n")
+        f.write("@Display(800,600)\n")
         f.write("# set the game title\n")
         f.write(f"@GameTitle(\"{project_name}\")\n")
         f.write("# set the gane icon. eg. @GameIconName(\"window_icon\")\n")
@@ -126,6 +127,7 @@ def init_game(game_path, project_name):
         f.write("# Game startup script\n")
         f.write("@Load(\"system/ui.kag\")\n")
         f.write("@Load(\"system/scenes.kag\")\n")
+        f.write("@Load(\"system/vars.kag\")\n")
         f.write("@Load(\"system/characters.kag\")\n")
         f.write("@Load(\"system/main_menu.kag\")\n")
 
@@ -134,6 +136,9 @@ def init_game(game_path, project_name):
     
     with open(characters_file, "w", encoding="utf-8") as f:
         f.write("@char K as \"Kuro\" ")
+    
+    with open(vars_file, "w", encoding="utf-8") as f:
+        f.write("# Include variables here")
 
     with open(first_scene_file, "w", encoding="utf-8") as f:
         f.write("K: Hello!\n")

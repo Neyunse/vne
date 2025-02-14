@@ -1,9 +1,17 @@
-# Load initial configurations
+# Game startup script
 
-@LoadSystem("ui","vars","characters","scenes")
+# Load here somthing before that system files
+
+#@Load("system/vars.kag")
+
+# Load initial configurations
+@LoadSystem()
+
+# Load here somthing after that system files
 
 # search for splash.jpg in data/ui/splash.jpg
 # or @SplashScreen("logo") in data/ui/logo.jpg
 # @SplashScreen()
 
+# Load the main menu from system/
 @LoadMainMenu()

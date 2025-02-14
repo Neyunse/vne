@@ -11,10 +11,11 @@ class EventManager:
         self.event_handlers = {}
         self.register_default_events()
         self.system_files = [
-            "characters.kagc", 
-            "vars.kagc", 
-            "scenes.kagc", 
-            "ui.kagc"
+            "characters.kag", 
+            "vars.kag", 
+            "scenes.kag", 
+            "ui.kag",
+            "main_menu.kag"
         ]
 
     def register_default_events(self):
@@ -25,8 +26,6 @@ class EventManager:
         self.register_event("bg", self.handle_bg)
         self.register_event("exit", self.handle_exit)
         self.register_event("Load", self.handle_Load)
-        self.register_event("LoadSystem", self.handle_Load_Many_System)
-        self.register_event("LoadMainMenu", self.handle_Load_MainMenu)
         self.register_event("process_scene", self.handle_process_scene)
         self.register_event("jump_scene", self.handle_jump_scene)
         self.register_event("char", self.handle_char)
@@ -247,16 +246,24 @@ class EventManager:
         if arg.startswith("(") and arg.endswith(")"):
             arg = arg[1:-1].strip()
         arg = arg.strip('"').strip("'")
+        force_compiled = any(keyword in arg.lower() for keyword in self.system_files)
         try:
-            compiled_arg = arg + ".kagc"
-            
+            if force_compiled:
+                if not arg.lower().endswith(".kagc"):
+                    compiled_arg = arg[:-4] + ".kagc"
+                else:
+                    compiled_arg = arg
+                data = engine.resource_manager.get_bytes(compiled_arg)
+                data = xor_data(data, key)
+                engine.Log(f"[Load] Compiled file loaded: {compiled_arg}")
+                engine.loaded_files[compiled_arg] = data
+                content = data.decode("utf-8", errors="replace")
 
-            data = engine.resource_manager.get_bytes(compiled_arg)
-            data = xor_data(data, key)
-            engine.Log(f"[Load] Compiled file loaded: {compiled_arg}")
-            engine.loaded_files[compiled_arg] = data
-            content = data.decode("utf-8", errors="replace")
-           
+            else:
+                data = engine.resource_manager.get_bytes(arg)
+                engine.Log(f"[Load] File loaded: {arg}")
+                engine.loaded_files[arg] = data
+                content = data.decode("utf-8", errors="replace")
             if any(line.strip().startswith("@") for line in content.splitlines()):
                 commands = ScriptLexer(engine.game_path, engine).parse_script(content)
                 for cmd in commands:
@@ -265,47 +272,6 @@ class EventManager:
         except Exception as e:
             raise Exception(f"[Load] Error loading {arg}: {e}")
     
-    
-    def handle_Load_System(self, arg, engine):
-        """
-        Load files from 'system/**.kagc'
-        """
-        arg = arg.strip()
-        if arg.startswith("(") and arg.endswith(")"):
-            arg = arg[1:-1].strip()
-        arg = arg.strip('"').strip("'")
-
-        try:
-            compiled_arg = f"system/{arg}.kagc"
-            data = engine.resource_manager.get_bytes(compiled_arg)
-            data = xor_data(data, key)
-            engine.Log(f"[Load] Compiled file loaded: {compiled_arg}")
-            engine.loaded_files[compiled_arg] = data
-            content = data.decode("utf-8", errors="replace")
-
-            if any(line.strip().startswith("@") for line in content.splitlines()):
-                commands = ScriptLexer(engine.game_path, engine).parse_script(content)
-                for cmd in commands:
-                    engine.Log(f"[Load-Process] Executing command: {cmd}")
-                    self.handle(cmd, engine)
-        except Exception as e:
-         
-            raise Exception(f"[Load] Error loading {arg}: {e}")
-    
-    def handle_Load_Many_System(self, arg, engine):
-        arg = arg.strip()
-        if arg.startswith("(") and arg.endswith(")"):
-            arg = arg[1:-1].strip()
-        arg = arg.replace('"',"").replace(" ", "")
-        parts = arg.split(",")
-       
-        for file in parts:
-            self.handle_Load_System(file, engine)
-    
-    def handle_Load_MainMenu(self, arg, engine):
-        self.handle_Load_System("main_menu", engine)
-    
-
     def handle_scene(self, arg, engine):
         """
         Parses and stores scene aliases and filenames.
