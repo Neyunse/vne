@@ -86,9 +86,10 @@ def init_game(game_path, project_name):
         f"{game_path}/data/scenes",
         f"{game_path}/data/images/bg",
         f"{game_path}/data/images/sprites",
+        f"{game_path}/data/ui",
+        f"{game_path}/data/ui/icon",
         # f"{game_path}/data/audio/bgm",
         # f"{game_path}/data/audio/sfx",
-        # f"{game_path}/data/ui",
         # f"{game_path}/saves",
     ]
     for d in directories:
