@@ -3,7 +3,6 @@ import os
 import pygame
 from vne.xor_data import xor_data
 from vne.config import key
-import numpy as np
 
 class ScriptLexer:
  
