@@ -5,7 +5,7 @@ on:
     branches:
       - dev
     paths:
-      - 'sphinx/**'
+      - '**.rst'
 
   workflow_dispatch:
 
