@@ -1,8 +1,9 @@
 # Load initial configurations
 
+@LoadSystem("ui","vars","characters","scenes")
 
-@Load("system/vars.kag")
-@Load("system/ui.kag")
-@Load("system/scenes.kag")
-@Load("system/characters.kag")
-@Load("system/main_menu.kag")
+# search for splash.jpg in data/ui/splash.jpg
+# or @SplashScreen("logo") in data/ui/logo.jpg
+# @SplashScreen()
+
+@LoadMainMenu()
