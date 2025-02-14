@@ -143,6 +143,26 @@ class EventManager:
                     raise Exception(f"[ERROR] The variable for '{key}' is not defined.")
             dialogue = re.sub(r"\{([^}]+)\}", replacer, dialogue)
             engine.current_dialogue = dialogue
+        
+        elif '*' in arg:
+       
+            speaker, dialogue = arg.split("*", 1)
+            speaker = speaker.strip()
+            dialogue = dialogue.strip()
+            
+            engine.current_character_name = speaker
+            def replacer(match):
+                key = match.group(1).strip()
+                if key in speaker:
+                    return speaker
+                elif key in engine.scenes:
+                    return engine.scenes[key]
+                elif key in engine.vars:
+                    return engine.vars[key]
+                else:
+                    raise Exception(f"[ERROR] The variable for '{key}' is not defined.")
+            dialogue = re.sub(r"\{([^}]+)\}", replacer, dialogue)
+            engine.current_dialogue = dialogue
         else:
             engine.current_dialogue = arg.strip()
             engine.current_character_name = ""
