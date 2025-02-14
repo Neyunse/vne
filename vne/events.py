@@ -272,6 +272,12 @@ class EventManager:
         except Exception as e:
             raise Exception(f"[Load] Error loading {arg}: {e}")
     
+    def handle_load_system(self, arg, engine):
+        pass
+    
+    def handle_load_main_menu(self, arg, engine):
+        pass
+    
     def handle_scene(self, arg, engine):
         """
         Parses and stores scene aliases and filenames.
