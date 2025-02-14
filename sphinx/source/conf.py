@@ -14,7 +14,7 @@ copyright = '2025, Neyunse'
 author = 'Neyunse'
 
 sys.path.insert(0, '../..')
-from vne import __version__
+from vne._version import __version__
 version = release = __version__
 GitHubPage = "https://github.com/neyunse/vne"
 
