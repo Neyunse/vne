@@ -1,5 +1,4 @@
 import pygame
-import pygame_gui
 from vne.lexer import ScriptLexer
 from vne.renderer import Renderer
 from vne.events import EventManager
@@ -39,9 +38,6 @@ class VNEngine:
 
         self.current_dialogue = ""
         self.current_character_name = ""
-        
-        self.gui_manager = pygame_gui.UIManager((CONFIG["screen_width"], CONFIG["screen_height"]))
-
 
         self.Log(f"Starting the game from {self.game_path}...")
     
