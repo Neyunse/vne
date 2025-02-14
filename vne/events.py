@@ -11,11 +11,10 @@ class EventManager:
         self.event_handlers = {}
         self.register_default_events()
         self.system_files = [
-            "characters.kag", 
             "vars.kag", 
-            "scenes.kag", 
+            "characters.kag", 
             "ui.kag",
-            "main_menu.kag"
+            "scenes.kag"
         ]
 
     def register_default_events(self):
@@ -26,6 +25,8 @@ class EventManager:
         self.register_event("bg", self.handle_bg)
         self.register_event("exit", self.handle_exit)
         self.register_event("Load", self.handle_Load)
+        self.register_event("LoadSystem", self.handle_load_system)
+        self.register_event("LoadMainMenu", self.handle_load_main_menu)
         self.register_event("process_scene", self.handle_process_scene)
         self.register_event("jump_scene", self.handle_jump_scene)
         self.register_event("char", self.handle_char)
@@ -273,10 +274,13 @@ class EventManager:
             raise Exception(f"[Load] Error loading {arg}: {e}")
     
     def handle_load_system(self, arg, engine):
-        pass
+        for file in self.system_files:
+            self.handle_Load(f'("system/{file}")', engine)
     
     def handle_load_main_menu(self, arg, engine):
-        pass
+        if not "main_menu.kag" in self.system_files:
+            self.system_files.append("main_menu.kag")
+        self.handle_Load('("system/main_menu.kag")', engine)
     
     def handle_scene(self, arg, engine):
         """
