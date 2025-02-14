@@ -5,6 +5,7 @@ import re
 from vne.lexer import ScriptLexer
 from vne.xor_data import xor_data
 from vne.config import key
+import pickle
 
 class EventManager:
     def __init__(self):
@@ -773,3 +774,59 @@ class EventManager:
         
         engine.vars[var_name] = new_value
         engine.Log(f"[Set] Variable '{var_name}' updated to '{new_value}'.")
+
+
+
+    
+    # TODO: IMPLEMENT SAVE AND LOAD
+
+    def handle_save(self, arg, engine):
+        arg = arg.strip()
+        if arg.startswith("(") and arg.endswith(")"):
+            arg = arg[1:-1].strip()
+        engine.vars["continue"] = "true"
+        state = {
+            "vars": engine.vars,
+            "characters": engine.characters,
+            "scenes": engine.scenes,
+            "lexer_current": engine.lexer.current,
+            "original_commands": engine.lexer.original_commands,
+            "checkpoints": engine.checkpoints if hasattr(engine, "checkpoints") else {},
+        }
+        file = f"{engine.game_path}/data.save"
+        try:
+            with open(file, "wb") as f:
+                pickle.dump(state, f)
+            print(f"[save] Game saved to '{file}'.")
+        except Exception as e:
+            raise Exception(f"[save] Error saving game: {e}")
+    
+ 
+
+    def handle_load_save(self, arg, engine):
+        """
+        Loads the game status from a file.
+   
+        """
+        arg = arg.strip()
+        if arg.startswith("(") and arg.endswith(")"):
+            arg = arg[1:-1].strip()
+        try:
+            file = f"{engine.game_path}/data.save"
+
+            with open(file, "rb") as f:
+                state = pickle.load(f)
+            engine.vars = state.get("vars", {})
+            engine.characters = state.get("characters", {})
+            engine.scenes = state.get("scenes", {})
+            
+            if "original_commands" in state and "lexer_current" in state:
+                engine.lexer.original_commands = state["original_commands"]
+                engine.lexer.commands = state["original_commands"][state["lexer_current"]:]
+                engine.lexer.current = 0
+            engine.checkpoints = state.get("checkpoints", {})
+            print(f"[load] Game loaded from '{file}'.")
+
+        except Exception as e:
+            raise Exception(f"[load] Error loading game: {e}")
+

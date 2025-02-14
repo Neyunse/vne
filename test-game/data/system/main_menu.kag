@@ -1,5 +1,6 @@
 # create a menu
 @menu
+@bg school
 @button "Start game" event Scene("first") 
 @button "Quit" event Quit()
 @endMenu

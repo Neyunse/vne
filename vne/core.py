@@ -58,6 +58,7 @@ class VNEngine:
                 
                 if event.type == pygame.MOUSEBUTTONDOWN:
                     waiting = False
+                
                                
             self.renderer.render()
          
@@ -106,6 +107,9 @@ Plataform: %(plataform)s
             "startup.kag"
         ]
         content = None
+
+        self.vars["continue"] = "false"
+        
  
         for candidate in candidates:
             try:
