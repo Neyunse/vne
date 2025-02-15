@@ -8,9 +8,6 @@ Menu & Button
    Starts a menu block.
    It is expected that, after this command, @button commands will be issued to define the options.
 
-   :require: @if
-   :parent: @if
-   
 .. code-block::
    :caption: scenes/first.kag | system/main_menu.kag
    
