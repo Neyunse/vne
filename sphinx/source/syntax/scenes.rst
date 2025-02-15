@@ -56,7 +56,7 @@ The jump between scenes is a common method in branching visual novels, it allows
 Checkpoints
 +++++++++++
 
-Un checkpoint te permite establecer un punto de retorno, esto puede ser util si necesitas usar variables que cambian una accion en espesifico del juego.
+A checkpoint allows you to set a return point, this can be useful if you need to use variables that change a specific action in the game.
 
 .. py:function:: @checkpoint
 
