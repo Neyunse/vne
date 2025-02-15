@@ -24,8 +24,8 @@ By default |product| does not detect scenes created inside :file:`/scenes/**.kag
    :param scene: Required
    :type scene: tag
 
-   :param value: Required
-   :type value: string
+   :param filename: Required
+   :type filename: string
 
    :type: Definition
    
