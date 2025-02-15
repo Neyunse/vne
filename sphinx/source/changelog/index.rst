@@ -5,7 +5,6 @@
    :description: Find out what changed between releases.
    :twitter:description: Find out what changed between releases.
 
-
 Changelog
 =========
 
