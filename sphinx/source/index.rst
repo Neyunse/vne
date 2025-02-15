@@ -40,4 +40,19 @@ Features
     
     quickstart
 
+
+.. toctree::
+    :maxdepth: 1
+    :caption: Language Syntax
+    :hidden:
+    :glob:
+    
+    syntax/*
  
+.. toctree::
+    :maxdepth: 2
+    :caption: System
+    :hidden:
+    :glob:
+    
+    system/*

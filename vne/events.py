@@ -23,40 +23,56 @@ class EventManager:
         """
         Registers various event handlers for different events.
         """
+        # Primitive
         self.register_event("say", self.handle_say)
-        self.register_event("bg", self.handle_bg)
         self.register_event("exit", self.handle_exit)
+        self.register_event("process_scene", self.handle_process_scene)
+
+        # Importing/Loading & StartUp/init
         self.register_event("Load", self.handle_Load)
         self.register_event("LoadSystem", self.handle_load_system)
         self.register_event("LoadMainMenu", self.handle_load_main_menu)
-        self.register_event("process_scene", self.handle_process_scene)
+        self.register_event("SplashScreen", self.handle_splash_screen)
+        
+        # Scenes Flow
         self.register_event("jump_scene", self.handle_jump_scene)
+        self.register_event("checkpoint", self.handle_checkpoint)
+        self.register_event("goto", self.handle_goto)
+        
+        # Variable definitions
         self.register_event("char", self.handle_char)
         self.register_event("scene", self.handle_scene)
         self.register_event("def", self.handle_define)
+
+        # Mutations
+        self.register_event("set", self.handle_set)
+        self.register_event("rename", self.handle_rename)
+
+        # Images
+        self.register_event("bg", self.handle_bg)
         self.register_event("sprite", self.handle_sprite)
         self.register_event("hide", self.handle_hide_sprite)
-        self.register_event("rename", self.handle_rename)
-        self.register_event("if", self.handle_if)
-        self.register_event("else", self.handle_else)
-        self.register_event("endif", self.handle_endif)
-        self.register_event("checkpoint", self.handle_checkpoint)
-        self.register_event("goto", self.handle_goto)
-        self.register_event("set", self.handle_set)
-        self.register_event("Display", self.handle_display)
-        self.register_event("GameTitle", self.handle_game_title)
-        self.register_event("GameIconName", self.handle_game_window_icon)
-        self.register_event("SplashScreen", self.handle_splash_screen)
-        self.register_event("menu", self.handle_menu)
-        self.register_event("button", self.handle_button)
-        self.register_event("endMenu", self.handle_endmenu)
+        
+        # Audio
         self.register_event("bgm", self.handle_bgm)
         self.register_event("sfx", self.handle_sfx)
 
+        # Configurations
+        self.register_event("Display", self.handle_display)
+        self.register_event("GameTitle", self.handle_game_title)
+        self.register_event("GameIconName", self.handle_game_window_icon)
+        
+        # Conditional flags
+        self.register_event("if", self.handle_if)
+        self.register_event("else", self.handle_else)
+        self.register_event("endif", self.handle_endif)
 
+        # Menu
+        self.register_event("menu", self.handle_menu)
+        self.register_event("button", self.handle_button)
+        self.register_event("endMenu", self.handle_endmenu)
 
-
-        # Command events
+        # Events
         self.register_event("Scene", self.handle_process_scene)
         self.register_event("Set", self.handle_Set_event)
         self.register_event("Quit",  self.handle_exit)
