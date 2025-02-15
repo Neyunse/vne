@@ -25,7 +25,8 @@ extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.autosummary',
     'myst_parser',
-    'sphinx_design'
+    'sphinx_design',
+    'sphinx.ext.extlinks'
 ]
 autosummary_generate = True
 autosummary_imported_members = True
@@ -47,6 +48,13 @@ html_static_path = ['_static']
  
 exclude_patterns = ["public", "includes", "**/includes", "jupyter_execute"]
 
+
+extlinks = {
+    'gh_commit': ('https://github.com/Neyunse/vne/pull/%s', 'commit #%s'),
+    'gh_pull': ('https://github.com/Neyunse/vne/pull/%s', 'pull request #%s'),
+    'gh_issue': ('https://github.com/Neyunse/vne/issues/%s', 'issue %s'),
+    'gh_release': ('https://github.com/Neyunse/vne/releases/%s', 'release %s'),
+}
  
 html_baseurl = "https://neyunse.github.io/vne/"
 
@@ -82,5 +90,6 @@ substitutions = [
     ".. |rst| replace:: reStructuredText",
     ".. |product| replace:: VNEngine",
     f".. |current| replace:: {engine_version}",
+    f".. |currentLink| replace:: :gh_release:`{engine_version}`"
 ]
 rst_prolog = "\n".join(substitutions)

@@ -56,3 +56,11 @@ Features
     :glob:
     
     system/*
+
+.. toctree::
+    :maxdepth: 4
+    :caption: Development
+    :hidden:
+    :glob:
+    
+    changelog/index
