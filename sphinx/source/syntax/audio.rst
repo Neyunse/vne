@@ -5,7 +5,7 @@ Supported files
 *******************
 
 - **BGM**: :file:`audio/bgm/**.mp3`
-- **SFX**: :file:`images/sfx/**.mp3`
+- **SFX**: :file:`audio/sfx/**.mp3`
 
 Background Music
 *******************
