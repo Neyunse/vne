@@ -97,6 +97,42 @@ You can rename an already defined character using "@rename", this can be useful 
    
    @rename k as "Kuromi"
 
+Choice Menu
++++++++++++++
+
+.. py:function:: @choice
+
+   Starts a choice block.
+   It is expected that, after this command, @option commands will be issued to define the options.
+
+.. py:function:: @option
+
+   Create a button with a label
+   
+   :param label: Required
+   :type label: string
+
+   :param event: Required
+   :type event: Action Event
+   
+   :type: Event
+
+   :require: @choice, @end_choice, Set()
+   :parent: @choice
+
+.. py:function:: @end_choice
+
+   Close and render the menu and buttons
+
+   :require: @choice, @options
+   :parent: @choice
+
+.. code-block::
+   :caption: scenes/first.kag
+   
+   @choice
+   @option "Start" event Set(var, true)
+   @end_choice
 
 Primitive Say
 ++++++++++++++++
