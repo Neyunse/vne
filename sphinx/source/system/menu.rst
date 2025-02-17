@@ -8,12 +8,6 @@ Menu & Button
    Starts a menu block.
    It is expected that, after this command, @button commands will be issued to define the options.
 
-.. code-block::
-   :caption: scenes/first.kag | system/main_menu.kag
-   
-   @menu
-
-
 .. py:function:: @button
 
    Create a button with a label
@@ -29,19 +23,19 @@ Menu & Button
    :require: @menu 
    :parent: @menu
    
-.. code-block::
-   :caption: scenes/first.kag | system/main_menu.kag
-   
-   @menu
-   @button "Start" event Scene("first")
-   @endMenu
-
 .. py:function:: @endMenu
 
    Close and render the menu and buttons
 
    :require: @menu, @buttons
    :parent: @menu
+
+.. code-block::
+   :caption: scenes/first.kag | system/main_menu.kag
+   
+   @menu
+   @button "Start" event Scene("first")
+   @endMenu
 
 Events
 +++++++++++++
