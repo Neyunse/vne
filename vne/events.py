@@ -18,7 +18,7 @@ class EventManager:
             "ui.kag",
             "scenes.kag"
         ]
-        self.sound_cache = {}
+ 
 
     def register_default_events(self):
         """
@@ -73,10 +73,16 @@ class EventManager:
         self.register_event("button", self.handle_button)
         self.register_event("endMenu", self.handle_endmenu)
 
+        # ALIAS (MENU)
+        self.register_event("choice", self.handle_choice_menu)
+        self.register_event("option", self.handle_option_button)
+        self.register_event("end_choice", self.handle_end_choice)
+
         # Events
         self.register_event("Scene", self.handle_process_scene)
         self.register_event("Set", self.handle_Set_event)
         self.register_event("Quit",  self.handle_exit)
+    
 
     def register_event(self, event_name, handler):
         """
@@ -663,80 +669,59 @@ class EventManager:
         
         engine.Log(f"[Display] Window set to {width}x{height}.")
 
-    def handle_menu(self, arg, engine):
+    def handle_choice_menu(self, arg, engine):
         """
-        Starts a menu block.
-        It is expected that, after this command, @button commands will be issued to define the options.
-        """
-        engine.current_menu_buttons = []
-        engine.Log("[menu] Menu block started.")
-
-    def handle_button(self, arg, engine):
-        """
-        The function `handle_button` parses a string argument to extract a label and an event action,
-        then adds them to a list in the `engine` object.
+        Initiates a choicemenu block where subsequent @option commands define menu options.
         
-        :param arg: The `arg` parameter in the `handle_button` function is a string that represents the
-        input provided by the user. It is expected to be in a specific format: "@button "Label" event
-        <command>". The function then processes this input to extract the label and event command
-        associated with a button
-        :param engine: The `engine` parameter in the `handle_button` method seems to be an object that is
-        used to store information related to the current menu buttons. It is used to keep track of the
-        buttons that have been added to the menu so far. The method checks if the `engine` object has an
+        :param arg: Unused argument.
+        :param engine: The game engine instance.
         """
-     
+        engine.current_choice_buttons = []
+        engine.Log("[choice] Menu block started.")
+    
+    def handle_option_button(self, arg, engine):
+        """
+        Parses a button command to extract a label and an event action, then adds them to the current menu.
+        Expected syntax: @button "Label" event <command>
+        
+        :param arg: The argument string containing the label and the event command.
+        :param engine: The game engine instance.
+        """
         pattern = r'^"([^"]+)"\s+event\s+(.+)$'
         arg = arg.strip()
         match = re.match(pattern, arg)
         if not match:
-            raise Exception('[button] Invalid format. Expected: @button "Label" event <command>.')
+            raise Exception('[choice-button] Invalid format. Expected: @option "Label" event Set(var, test).')
         raw_label = match.group(1)
         action = match.group(2).strip()
-        if not hasattr(engine, "current_menu_buttons"):
-            engine.current_menu_buttons = []
-      
-        engine.current_menu_buttons.append({"raw_label": raw_label, "event": action})
-        engine.Log(f"[button] Button added: '{raw_label}'. -> '{action}'")
-
-    def handle_endmenu(self, arg, engine):
-        """
-        The function `handle_endmenu` in Python handles the display and interaction with a menu
-        interface within a game engine.
+        if not hasattr(engine, "current_choice_buttons"):
+            engine.current_choice_buttons = []
+        if not action.startswith("Set"):
+            raise Exception('[choice-button] Invalid event. Expected: @option "Label" event Set(var, test).')
         
-        :param arg: The `arg` parameter in the `handle_endmenu` method seems to be unused in the
-        provided code snippet. It is defined as a parameter but not referenced or utilized within the
-        method. If you intended to use this parameter for some specific functionality or logic within
-        the method, you may need to update
-        :param engine: The `engine` parameter in the `handle_endmenu` method seems to be an object that
-        contains various properties and methods related to the game engine. It is used to access
-        configuration settings, handle events, render graphics, and manage the game state
+        engine.current_choice_buttons.append({"raw_label": raw_label, "event": action})
+        engine.Log(f"[choice-button] Button added: '{raw_label}' -> '{action}'.")
+    
+    def handle_end_choice(self, arg, engine):
         """
-       
+        """
         clock = engine.clock
-
-        if not hasattr(engine, "current_menu_buttons") or not engine.current_menu_buttons:
+        if not hasattr(engine, "current_choice_buttons") or not engine.current_choice_buttons:
             raise Exception("[endmenu] There are no buttons defined in the menu.")
-
-         
         screen_width = engine.config.get("screen_width", 800)
         screen_height = engine.config.get("screen_height", 600)
         panel_width = int(screen_width * 0.5)
         button_height = 40
         margin = 10
-        panel_height = len(engine.current_menu_buttons) * (button_height + margin) + margin
+        panel_height = len(engine.current_choice_buttons) * (button_height + margin) + margin
         panel_x = (screen_width - panel_width) // 2
         panel_y = (screen_height - panel_height) // 2
         panel_rect = pygame.Rect(panel_x, panel_y, panel_width, panel_height)
-        
-   
         panel_bg_color = (50, 50, 50, 200)
         border_color = (255, 255, 255)
         font = engine.renderer.font
-
-   
         buttons = []
-        for i, btn in enumerate(engine.current_menu_buttons):
-  
+        for i, btn in enumerate(engine.current_choice_buttons):
             label_text = self.substitute_variables(btn["raw_label"], engine)
             text_surface = font.render(label_text, True, (255, 255, 255))
             text_rect = text_surface.get_rect()
@@ -744,7 +729,6 @@ class EventManager:
             btn_rect = pygame.Rect(0, btn_y, panel_width, button_height)
             text_rect.center = btn_rect.center
             buttons.append({"rect": btn_rect, "event": btn["event"], "text": text_surface, "text_rect": text_rect})
-        
         selected_action = None
         running_menu = True
         while running_menu and engine.running:
@@ -762,10 +746,103 @@ class EventManager:
                                 selected_action = btn["event"]
                                 running_menu = False
                                 break
-    
             panel_surface = pygame.Surface((panel_width, panel_height), pygame.SRCALPHA)
-            panel_surface.fill(panel_bg_color)
-            pygame.draw.rect(panel_surface, border_color, panel_surface.get_rect(), 2)
+            for btn in buttons:
+                pygame.draw.rect(panel_surface, (100, 100, 100), btn["rect"])
+                pygame.draw.rect(panel_surface, border_color, btn["rect"], 2)
+                panel_surface.blit(btn["text"], btn["text_rect"])
+            engine.renderer.draw_background()
+            engine.renderer.screen.blit(panel_surface, (panel_x, panel_y))
+            pygame.display.update()
+        if selected_action:
+            if not selected_action.startswith("@"):
+                selected_action = "@" + selected_action
+            engine.Log(f"[menu] Selected action: {selected_action}")
+            self.handle(selected_action, engine)
+
+    def handle_menu(self, arg, engine):
+        """
+        Initiates a menu block where subsequent @button commands define menu options.
+        
+        :param arg: Unused argument.
+        :param engine: The game engine instance.
+        """
+        engine.current_menu_buttons = []
+        engine.Log("[menu] Menu block started.")
+
+    def handle_button(self, arg, engine):
+        """
+        Parses a button command to extract a label and an event action, then adds them to the current menu.
+        Expected syntax: @button "Label" event <command>
+        
+        :param arg: The argument string containing the label and the event command.
+        :param engine: The game engine instance.
+        """
+        pattern = r'^"([^"]+)"\s+event\s+(.+)$'
+        arg = arg.strip()
+        match = re.match(pattern, arg)
+        if not match:
+            raise Exception('[button] Invalid format. Expected: @button "Label" event <command>.')
+        raw_label = match.group(1)
+        action = match.group(2).strip()
+        if not hasattr(engine, "current_menu_buttons"):
+            engine.current_menu_buttons = []
+        
+        engine.current_menu_buttons.append({"raw_label": raw_label, "event": action})
+        engine.Log(f"[button] Button added: '{raw_label}' -> '{action}'.")
+        
+    def handle_endmenu(self, arg, engine):
+        """
+        Handles the display and interaction with a menu interface. It renders a centered panel with buttons,
+        waits for user selection, and then executes the associated event command.
+        
+        :param arg: Unused argument.
+        :param engine: The game engine instance.
+        """
+        clock = engine.clock
+        if not hasattr(engine, "current_menu_buttons") or not engine.current_menu_buttons:
+            raise Exception("[endmenu] There are no buttons defined in the menu.")
+        screen_width = engine.config.get("screen_width", 800)
+        screen_height = engine.config.get("screen_height", 600)
+        panel_width = int(screen_width * 0.3)
+        button_height = 40
+        margin = 10
+        panel_height = len(engine.current_menu_buttons) * (button_height + margin) + margin
+        panel_x = 10
+        panel_y = (screen_height - panel_height) * 1
+        panel_rect = pygame.Rect(panel_x, panel_y, panel_width, panel_height)
+        panel_bg_color = (50, 50, 50, 200)
+        border_color = (255, 255, 255)
+        font = engine.renderer.font
+        buttons = []
+        for i, btn in enumerate(engine.current_menu_buttons):
+            label_text = self.substitute_variables(btn["raw_label"], engine)
+            text_surface = font.render(label_text, True, (255, 255, 255))
+            text_rect = text_surface.get_rect()
+            btn_y = margin + i * (button_height + margin)
+            btn_rect = pygame.Rect(0, btn_y, panel_width, button_height)
+            text_rect.center = btn_rect.center
+            buttons.append({"rect": btn_rect, "event": btn["event"], "text": text_surface, "text_rect": text_rect})
+        selected_action = None
+        running_menu = True
+        while running_menu and engine.running:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    engine.running = False
+                    running_menu = False
+                elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                    mouse_x, mouse_y = event.pos
+                    if panel_rect.collidepoint(mouse_x, mouse_y):
+                        local_x = mouse_x - panel_x
+                        local_y = mouse_y - panel_y
+                        for btn in buttons:
+                            if btn["rect"].collidepoint(local_x, local_y):
+                                selected_action = btn["event"]
+                                running_menu = False
+                                break
+            panel_surface = pygame.Surface((panel_width, panel_height), pygame.SRCALPHA)
+            #panel_surface.fill(panel_bg_color)
+            #pygame.draw.rect(panel_surface, border_color, panel_surface.get_rect(), 2)
             for btn in buttons:
                 pygame.draw.rect(panel_surface, (100, 100, 100), btn["rect"])
                 pygame.draw.rect(panel_surface, border_color, btn["rect"], 2)
@@ -774,7 +851,6 @@ class EventManager:
             engine.renderer.screen.blit(panel_surface, (panel_x, panel_y))
             pygame.display.update()
             clock.tick(30)
-        
         if selected_action:
             if not selected_action.startswith("@"):
                 selected_action = "@" + selected_action
@@ -783,93 +859,77 @@ class EventManager:
 
     def handle_Set_event(self, arg, engine):
         """
-        Updates the value of a defined variable using the syntax:
-
-            Set(variable, value)
-
-        For example:
-            @button "Exit" action Set(chek, true).
-
-        This command extracts the variable name and the new value, and then assigns it in engine.vars.
+        Updates the value of a defined variable using the syntax: Set(variable, value)
+        For example, @button "Exit" event Set(chek, true).
+        
+        :param arg: The argument string containing the variable name and new value.
+        :param engine: The game engine instance.
         """
         arg = arg.strip()
-         
         if arg.startswith("(") and arg.endswith(")"):
             arg = arg[1:-1].strip()
         parts = arg.split(",")
         if len(parts) != 2:
             raise Exception("[Set] Invalid format. Expected: Set(variable, value)")
-        
         var_name = parts[0].strip()
         new_value = parts[1].strip().strip('"')
-        
         if var_name in engine.characters:
             raise Exception(f"[Set] The variable '{var_name}' cannot be modified as it is an already defined character!")
-        
         if var_name in engine.scenes:
             raise Exception(f"[Set] The variable '{var_name}' cannot be modified as it is an already defined scene!")
-        
         if var_name not in engine.vars:
             raise Exception(f"[Set] The variable '{var_name}' is not defined. Use @def to define it.")
-        
-
         new_value = self.substitute_variables(new_value, engine)
-        
         engine.vars[var_name] = new_value
         engine.Log(f"[Set] Variable '{var_name}' updated to '{new_value}'.")
-
-
-
     
     # TODO: IMPLEMENT SAVE AND LOAD
 
     def handle_save(self, arg, engine):
-        arg = arg.strip()
-        if arg.startswith("(") and arg.endswith(")"):
-            arg = arg[1:-1].strip()
-        engine.vars["continue"] = "true"
+        """
+        Saves the game state to a file. The saved state includes variables, characters, scenes, the current 
+        lexer position, the original commands of the script, and any checkpoints.
+        
+        :param arg: Optional argument (not used in this implementation).
+        :param engine: The game engine instance containing state information.
+        """
         state = {
             "vars": engine.vars,
             "characters": engine.characters,
             "scenes": engine.scenes,
             "lexer_current": engine.lexer.current,
             "original_commands": engine.lexer.original_commands,
-            "checkpoints": engine.checkpoints if hasattr(engine, "checkpoints") else {},
+            "checkpoints": getattr(engine, "checkpoints", {})
         }
-        file = f"{engine.game_path}/data.save"
+        save_file = os.path.join(engine.game_path, "data.save")
         try:
-            with open(file, "wb") as f:
+            with open(save_file, "wb") as f:
                 pickle.dump(state, f)
-            print(f"[save] Game saved to '{file}'.")
+            engine.Log(f"[save] Game saved to '{save_file}'.")
         except Exception as e:
             raise Exception(f"[save] Error saving game: {e}")
     
- 
-
     def handle_load_save(self, arg, engine):
         """
-        Loads the game status from a file.
-   
+        Loads the game state from a save file. The state includes variables, characters, scenes, the lexer's
+        original commands, current position, and checkpoints.
+        
+        :param arg: Optional argument (not used in this implementation).
+        :param engine: The game engine instance to which the state will be applied.
         """
-        arg = arg.strip()
-        if arg.startswith("(") and arg.endswith(")"):
-            arg = arg[1:-1].strip()
+        save_file = os.path.join(engine.game_path, "data.save")
         try:
-            file = f"{engine.game_path}/data.save"
-
-            with open(file, "rb") as f:
+            with open(save_file, "rb") as f:
                 state = pickle.load(f)
             engine.vars = state.get("vars", {})
             engine.characters = state.get("characters", {})
             engine.scenes = state.get("scenes", {})
-            
             if "original_commands" in state and "lexer_current" in state:
                 engine.lexer.original_commands = state["original_commands"]
                 engine.lexer.commands = state["original_commands"][state["lexer_current"]:]
                 engine.lexer.current = 0
             engine.checkpoints = state.get("checkpoints", {})
-            print(f"[load] Game loaded from '{file}'.")
-
+            engine.Log(f"[load] Game loaded from '{save_file}'.")
         except Exception as e:
             raise Exception(f"[load] Error loading game: {e}")
 
@@ -877,76 +937,55 @@ class EventManager:
         """
         Plays looping background music using a file located at:
         data/audio/bgm/<filename>.mp3.
-        The file is loaded via the ResourceManager and cached in self.sound_cache.
-        If the designated BGM channel is busy, a fadeout is applied and the new track is scheduled to play after the fadeout period.
-        The volume is set from engine.config["bgm_volume"].
-        
-        :param arg: The filename (without extension) of the background music.
-        :param engine: The game engine instance containing configuration and ResourceManager.
+        The files can be in data/loose or inside data.pkg.
+        The ResourceManager is used to get the bytes and the sound is loaded from a BytesIO.
+        Fade out is applied in case something is already playing and fade in when starting the new track.
         """
         filename = arg.strip()
         rel_path = os.path.join("audio", "bgm", filename + ".mp3")
-        if rel_path in self.sound_cache:
-            bgm_sound = self.sound_cache[rel_path]
-        else:
+        try:
             data_bytes = engine.resource_manager.get_bytes(rel_path)
             bgm_sound = pygame.mixer.Sound(io.BytesIO(data_bytes))
-            self.sound_cache[rel_path] = bgm_sound
-        bgm_channel = engine.bgm_channel
-        bgm_volume = engine.config.get("bgm_volume", 1.0)
-        bgm_channel.set_volume(bgm_volume)
+        except Exception as e:
+            raise Exception(f"[bgm] Error loading background music from '{rel_path}': {e}")
+        
+        bgm_channel_number = engine.config.get("bgm_channel", 0)
+        bgm_channel = pygame.mixer.Channel(bgm_channel_number)
+        
         if bgm_channel.get_busy():
             bgm_channel.fadeout(2000)
-            engine.pending_bgm = {"sound": bgm_sound, "fade_ms": 2000, "start_time": pygame.time.get_ticks() + 2000}
-        else:
-            bgm_channel.play(bgm_sound, loops=-1, fade_ms=2000)
-        engine.Log(f"[bgm] Background music '{filename}' scheduled on channel {engine.config.get('bgm_channel', 0)} with fade in at volume {bgm_volume}.")
+            pygame.time.delay(2000)
+            bgm_channel.stop()
 
+        bgm_channel.play(bgm_sound, loops=-1, fade_ms=2000)
+        bgm_channel.set_volume(0.6)
+        engine.Log(f"[bgm] Background music '{filename}' playing on channel {bgm_channel_number} with fade in.")
 
     def handle_sfx(self, arg, engine):
         """
         Plays a sound effect using a file located at:
-        data/audio/sfx/<filename>.mp3.
-        The file is loaded via the ResourceManager and cached in self.sound_cache.
-        If the designated SFX channel is busy, a fadeout is applied and the new sound is scheduled to play after the fadeout period.
-        The volume is set from engine.config["sfx_volume"].
-        
-        :param arg: The filename (without extension) of the sound effect.
-        :param engine: The game engine instance containing configuration and ResourceManager.
+        data/audio/sfx/<filename>.wav.
+        The files can be in data/loose or inside data.pkg.
+        The ResourceManager is used to get the bytes and the sound is loaded from a BytesIO.
+        If the channel is already playing another sound, a fade out (500 ms) is applied before playing the new sound.
+        with a fade in of 500 ms.
         """
         filename = arg.strip()
         rel_path = os.path.join("audio", "sfx", filename + ".mp3")
-        if rel_path in self.sound_cache:
-            sfx_sound = self.sound_cache[rel_path]
-        else:
+        try:
             data_bytes = engine.resource_manager.get_bytes(rel_path)
             sfx_sound = pygame.mixer.Sound(io.BytesIO(data_bytes))
-            self.sound_cache[rel_path] = sfx_sound
-        sfx_channel = engine.sfx_channel
-        sfx_volume = engine.config.get("sfx_volume", 1.0)
-        sfx_channel.set_volume(sfx_volume)
-        if sfx_channel.get_busy():
-            sfx_channel.fadeout(500)
-            engine.pending_sfx = {"sound": sfx_sound, "fade_ms": 500, "start_time": pygame.time.get_ticks() + 500}
-        else:
-            sfx_channel.play(sfx_sound, fade_ms=500)
-        engine.Log(f"[sfx] Sound effect '{filename}' scheduled on channel {engine.config.get('sfx_channel', 1)} with fade in at volume {sfx_volume}.")
-
-    def update_pending_audio(self, engine):
-        """
-        Checks and plays any pending audio that has been scheduled after a fadeout.
-        This function should be called within the main update loop of the engine.
+        except Exception as e:
+            raise Exception(f"[sfx] Error loading sound effect from '{rel_path}': {e}")
         
-        :param engine: The game engine instance containing pending audio scheduling.
-        """
-        current_time = pygame.time.get_ticks()
-        if hasattr(engine, "pending_bgm") and engine.pending_bgm:
-            pending = engine.pending_bgm
-            if current_time >= pending["start_time"]:
-                engine.bgm_channel.play(pending["sound"], loops=-1, fade_ms=pending["fade_ms"])
-                engine.pending_bgm = None
-        if hasattr(engine, "pending_sfx") and engine.pending_sfx:
-            pending = engine.pending_sfx
-            if current_time >= pending["start_time"]:
-                engine.sfx_channel.play(pending["sound"], fade_ms=pending["fade_ms"])
-                engine.pending_sfx = None
+        sfx_channel_number = engine.config.get("sfx_channel", 1)
+        sfx_channel = pygame.mixer.Channel(sfx_channel_number)
+        
+        if sfx_channel.get_busy():
+            sfx_channel.fadeout(500)  # Fade out en 500 ms si el canal ya está ocupado
+            pygame.time.delay(500)    # Esperar 500 ms para que se complete el fade out
+        
+        sfx_channel.play(sfx_sound, fade_ms=500)  # Reproducir con fade in de 500 ms
+        sfx_channel.set_volume(1.0)
+
+        engine.Log(f"[sfx] Sound effect '{filename}' played on channel {sfx_channel_number} with fade in.")
