@@ -2,6 +2,9 @@
  
 |product|
 =========
+current version: |current|
+
+ 
 
 .. rst-class:: lead
 
