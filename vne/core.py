@@ -28,13 +28,17 @@ class VNEngine:
         self.condition_stack = []
         self.current_menu_buttons = []
         self.typewriter_index = 0
-        
+        self.pending_sfx = None
+        self.pending_bgm = None
         
         self.resource_manager = ResourceManager(self.game_path, self.Log)
         self.lexer = ScriptLexer(self.game_path, self)
         self.event_manager = EventManager()
         self.renderer = Renderer(self)
         self.clock = pygame.time.Clock()
+        self.sfx_channel = None
+        self.bgm_channel = None
+        
 
         self.current_dialogue = ""
         self.current_character_name = ""
@@ -129,12 +133,16 @@ Plataform: %(plataform)s
             self.running = False
             return
         pygame.mixer.init()
-        
+        self.sfx_channel = pygame.mixer.Channel(CONFIG.get("sfx_channel", 1.0))
+        self.bgm_channel = pygame.mixer.Channel(CONFIG.get("bgm_channel", 0.6))
         while self.running:
             delta_time = self.clock.tick(30) / 1000.0
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     self.running = False
+                
+            self.event_manager.update_pending_audio(self)
+
             self.typewriter_index += int(delta_time * 20)
             command = self.lexer.get_next_command()
             if command is None:

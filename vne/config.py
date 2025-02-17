@@ -26,7 +26,10 @@ CONFIG = {
     "sprite_scale": 0.5,
     "bgm_channel": 0,
     "sfx_channel": 1,
+    "bgm_volume": 0.6,
+    "sfx_volume": 1.0 
 }
 
 
 key = b"MyXorKey"
+        

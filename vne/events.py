@@ -18,6 +18,7 @@ class EventManager:
             "ui.kag",
             "scenes.kag"
         ]
+        self.sound_cache = {}
 
     def register_default_events(self):
         """
@@ -876,55 +877,76 @@ class EventManager:
         """
         Plays looping background music using a file located at:
         data/audio/bgm/<filename>.mp3.
-        The files can be in data/loose or inside data.pkg.
-        The ResourceManager is used to get the bytes and the sound is loaded from a BytesIO.
-        Fade out is applied in case something is already playing and fade in when starting the new track.
+        The file is loaded via the ResourceManager and cached in self.sound_cache.
+        If the designated BGM channel is busy, a fadeout is applied and the new track is scheduled to play after the fadeout period.
+        The volume is set from engine.config["bgm_volume"].
+        
+        :param arg: The filename (without extension) of the background music.
+        :param engine: The game engine instance containing configuration and ResourceManager.
         """
         filename = arg.strip()
         rel_path = os.path.join("audio", "bgm", filename + ".mp3")
-        try:
+        if rel_path in self.sound_cache:
+            bgm_sound = self.sound_cache[rel_path]
+        else:
             data_bytes = engine.resource_manager.get_bytes(rel_path)
             bgm_sound = pygame.mixer.Sound(io.BytesIO(data_bytes))
-        except Exception as e:
-            raise Exception(f"[bgm] Error loading background music from '{rel_path}': {e}")
-        
-        bgm_channel_number = engine.config.get("bgm_channel", 0)
-        bgm_channel = pygame.mixer.Channel(bgm_channel_number)
-        
+            self.sound_cache[rel_path] = bgm_sound
+        bgm_channel = engine.bgm_channel
+        bgm_volume = engine.config.get("bgm_volume", 1.0)
+        bgm_channel.set_volume(bgm_volume)
         if bgm_channel.get_busy():
             bgm_channel.fadeout(2000)
-            pygame.time.delay(2000)
-            bgm_channel.stop()
+            engine.pending_bgm = {"sound": bgm_sound, "fade_ms": 2000, "start_time": pygame.time.get_ticks() + 2000}
+        else:
+            bgm_channel.play(bgm_sound, loops=-1, fade_ms=2000)
+        engine.Log(f"[bgm] Background music '{filename}' scheduled on channel {engine.config.get('bgm_channel', 0)} with fade in at volume {bgm_volume}.")
 
-        bgm_channel.play(bgm_sound, loops=-1, fade_ms=2000)
-        bgm_channel.set_volume(0.6)
-        engine.Log(f"[bgm] Background music '{filename}' playing on channel {bgm_channel_number} with fade in.")
 
     def handle_sfx(self, arg, engine):
         """
         Plays a sound effect using a file located at:
-        data/audio/sfx/<filename>.wav.
-        The files can be in data/loose or inside data.pkg.
-        The ResourceManager is used to get the bytes and the sound is loaded from a BytesIO.
-        If the channel is already playing another sound, a fade out (500 ms) is applied before playing the new sound.
-        with a fade in of 500 ms.
+        data/audio/sfx/<filename>.mp3.
+        The file is loaded via the ResourceManager and cached in self.sound_cache.
+        If the designated SFX channel is busy, a fadeout is applied and the new sound is scheduled to play after the fadeout period.
+        The volume is set from engine.config["sfx_volume"].
+        
+        :param arg: The filename (without extension) of the sound effect.
+        :param engine: The game engine instance containing configuration and ResourceManager.
         """
         filename = arg.strip()
         rel_path = os.path.join("audio", "sfx", filename + ".mp3")
-        try:
+        if rel_path in self.sound_cache:
+            sfx_sound = self.sound_cache[rel_path]
+        else:
             data_bytes = engine.resource_manager.get_bytes(rel_path)
             sfx_sound = pygame.mixer.Sound(io.BytesIO(data_bytes))
-        except Exception as e:
-            raise Exception(f"[sfx] Error loading sound effect from '{rel_path}': {e}")
-        
-        sfx_channel_number = engine.config.get("sfx_channel", 1)
-        sfx_channel = pygame.mixer.Channel(sfx_channel_number)
-        
+            self.sound_cache[rel_path] = sfx_sound
+        sfx_channel = engine.sfx_channel
+        sfx_volume = engine.config.get("sfx_volume", 1.0)
+        sfx_channel.set_volume(sfx_volume)
         if sfx_channel.get_busy():
-            sfx_channel.fadeout(500)  # Fade out en 500 ms si el canal ya está ocupado
-            pygame.time.delay(500)    # Esperar 500 ms para que se complete el fade out
-        
-        sfx_channel.play(sfx_sound, fade_ms=500)  # Reproducir con fade in de 500 ms
-        sfx_channel.set_volume(1.0)
+            sfx_channel.fadeout(500)
+            engine.pending_sfx = {"sound": sfx_sound, "fade_ms": 500, "start_time": pygame.time.get_ticks() + 500}
+        else:
+            sfx_channel.play(sfx_sound, fade_ms=500)
+        engine.Log(f"[sfx] Sound effect '{filename}' scheduled on channel {engine.config.get('sfx_channel', 1)} with fade in at volume {sfx_volume}.")
 
-        engine.Log(f"[sfx] Sound effect '{filename}' played on channel {sfx_channel_number} with fade in.")
+    def update_pending_audio(self, engine):
+        """
+        Checks and plays any pending audio that has been scheduled after a fadeout.
+        This function should be called within the main update loop of the engine.
+        
+        :param engine: The game engine instance containing pending audio scheduling.
+        """
+        current_time = pygame.time.get_ticks()
+        if hasattr(engine, "pending_bgm") and engine.pending_bgm:
+            pending = engine.pending_bgm
+            if current_time >= pending["start_time"]:
+                engine.bgm_channel.play(pending["sound"], loops=-1, fade_ms=pending["fade_ms"])
+                engine.pending_bgm = None
+        if hasattr(engine, "pending_sfx") and engine.pending_sfx:
+            pending = engine.pending_sfx
+            if current_time >= pending["start_time"]:
+                engine.sfx_channel.play(pending["sound"], fade_ms=pending["fade_ms"])
+                engine.pending_sfx = None

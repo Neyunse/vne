@@ -1,8 +1,10 @@
 @bg school
 @sprite kuro
+@bgm 70_love
 K: Hello, welcome to this engine test!
 K: my name is {K} and I am here for the sole purpose of debugging this project....
 K: everything seems to be working properly...
+@bgm escape-ofv
 
 @menu
 @button "I found a bug!" event Set(chek, true)
