@@ -7,6 +7,8 @@ from vne.config import key
 from vne.rm import ResourceManager
 from vne.xor_data import xor_data
 from datetime import datetime
+from vne._version import __version__
+
 import os
 import platform
 class VNEngine:
@@ -91,11 +93,12 @@ class VNEngine:
 
         init_log_template = """created at: %(createdAt)s
 Plataform: %(plataform)s
+VNE v%(engineVersion)s
 """
         init_log_template_data = {
             'createdAt': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
             'plataform': f"{platform.system()}-{platform.version()}",
-         
+            'engineVersion': __version__ 
         }
 
         log_path = os.path.join(self.game_path, 'log.txt')
@@ -153,12 +156,14 @@ Plataform: %(plataform)s
   %(message)s\n
 
   %(plataform)s
+  VNE v%(engineVersion)s
   '''
                     self.Log(f"[Exception] Script was failed. Check the traceback.txt file for more information.")
                     
                     traceback_details = {
                         'message' : e,
-                        'plataform': f"{platform.system()}-{platform.version()}"
+                        'plataform': f"{platform.system()}-{platform.version()}",
+                        'engineVersion': __version__ 
                     }
                     
                     print(traceback_template % traceback_details)

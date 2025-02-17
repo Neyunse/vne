@@ -138,8 +138,8 @@ if __name__ == "__main__":
     # Example configuration:
     part = "patch"              # Or "minor", "major" as required (used only if only_pre_release is False)
     pre_release = "alpha"         # Change or set to None if no suffix is required
-    only_pre_release = False      # Set to True to update only the suffix
-    incr_suffix = False           # Useful only in only_pre_release mode to increment the numeric suffix
+    only_pre_release = True      # Set to True to update only the suffix
+    incr_suffix = True           # Useful only in only_pre_release mode to increment the numeric suffix
     
     # To test suffix increment without changing the main part, uncomment:
     # only_pre_release = True
