@@ -31,7 +31,7 @@ Menu & Button
    :parent: @menu
 
 .. code-block::
-   :caption: scenes/first.kag | system/main_menu.kag
+   :caption: system/main_menu.kag
    
    @menu
    @button "Start" event Scene("first")
