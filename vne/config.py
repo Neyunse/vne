@@ -1,3 +1,5 @@
+import os 
+
 CONFIG = {
     "screen_width": 800,
     "screen_height": 600,
@@ -31,5 +33,4 @@ CONFIG = {
 }
 
 
-key = b"MyXorKey"
-        
+key = bytes.fromhex(os.environ.get("VNE_KEY", ""))
