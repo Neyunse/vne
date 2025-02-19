@@ -1,13 +1,11 @@
 import pygame
 import io
 import os
-import threading
 class Audio(object):
     instances = []
     def __init__(self, filename, type_file="bgm", engine=None):
         super(Audio, self).__init__()
         assert isinstance(filename, str)
- 
         self.bytes_io = None
         self.filename = filename
         self.type_file = type_file
@@ -16,13 +14,6 @@ class Audio(object):
         Audio.instances.append(self)
     
     def load_audio(self):
-        """
-        The function `load_audio` loads an audio file from the game directory and returns a `pygame.mixer.Sound` object.
-        :param filename: The `load_audio` method takes a string `filename` as input, which specifies the name of the audio file.
-        :param type: The `load_audio` method also takes an optional string `type` as input, which specifies the type of audio (bgm or sfx).
-        :param engine: The `load_audio` method takes an optional `engine` object as input, which is used to access the resource manager.
-        :return: The `load_audio` method returns a `pygame.mixer.Sound` object loaded with the specified audio file.
-        """
         rel_path = os.path.join("audio", self.type_file, self.filename + ".mp3")
         try:
             audio_bytes = self.engine.resource_manager.get_bytes(rel_path)  
@@ -36,7 +27,7 @@ class Audio(object):
 
         if self.type_file == "bgm":
             return pygame.mixer.Channel(0)
-        
+
         return pygame.mixer.Channel(1)
 
     def play(self, channel_id=0, loop=0, fade_ms=1000):
