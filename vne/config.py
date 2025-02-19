@@ -1,4 +1,5 @@
 import os 
+import secrets
 
 CONFIG = {
     "screen_width": 800,
@@ -32,5 +33,5 @@ CONFIG = {
     "sfx_volume": 1.0 
 }
 
-
-key = bytes.fromhex(os.environ.get("VNE_KEY", ""))
+# Get the key from the environment variable VNE_KEY, or generate a new one if it doesn't exist
+key = bytes.fromhex(os.environ.get("VNE_KEY", secrets.token_hex(16)))

@@ -60,37 +60,6 @@ class ResourceManager:
 
         raise FileNotFoundError(f"'{internal_path}' not found in data.pkg nor in '{local_path}'")
 
-    def get_script_bytes(self, base_name):
-        """
-        Retrieves and decrypts the content of a compiled script file based on a given base name.
-        The compiled file should have a header line starting with "VNEFILE:".
-        """
-        compiled_path = base_name + ".kagc"
-        try:
-            file_bytes = self.get_bytes(compiled_path)
-            header, encrypted_content = file_bytes.split(b'\n', 1)
-             
-            if not header.startswith(b"VNEFILE:"):
-                raise Exception("Invalid header in compiled script.")
-             
-            header_content = header.decode("utf-8").strip()  
-            parts = header_content.split(";")
-            id_part = parts[0]
-            if not id_part.startswith("VNEFILE:"):
-                raise Exception("Invalid header: missing 'VNEFILE:'")
-            file_identifier = id_part[len("VNEFILE:"):].strip()
- 
-            expected_identifier = os.path.basename(base_name)
-            if file_identifier != expected_identifier:
-                raise Exception(f"File identifier ('{file_identifier}') does not match expected ('{expected_identifier}').")
-        
-            plain_bytes = xor_data(encrypted_content, key)
-            if b'\x00' in plain_bytes:
-                raise Exception("The decrypted content contains null characters.")
-            return plain_bytes
-        except FileNotFoundError:
-            raise Exception(f"[ERROR] Compiled version of the script for '{base_name}' was not found.")
-
     def close(self):
         if self.zipfile:
             self.zipfile.close()
