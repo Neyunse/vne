@@ -14,6 +14,6 @@ Changelog
 
 --------------------
 
+.. include:: includes/alpha.5.rst
 .. include:: includes/alpha.4.rst
-
 .. include:: includes/alpha.3.rst
