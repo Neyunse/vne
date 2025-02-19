@@ -1,5 +1,6 @@
 import os 
 import secrets
+from vne._version import __version__
 
 CONFIG = {
     "screen_width": 800,
@@ -32,6 +33,8 @@ CONFIG = {
     "bgm_volume": 0.6,
     "sfx_volume": 1.0 
 }
+
+engine_version = __version__
 
 # Get the key from the environment variable VNE_KEY, or generate a new one if it doesn't exist
 key = bytes.fromhex(os.environ.get("VNE_KEY", secrets.token_hex(16)))

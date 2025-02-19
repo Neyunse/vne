@@ -1,16 +1,15 @@
 import pygame
+import os
+import platform
+from datetime import datetime
 from vne.lexer import ScriptLexer
 from vne.renderer import Renderer
 from vne.events import EventManager
 from vne.config import CONFIG
-from vne.config import key
+from vne.config import key, engine_version
 from vne.rm import ResourceManager
 from vne.xor_data import xor_data
-from datetime import datetime
-from vne._version import __version__
 
-import os
-import platform
 class VNEngine:
     def __init__(self, game_path, devMode=False):
         self.game_path = game_path
@@ -88,6 +87,9 @@ class VNEngine:
         :return: If the script reaches the end of the `run` method without encountering any errors, it
         will return `None`.
         """
+
+        pygame.mixer.pre_init(44100, -16, 2, 2048)
+        
      
         self.Log("Running game. Close the window to exit.") 
 
@@ -98,7 +100,7 @@ VNE v%(engineVersion)s
         init_log_template_data = {
             'createdAt': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
             'plataform': f"{platform.system()}-{platform.version()}",
-            'engineVersion': __version__ 
+            'engineVersion': engine_version 
         }
 
         log_path = os.path.join(self.game_path, 'log.txt')
@@ -133,8 +135,9 @@ VNE v%(engineVersion)s
             self.Log("[VNEngine] Startup script not found. Exiting.")
             self.running = False
             return
-        pygame.mixer.init()
         
+        self.renderer.initialize()
+ 
         while self.running:
             delta_time = self.clock.tick(30) / 1000.0
             for event in pygame.event.get():
@@ -163,7 +166,7 @@ VNE v%(engineVersion)s
                     traceback_details = {
                         'message' : e,
                         'plataform': f"{platform.system()}-{platform.version()}",
-                        'engineVersion': __version__ 
+                        'engineVersion': engine_version 
                     }
                     
                     print(traceback_template % traceback_details)

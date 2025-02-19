@@ -8,10 +8,7 @@ import platform
 from vne import Core
 from vne import xor_data
 from vne import config as CONFIG
-from vne.config import key
-from vne._version import __version__
-
-engine_version = __version__
+from vne.config import key, engine_version
 
 def compile_kag(source_file, target_file, key):
     """
