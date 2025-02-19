@@ -95,7 +95,7 @@ class VNEngine:
 
         init_log_template = """created at: %(createdAt)s
 Plataform: %(plataform)s
-VNE v%(engineVersion)s
+VNE %(engineVersion)s
 """
         init_log_template_data = {
             'createdAt': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
@@ -159,7 +159,7 @@ VNE v%(engineVersion)s
   %(message)s\n
 
   %(plataform)s
-  VNE v%(engineVersion)s
+  VNE %(engineVersion)s
   '''
                     self.Log(f"[Exception] Script was failed. Check the traceback.txt file for more information.")
                     
