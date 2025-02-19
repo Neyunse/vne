@@ -170,7 +170,7 @@ class Renderer:
              
             return None
         except Exception as e:
-            raise Exception(f"[window] {e}")
+            pass
     
     def render(self):
             
