@@ -10,6 +10,7 @@ from vne import xor_data
 from vne import config as CONFIG
 from vne.config import key, engine_version
 
+
 def compile_kag(source_file, target_file, key):
     """
     Reads a source file, encodes its content using an XOR operation with a given key,
