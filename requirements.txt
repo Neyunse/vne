@@ -19,3 +19,4 @@ pygame
 pyinstaller
 pyzipper
 bumpversion
+cryptography
