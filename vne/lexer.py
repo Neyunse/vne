@@ -1,7 +1,7 @@
 import io
 import os
 import pygame
-from vne.xor_data import xor_data
+from vne.aes import AES
 from vne.config import key
 
 class ScriptLexer:
@@ -16,15 +16,15 @@ class ScriptLexer:
     
     def load_scripts(self):
         """
-        The function `load_scripts` loads and parses a script file after decoding it using XOR
+        The function `load_scripts` loads and parses a script file after decoding it using AES
         encryption.
         """
         base_name = "startup"   
         try:
             compiled_path = base_name + ".kagc"
             file_bytes = self.engine.resource_manager.get_bytes(compiled_path)
-            plain_bytes = xor_data(file_bytes, key)
-            content = plain_bytes.decode("utf-8", errors="replace")
+            plain_bytes = AES(file_bytes, key).decrypt().decode("utf-8", errors="replace")
+            content = plain_bytes
             self.commands = self.parse_script(content)
             self.original_commands = list(self.commands)
         except Exception as e:

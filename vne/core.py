@@ -8,7 +8,7 @@ from vne.events import EventManager
 from vne.config import CONFIG
 from vne.config import key, engine_version
 from vne.rm import ResourceManager
-from vne.xor_data import xor_data
+from vne.aes import AES
 
 class VNEngine:
     def __init__(self, game_path, devMode=False):
@@ -90,6 +90,7 @@ class VNEngine:
 
         pygame.mixer.pre_init(44100, -16, 2, 2048)
         
+        
      
         self.Log("Running game. Close the window to exit.") 
 
@@ -122,10 +123,9 @@ VNE %(engineVersion)s
             try:
                 data_bytes = self.resource_manager.get_bytes(candidate)
                 if candidate.endswith(".kagc"):
-                    plain_bytes = xor_data(data_bytes, key)
-                    content = plain_bytes.decode("utf-8", errors="replace")
+                    content = AES(data_bytes, key).decrypt().decode("utf-8", errors="replace")
                 else:
-                    content = data_bytes.decode("utf-8", errors="replace")
+                    content = data_bytes
                 self.Log(f"[VNEngine] Startup script loaded: {candidate}")
                 break
             except FileNotFoundError:

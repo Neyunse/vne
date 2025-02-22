@@ -5,7 +5,7 @@ import pygame
 from collections import ChainMap
 import re
 from vne.lexer import ScriptLexer
-from vne.xor_data import xor_data
+from vne.aes import AES
 from vne.config import key
 import pickle
 from vne.Audio import Audio
@@ -307,16 +307,16 @@ class EventManager:
                 else:
                     compiled_arg = arg
                 data = engine.resource_manager.get_bytes(compiled_arg)
-                data = xor_data(data, key)
+                data = AES(data, key).decrypt().decode("utf-8", errors="replace")
                 engine.Log(f"[Load] Compiled file loaded: {compiled_arg}")
                 engine.loaded_files[compiled_arg] = data
-                content = data.decode("utf-8", errors="replace")
+                content = data
 
             else:
                 data = engine.resource_manager.get_bytes(arg)
                 engine.Log(f"[Load] File loaded: {arg}")
                 engine.loaded_files[arg] = data
-                content = data.decode("utf-8", errors="replace")
+                content = data
             if any(line.strip().startswith("@") for line in content.splitlines()):
                 commands = ScriptLexer(engine.game_path, engine).parse_script(content)
                 for cmd in commands:
@@ -380,7 +380,8 @@ class EventManager:
         try:
             compiled_path = base_name + ".kagc"
             file_bytes = engine.resource_manager.get_bytes(compiled_path)
-            content = xor_data(file_bytes, key).decode("utf-8", errors="replace")
+            content = AES(file_bytes, key).decrypt().decode("utf-8", errors="replace")
+
         except Exception as e:
             raise Exception(f"[ERROR] Compiled version of the script for '{base_name}' not found: {e}")
         engine.Log(f"[process_scene] Processing scene '{scene_alias}'.")
@@ -407,7 +408,7 @@ class EventManager:
         content = ""
         try:
             file_bytes = engine.resource_manager.get_bytes(compiled_path)
-            content = xor_data(file_bytes, key).decode("utf-8", errors="replace")
+            content = AES(file_bytes, key).decrypt().decode("utf-8", errors="replace")
             engine.Log(f"[jump_scene] Compiled scene '{scene_alias}' loaded from: {compiled_path}")
         except Exception as e:
             non_compiled_path = os.path.join(engine.game_path, "data", "scenes", f"{scene_file_name}.kag")

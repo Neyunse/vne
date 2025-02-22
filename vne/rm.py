@@ -1,6 +1,5 @@
 import os
 import pyzipper
-from .xor_data import xor_data
 from .config import key
 
 class ResourceManager:

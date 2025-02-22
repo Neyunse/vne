@@ -6,24 +6,24 @@ import pyzipper
 from datetime import datetime
 import platform
 from vne import Core
-from vne import xor_data
+from vne import aes
 from vne import config as CONFIG
 from vne.config import key, engine_version
 
 
 def compile_kag(source_file, target_file, key):
     """
-    Reads a source file, encodes its content using an XOR operation with a given key,
+    Reads a source file, encodes its content using an AES operation with a given key,
     and writes the result to a target file.
     
     :param source_file: The path to the source file containing the plain text data.
     :param target_file: The file path where the compiled data will be written in binary format.
-    :param key: The key used to perform XOR encryption on the data.
+    :param key: The key used to perform AES encryption on the data.
     """
     with open(source_file, "r", encoding="utf-8") as sf:
         plain_text = sf.read()
     plain_bytes = plain_text.encode("utf-8")
-    compiled_bytes = xor_data(plain_bytes, key)
+    compiled_bytes = aes.AES(plain_bytes, key).encrypt()
     with open(target_file, "wb") as tf:
         tf.write(compiled_bytes)
     

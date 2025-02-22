@@ -37,4 +37,4 @@ CONFIG = {
 engine_version = __version__
 
 # Get the key from the environment variable VNE_KEY, or generate a new one if it doesn't exist
-key = bytes.fromhex(os.environ.get("VNE_KEY", secrets.token_hex(16)))
+key = bytes.fromhex(os.environ.get("VNE_KEY", secrets.token_hex(32)))
