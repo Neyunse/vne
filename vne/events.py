@@ -942,12 +942,13 @@ class EventManager:
         data/audio/bgm/<filename>.mp3.
         """
         filename = arg.strip()
+
         bgm = Audio(filename, "bgm", engine)
 
         bgm.play(loop=-1)
-
+      
         engine.Log(f"[bgm] Playing background music '{filename}'.")
-
+    
     def handle_sfx(self, arg, engine):
         """
         Plays a sound effect using a file located at:

@@ -29,7 +29,7 @@ class VNEngine:
         self.condition_stack = []
         self.current_menu_buttons = []
         self.typewriter_index = 0
- 
+        self.current_bgm = None
         
         self.resource_manager = ResourceManager(self.game_path, self.Log)
         self.lexer = ScriptLexer(self.game_path, self)
@@ -97,7 +97,7 @@ class VNEngine:
         """
 
         pygame.mixer.pre_init(44100, -16, 2, 2048)
-        
+        pygame.mixer.init()
         
      
         self.Log("Running game. Close the window to exit.") 
