@@ -104,7 +104,7 @@ class EventManager:
             else:
                 engine.Log(f"[Log] {mapping[arg]}")
                 print(f"[Log] {mapping[arg]}")
-                
+        
 
     def register_event(self, event_name, handler):
         """
