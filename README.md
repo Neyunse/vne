@@ -5,16 +5,6 @@
 > [!IMPORTANT]  
 > The engine name may change
 
->[!NOTE]
-> Development documentation is not available
-
-## Installation (build)
-
-1. Download the executable (https://github.com/Neyunse/vne/releases)
-2. Put the SDK in a folder with the name of your project and Run the engine (vne.exe)
-3. Edit
-4. Have fun!
-
 > [!IMPORTANT]  
 > the engine does not have an interface, it is used in CLI mode
 
