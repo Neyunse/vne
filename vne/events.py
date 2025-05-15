@@ -84,7 +84,27 @@ class EventManager:
         self.register_event("Scene", self.handle_process_scene)
         self.register_event("Set", self.handle_Set_event)
         self.register_event("Quit",  self.handle_exit)
+        
+        #TOOLS
+        
+        self.register_event("Log", self.handle_log)
     
+    def handle_log(self, arg, engine):
+        arg = arg.strip()
+        mapping = ChainMap(engine.characters, engine.scenes, engine.vars)
+        if arg.startswith("(") and arg.endswith(")"):
+            arg = arg[1:-1].strip()
+
+            # String log
+            if arg.startswith('"')  and arg.endswith('"'):
+                arg = arg.strip('"').strip("'")
+                vrs = self.substitute_variables(arg, engine)
+                engine.Log(f"[Log] {vrs}")
+                print(f"[Log] {vrs}")
+            else:
+                engine.Log(f"[Log] {mapping[arg]}")
+                print(f"[Log] {mapping[arg]}")
+                
 
     def register_event(self, event_name, handler):
         """

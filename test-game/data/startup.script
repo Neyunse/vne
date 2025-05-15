@@ -2,8 +2,6 @@
 
 # Load here somthing before that system files
 
-#@Load("system/vars.kag")
-
 # Load initial configurations
 @LoadSystem()
 
