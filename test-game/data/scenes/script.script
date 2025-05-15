@@ -13,9 +13,13 @@ K: everything seems to be working properly...
 
 @if chek
   @bgm escape-ofv
-  Oh, you found a bug! Thank you very much for finding it!
-@else
-  perhaps the code should be looked at again.
-@endif
+  K: Oh, you found a bug! Thank you very much for finding it!
+  K: Be sure to report it on github!
+@else chek
+  @bgm escape-ofv
+  dddddd
+ 
+
+
 
 @exit
