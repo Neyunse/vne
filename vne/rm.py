@@ -1,12 +1,12 @@
 import os
 import pyzipper
-from .config import key
+from .config import key, file_extension, aes_extension, bundle_extension
 
 class ResourceManager:
     def __init__(self, base_path, log):
         self.base_path = base_path
         self.Log = log
-        self.pkg_path = os.path.join(base_path, "data.pkg")
+        self.pkg_path = os.path.join(base_path, f"data{bundle_extension}")
         self.data_folder = os.path.join(base_path, "data")
         self.zipfile = None
 
@@ -16,7 +16,7 @@ class ResourceManager:
                 self.zipfile = pyzipper.AESZipFile(self.pkg_path, "r")
          
                 self.zipfile.setpassword(key)
-                self.Log(f"[ResourceManager] data.pkg found at {self.pkg_path}")
+                self.Log(f"[ResourceManager] data{bundle_extension} found at {self.pkg_path}")
             except Exception as e:
                 self.Log(f"[ResourceManager] Error opening '{self.pkg_path}': {e}")
                 self.zipfile = None
@@ -43,8 +43,8 @@ class ResourceManager:
                 return f.read()
 
         
-        if internal_path.lower().endswith(".kag"):
-            alt_path = internal_path[:-4] + ".kagc"
+        if internal_path.lower().endswith(file_extension):
+            alt_path = internal_path[:-4] + aes_extension
             zip_alt_path = alt_path.replace(os.sep, "/")
             self.Log(f"[ResourceManager] Retrying with '{zip_alt_path}'")
             if self.zipfile:
@@ -57,7 +57,7 @@ class ResourceManager:
                 with open(local_alt, "rb") as f:
                     return f.read()
 
-        raise FileNotFoundError(f"'{internal_path}' not found in data.pkg nor in '{local_path}'")
+        raise FileNotFoundError(f"'{internal_path}' not found in data{bundle_extension} nor in '{local_path}'")
 
     def close(self):
         if self.zipfile:

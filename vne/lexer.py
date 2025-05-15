@@ -2,7 +2,7 @@ import io
 import os
 import pygame
 from vne.aes import AES
-from vne.config import key
+from vne.config import key, aes_extension
 
 class ScriptLexer:
  
@@ -21,7 +21,7 @@ class ScriptLexer:
         """
         base_name = "startup"   
         try:
-            compiled_path = base_name + ".kagc"
+            compiled_path = base_name + aes_extension
             file_bytes = self.engine.resource_manager.get_bytes(compiled_path)
             plain_bytes = AES(file_bytes, key).decrypt().decode("utf-8", errors="replace")
             content = plain_bytes

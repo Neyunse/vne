@@ -40,9 +40,9 @@ def compile_all_kag_in_folder(data_folder, key):
     """
     for root, dirs, files in os.walk(data_folder):
         for file in files:
-            if file.endswith(".kag"):
+            if file.endswith(CONFIG.file_extension):
                 source_path = os.path.join(root, file)
-                target_path = os.path.splitext(source_path)[0] + ".kagc"
+                target_path = os.path.splitext(source_path)[0] + CONFIG.aes_extension
                 compile_kag(source_path, target_path, key)
 
 
@@ -63,13 +63,13 @@ def create_data_pkg(source_folder, output_pkg):
         for root, dirs, files in os.walk(source_folder):
             for file in files:
                 
-                if file.lower().endswith(".kag") and not file.lower().endswith(".kagc"):
+                if file.lower().endswith(CONFIG.file_extension) and not file.lower().endswith(CONFIG.aes_extension):
                     continue
                 file_path = os.path.join(root, file)
             
                 rel_path = os.path.relpath(file_path, source_folder)
                 pkg.write(file_path, rel_path)
-    print(f"[create_data_pkg] '{source_folder}' packed in '{output_pkg}' (excluding .kag files)")
+    print(f"[create_data_pkg] '{source_folder}' packed in '{output_pkg}' (excluding {CONFIG.file_extension} files)")
 
 def init_game(game_path, project_name):
     """
@@ -94,15 +94,15 @@ def init_game(game_path, project_name):
         os.makedirs(d, exist_ok=True)
         print(f"Directory created: {d}")
 
-    main_menu_file = os.path.join(game_path, "data", "system", "main_menu.kag")
-    scenes_file = os.path.join(game_path, "data", "system", "scenes.kag")
-    characters_file = os.path.join(game_path, "data", "system", "characters.kag")
-    ui_file = os.path.join(game_path, "data", "system", "ui.kag")
-    vars_file = os.path.join(game_path, "data", "system", "vars.kag")
-    startup_file = os.path.join(game_path, "data", "startup.kag")
+    main_menu_file = os.path.join(game_path, "data", "system", f"main_menu{CONFIG.file_extension}")
+    scenes_file = os.path.join(game_path, "data", "system", f"scenes{CONFIG.file_extension}")
+    characters_file = os.path.join(game_path, "data", "system", f"characters{CONFIG.file_extension}")
+    ui_file = os.path.join(game_path, "data", "system", f"ui{CONFIG.file_extension}")
+    vars_file = os.path.join(game_path, "data", "system", f"vars{CONFIG.file_extension}")
+    startup_file = os.path.join(game_path, "data", f"startup{CONFIG.file_extension}")
 
     # scenes
-    first_scene_file = os.path.join(game_path, "data", "scenes", "first.kag")
+    first_scene_file = os.path.join(game_path, "data", "scenes", f"first{CONFIG.file_extension}")
 
     with open(main_menu_file, "w", encoding="utf-8") as f:
         f.write("# Main Menu\n")
@@ -146,7 +146,7 @@ def init_game(game_path, project_name):
     with open(first_scene_file, "w", encoding="utf-8") as f:
         f.write("K: Hello!\n")
         f.write("K: my name is {K}.\n")
-        f.write("K: start editing scenes/first.kag to add dialogues.\n")
+        f.write(f"K: start editing scenes/first{CONFIG.file_extension} to add dialogues.\n")
         f.write("K: good luck in your stories.\n")
         f.write("@exit\n")
 
@@ -178,8 +178,8 @@ def distribute_game(game_path):
         shutil.rmtree(dest_folder)
     os.makedirs(dest_folder)
 
-    shutil.copy2(pkg_path, os.path.join(dest_folder, "data.pkg"))
-    print(f"[distribute] data.pkg copied to {dest_folder}")
+    shutil.copy2(pkg_path, os.path.join(dest_folder, f"data{CONFIG.bundle_extension}"))
+    print(f"[distribute] data{CONFIG.bundle_extension} copied to {dest_folder}")
  
     os.unlink(pkg_path)
  

@@ -16,8 +16,10 @@ update_copyright.py
 cert
 old
 *.kagc
+*.aes
 *.exe
 *.pkg
+
 build
 traceback.txt
 log.txt

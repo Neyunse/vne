@@ -6,7 +6,7 @@ from vne.lexer import ScriptLexer
 from vne.renderer import Renderer
 from vne.events import EventManager
 from vne.config import CONFIG
-from vne.config import key, engine_version
+from vne.config import key, engine_version, file_extension, aes_extension, bundle_extension
 from vne.rm import ResourceManager
 from vne.aes import AES
 
@@ -111,8 +111,8 @@ VNE %(engineVersion)s
             pass
 
         candidates = [
-            "startup.kagc",
-            "startup.kag"
+            f"startup{aes_extension}",
+            f"startup{file_extension}"
         ]
         content = None
 
@@ -122,7 +122,7 @@ VNE %(engineVersion)s
         for candidate in candidates:
             try:
                 data_bytes = self.resource_manager.get_bytes(candidate)
-                if candidate.endswith(".kagc"):
+                if candidate.endswith(aes_extension):
                     content = AES(data_bytes, key).decrypt().decode("utf-8", errors="replace")
                 else:
                     content = data_bytes

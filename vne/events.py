@@ -6,7 +6,7 @@ from collections import ChainMap
 import re
 from vne.lexer import ScriptLexer
 from vne.aes import AES
-from vne.config import key
+from vne.config import key, file_extension, aes_extension, bundle_extension
 import pickle
 from vne.Audio import Audio
 
@@ -15,10 +15,10 @@ class EventManager:
         self.event_handlers = {}
         self.register_default_events()
         self.system_files = [
-            "vars.kag", 
-            "characters.kag", 
-            "ui.kag",
-            "scenes.kag"
+            f"vars{file_extension}", 
+            f"characters{file_extension}", 
+            f"ui{file_extension}",
+            f"scenes{file_extension}"
         ]
  
 
@@ -300,12 +300,15 @@ class EventManager:
             arg = arg[1:-1].strip()
         arg = arg.strip('"').strip("'")
         force_compiled = any(keyword in arg.lower() for keyword in self.system_files)
+        
         try:
             if force_compiled:
-                if not arg.lower().endswith(".kagc"):
-                    compiled_arg = arg[:-4] + ".kagc"
+                if not arg.lower().endswith(aes_extension):
+                    base, _ = os.path.splitext(arg)
+                    compiled_arg = base + aes_extension
                 else:
                     compiled_arg = arg
+                
                 data = engine.resource_manager.get_bytes(compiled_arg)
                 data = AES(data, key).decrypt().decode("utf-8", errors="replace")
                 engine.Log(f"[Load] Compiled file loaded: {compiled_arg}")
@@ -330,9 +333,9 @@ class EventManager:
             self.handle_Load(f'("system/{file}")', engine)
     
     def handle_load_main_menu(self, arg, engine):
-        if not "main_menu.kag" in self.system_files:
-            self.system_files.append("main_menu.kag")
-        self.handle_Load('("system/main_menu.kag")', engine)
+        if not f"main_menu{file_extension}" in self.system_files:
+            self.system_files.append(f"main_menu{file_extension}")
+        self.handle_Load(f'("system/main_menu{file_extension}")', engine)
     
     def handle_scene(self, arg, engine):
         """
@@ -378,7 +381,7 @@ class EventManager:
             filename = scene_alias
         base_name = os.path.join("scenes", filename)
         try:
-            compiled_path = base_name + ".kagc"
+            compiled_path = base_name + aes_extension
             file_bytes = engine.resource_manager.get_bytes(compiled_path)
             content = AES(file_bytes, key).decrypt().decode("utf-8", errors="replace")
 
@@ -404,14 +407,14 @@ class EventManager:
             scene_file_name = engine.scenes[scene_alias]
         else:
             scene_file_name = scene_alias
-        compiled_path = os.path.join("scenes", f"{scene_file_name}.kagc")
+        compiled_path = os.path.join("scenes", f"{scene_file_name}{aes_extension}")
         content = ""
         try:
             file_bytes = engine.resource_manager.get_bytes(compiled_path)
             content = AES(file_bytes, key).decrypt().decode("utf-8", errors="replace")
             engine.Log(f"[jump_scene] Compiled scene '{scene_alias}' loaded from: {compiled_path}")
         except Exception as e:
-            non_compiled_path = os.path.join(engine.game_path, "data", "scenes", f"{scene_file_name}.kag")
+            non_compiled_path = os.path.join(engine.game_path, "data", "scenes", f"{scene_file_name}{aes_extension}")
             try:
                 with open(non_compiled_path, "r", encoding="utf-8") as f:
                     content = f.read()
