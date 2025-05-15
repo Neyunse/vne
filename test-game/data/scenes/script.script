@@ -15,11 +15,12 @@ K: everything seems to be working properly...
   @bgm escape-ofv
   K: Oh, you found a bug! Thank you very much for finding it!
   K: Be sure to report it on github!
-@else chek
+@else
   @bgm escape-ofv
-  dddddd
- 
+  aaaa
+@endif
 
-
-
+ssss
 @exit
+
+ 

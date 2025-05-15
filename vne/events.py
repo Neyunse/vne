@@ -99,8 +99,17 @@ class EventManager:
         Processes a command by extracting the event name and argument,
         then dispatching the event to the appropriate handler.
         """
+
         command = command.strip()
-         
+
+        # Si hay condiciones y no se debe ejecutar, saltamos la línea (excepto para @if, @else, @endif)
+        if engine is not None and hasattr(engine, "should_execute_line"):
+            # Permitir siempre los comandos de control condicional para que el stack se mantenga correcto
+            is_conditional_command = command.startswith("@if") or command.startswith("@else") or command.startswith("@endif")
+            if not engine.should_execute_line() and not is_conditional_command:
+                # Saltamos la ejecución
+                return
+
         if command.startswith("@"):
             stripped = command[1:].strip()
             match = re.match(r"(\w+)(.*)", stripped)
@@ -495,9 +504,6 @@ class EventManager:
         engine.Log(f"[set] Variable '{var_name}' updated to '{new_value}'.")
     
     def handle_if(self, arg, engine):
-        """
-        Evaluates the condition and marks the beginning of a conditional block.
-        """
         var_name = arg.strip()
         if not hasattr(engine, "condition_stack"):
             engine.condition_stack = []
@@ -508,21 +514,15 @@ class EventManager:
             condition = False
         engine.condition_stack.append(condition)
         engine.Log(f"[if] Evaluation of '{var_name}': {condition}")
-    
+
     def handle_else(self, arg, engine):
-        """
-        Reverses the condition in the current conditional block.
-        """
         if not hasattr(engine, "condition_stack") or not engine.condition_stack:
             raise Exception("[else] No open if block.")
         current = engine.condition_stack.pop()
         engine.condition_stack.append(not current)
         engine.Log(f"[else] Condition reversed: now {not current}")
-    
+
     def handle_endif(self, arg, engine):
-        """
-        Closes the current conditional block.
-        """
         if not hasattr(engine, "condition_stack") or not engine.condition_stack:
             raise Exception("[endif] No open if block.")
         engine.condition_stack.pop()

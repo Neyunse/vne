@@ -44,6 +44,14 @@ class VNEngine:
 
         self.Log(f"Starting the game from {self.game_path}...")
     
+    def should_execute_line(self):
+        """
+        Returns True if all conditions are True, or if there are no active conditions.
+        """
+        if not self.condition_stack:
+            return True
+        return all(self.condition_stack)
+    
     def wait_for_keypress(self):
         """
         The `wait_for_keypress` function in Python uses Pygame to wait for a keypress or mouse click
