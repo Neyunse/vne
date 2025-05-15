@@ -322,7 +322,7 @@ class EventManager:
     
     def handle_end(self, arg, engine):
         """
-        Prints a message and stops the engine.
+        Return to the main menu
         """
         engine.lexer.current = 0
         engine.lexer.load_scripts()
