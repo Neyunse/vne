@@ -1,21 +1,21 @@
 @bg school
 @sprite kuro
 @bgm 70_love
+
 K: Hello, welcome to this engine test!
 K: my name is {K} and I am here for the sole purpose of debugging this project....
 K: everything seems to be working properly...
 
 @choice
-@option "I found a bug!" event Set(chek, true)
-@option "No bugs" event Set(chek, false)
+  @option "I found a bug!" event Set(chek, true)
+  @option "No bugs" event Set(chek, false)
 @end_choice
 
 @if chek
-@bgm escape-ofv
-Oh, you found a bug! Thank you very much for finding it!
-d
+  @bgm escape-ofv
+  Oh, you found a bug! Thank you very much for finding it!
 @else
-perhaps the code should be looked at again.
+  perhaps the code should be looked at again.
 @endif
 
 @exit

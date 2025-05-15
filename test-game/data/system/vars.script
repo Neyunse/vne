@@ -1,7 +1,1 @@
-@def test = "Hello World!"
-@def a = "{test} {K} {second}"
-
 @def chek = "false"
-@def flag = "false"
-
-@def second = "test"
