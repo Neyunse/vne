@@ -20,6 +20,6 @@ K: everything seems to be working properly...
   K: Perfect! everything works correctly
 @endif
 
-@exit
+@end
 
  

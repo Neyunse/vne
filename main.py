@@ -148,7 +148,7 @@ def init_game(game_path, project_name):
         f.write("K: my name is {K}.\n")
         f.write(f"K: start editing scenes/first{CONFIG.file_extension} to add dialogues.\n")
         f.write("K: good luck in your stories.\n")
-        f.write("@exit\n")
+        f.write("@end\n")
 
     print("Files generated successfully")
 

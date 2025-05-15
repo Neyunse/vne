@@ -28,7 +28,7 @@ class EventManager:
         """
         # Primitive
         self.register_event("say", self.handle_say)
-        self.register_event("exit", self.handle_exit)
+        self.register_event("end", self.handle_end)
         self.register_event("process_scene", self.handle_process_scene)
 
         # Importing/Loading & StartUp/init
@@ -83,7 +83,7 @@ class EventManager:
         # Events
         self.register_event("Scene", self.handle_process_scene)
         self.register_event("Set", self.handle_Set_event)
-        self.register_event("Quit",  self.handle_exit)
+        self.register_event("Quit", self.handle_Quit)
         
         #TOOLS
         
@@ -313,13 +313,37 @@ class EventManager:
         else:
             engine.Log(f"[hide] Sprite '{sprite_alias}' not found to hide.")
     
-    def handle_exit(self, arg, engine):
+    def handle_Quit(self, arg, engine):
         """
         Prints a message and stops the engine.
         """
         engine.Log("Event 'exit'", arg)
         engine.running = False
     
+    def handle_end(self, arg, engine):
+        """
+        Prints a message and stops the engine.
+        """
+        engine.lexer.current = 0
+        engine.lexer.load_scripts()
+        self.clear_scene(engine)
+  
+    
+    def clear_scene(self, engine):
+        engine.current_bg = None
+        engine.characters.clear()
+        engine.text = ""
+        engine.vars.clear()
+        engine.scenes.clear()
+        engine.loaded_files.clear()
+        engine.sprites.clear()
+        engine.current_menu_buttons = []
+        engine.current_dialogue = ""
+        engine.current_character_name = ""
+        engine.condition_stack = []
+        engine.checkpoints.clear()
+        engine.current_choice_buttons = []
+        
     def handle_Load(self, arg, engine):
         """
         Loads and processes KAG/KAGC files.
