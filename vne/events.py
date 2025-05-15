@@ -331,6 +331,8 @@ class EventManager:
     
     def clear_scene(self, engine):
         engine.current_bg = None
+        engine.current_bgm = None
+        
         engine.characters.clear()
         engine.vars.clear()
         engine.scenes.clear()
