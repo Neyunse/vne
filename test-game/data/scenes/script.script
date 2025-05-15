@@ -17,10 +17,9 @@ K: everything seems to be working properly...
   K: Be sure to report it on github!
 @else
   @bgm escape-ofv
-  aaaa
+  K: Perfect! everything works correctly
 @endif
 
-ssss
 @exit
 
  
