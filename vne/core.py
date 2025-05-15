@@ -6,7 +6,7 @@ from vne.lexer import ScriptLexer
 from vne.renderer import Renderer
 from vne.events import EventManager
 from vne.config import CONFIG
-from vne.config import key, engine_version, file_extension, aes_extension, bundle_extension
+from vne.config import key, engine_version, file_extension, aes_extension, init_file
 from vne.rm import ResourceManager
 from vne.aes import AES
 
@@ -111,8 +111,8 @@ VNE %(engineVersion)s
             pass
 
         candidates = [
-            f"startup{aes_extension}",
-            f"startup{file_extension}"
+            f"{init_file}{aes_extension}",
+            f"{init_file}{file_extension}"
         ]
         content = None
 

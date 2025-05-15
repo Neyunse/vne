@@ -38,6 +38,7 @@ engine_version = __version__
 file_extension = ".script"
 aes_extension = ".aes"
 bundle_extension = ".pkg"
+init_file = "startup"
 
 # Get the key from the environment variable VNE_KEY, or generate a new one if it doesn't exist
 key = bytes.fromhex(os.environ.get("VNE_KEY", secrets.token_hex(32)))

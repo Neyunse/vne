@@ -2,7 +2,7 @@ import io
 import os
 import pygame
 from vne.aes import AES
-from vne.config import key, aes_extension
+from vne.config import key, aes_extension, init_file
 
 class ScriptLexer:
  
@@ -19,7 +19,7 @@ class ScriptLexer:
         The function `load_scripts` loads and parses a script file after decoding it using AES
         encryption.
         """
-        base_name = "startup"   
+        base_name = init_file 
         try:
             compiled_path = base_name + aes_extension
             file_bytes = self.engine.resource_manager.get_bytes(compiled_path)
@@ -30,7 +30,7 @@ class ScriptLexer:
         except Exception as e:
             self.commands = []
             self.original_commands = []
-            raise Exception(f"[Lexer] Compiled version of 'startup' not found: {e}")
+            raise Exception(f"[Lexer] Compiled version of '{init_file}' not found: {e}")
             
     def parse_script(self, content):
         """

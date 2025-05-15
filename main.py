@@ -99,7 +99,7 @@ def init_game(game_path, project_name):
     characters_file = os.path.join(game_path, "data", "system", f"characters{CONFIG.file_extension}")
     ui_file = os.path.join(game_path, "data", "system", f"ui{CONFIG.file_extension}")
     vars_file = os.path.join(game_path, "data", "system", f"vars{CONFIG.file_extension}")
-    startup_file = os.path.join(game_path, "data", f"startup{CONFIG.file_extension}")
+    startup_file = os.path.join(game_path, "data", f"{CONFIG.init_file}{CONFIG.file_extension}")
 
     # scenes
     first_scene_file = os.path.join(game_path, "data", "scenes", f"first{CONFIG.file_extension}")
