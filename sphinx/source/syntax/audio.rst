@@ -12,7 +12,7 @@ Background Music
 
 .. py:function:: @bgm
     
-    Play a muic in the bgm channel
+    Play a music in the bgm channel
 
    :param filename: Required
    :type filename: tag
@@ -35,7 +35,7 @@ Background Music
 
 .. py:function:: @sfx
     
-    Play a muic in the sfx channel
+    Play a music in the sfx channel
 
    :param filename: Required
    :type filename: tag
