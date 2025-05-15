@@ -12,7 +12,7 @@ Conditionals
    :require: @def
    
 .. code-block::
-   :caption: scenes/first.kag
+   :caption: scenes/first.script
    
    @if flag
    Hola mundo
@@ -27,7 +27,7 @@ Conditionals
    :parent: @if
    
 .. code-block::
-   :caption: scenes/first.kag
+   :caption: scenes/first.script
    
    @if flag
    Hola mundo
@@ -44,7 +44,7 @@ Conditionals
    :parent: @if
    
 .. code-block::
-   :caption: scenes/first.kag
+   :caption: scenes/first.script
    
    @if flag
    Hello world

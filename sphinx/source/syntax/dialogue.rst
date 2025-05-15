@@ -8,7 +8,7 @@ Say Statements
 ++++++++++++++
 
 .. code-block::
-   :caption: scenes/first.kag
+   :caption: scenes/first.script
    
    This is a dialog 
    k: hello!
@@ -20,7 +20,7 @@ Say Interpolation
 |product| supports the possibility of inserting variables in the dialogs. For example, to show the name of a character, "{}" is used.
 
 .. code-block::
-   :caption: scenes/first.kag
+   :caption: scenes/first.script
    
    k: hello! my name is {k}
 
@@ -50,14 +50,14 @@ Characters are created by using "@char" to add it to a variable.
    :return: The character name or variable instead
 
 .. code-block::
-   :caption: system/characters.kag
+   :caption: system/characters.script
    
    @char k as "Kuro"
 
 note that if you do not pass "as" and the display name, the variable name will be used instead.
 
 .. code-block::
-   :caption: system/characters.kag
+   :caption: system/characters.script
    
    @char k
 
@@ -65,7 +65,7 @@ note that if you do not pass "as" and the display name, the variable name will b
 You can also use a character without defining it with "@char", however, you will not be able to access the character's name from another dialog line or outside the scene.
 
 .. code-block::
-   :caption: scenes/first.kag
+   :caption: scenes/first.script
    
    ayumi* Hello my name is {ayumi}
 
@@ -93,7 +93,7 @@ You can rename an already defined character using "@rename", this can be useful 
    :type: Event
 
 .. code-block::
-   :caption: scenes/first.kag
+   :caption: scenes/first.script
    
    @rename k as "Kuromi"
 
@@ -128,7 +128,7 @@ Choice Menu
    :parent: @choice
 
 .. code-block::
-   :caption: scenes/first.kag
+   :caption: scenes/first.script
    
    @choice
    @option "Start" event Set(var, true)
@@ -152,7 +152,7 @@ Primitive Say
    :return: The dialog with the character or only the dialog
 
 .. code-block::
-   :caption: scenes/first.kag
+   :caption: scenes/first.script
    
    @say Hello World!
    @say k: Hello my name is {k}

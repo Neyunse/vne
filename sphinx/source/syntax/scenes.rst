@@ -1,7 +1,7 @@
 Scenes
 ------
 
-|product| uses a scene system similar to KiriKiri to structure your story, the scenes must be created inside the :file:`/scenes/**.kag` folder.
+|product| uses a scene system similar to KiriKiri to structure your story, the scenes must be created inside the :file:`/scenes/**.script` folder.
 
 ::
 
@@ -9,13 +9,13 @@ Scenes
         ├── test-game/          
         │   ├── data/         
         │   │   ├── scenes/   
-                    ├── first.kag
-                    └── hello.kag 
+                    ├── first.script
+                    └── hello.script 
 
 Defining a Scene
 +++++++++++++++++
 
-By default |product| does not detect scenes created inside :file:`/scenes/**.kag`, to use them you need to define them first.
+By default |product| does not detect scenes created inside :file:`/scenes/**.script`, to use them you need to define them first.
 
 .. py:function:: @scene
 
@@ -30,7 +30,7 @@ By default |product| does not detect scenes created inside :file:`/scenes/**.kag
    :type: Definition
    
 .. code-block::
-   :caption: system/scenes.kag
+   :caption: system/scenes.script
    
    @scene first = "first"
    @scene second = "second"
@@ -48,7 +48,7 @@ The jump between scenes is a common method in branching visual novels, it allows
    :type scene: tag
    :require: @scene
 .. code-block::
-   :caption: scenes/first.kag
+   :caption: scenes/first.script
    
    k: hello! my name is {k}
    @jump_scene second
@@ -69,7 +69,7 @@ A checkpoint allows you to set a return point, this can be useful if you need to
 
    
 .. code-block::
-   :caption: scenes/first.kag
+   :caption: scenes/first.script
    
    k: hello! my name is {k}
    @checkpoint myNiceCheckPoint
@@ -85,7 +85,7 @@ A checkpoint allows you to set a return point, this can be useful if you need to
    :type: Event
 
 .. code-block::
-   :caption: scenes/second.kag
+   :caption: scenes/second.script
    
    Oh, i need go back!!
    @goto myNiceCheckPoint

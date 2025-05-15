@@ -28,7 +28,7 @@ Showing a sprite
    :type: Rendering
 
 .. code-block::
-   :caption: scenes/first.kag
+   :caption: scenes/first.script
    
    @sprite kuro
 
@@ -51,7 +51,7 @@ Hide a sprite
    :type: Rendering
 
 .. code-block::
-   :caption: scenes/first.kag
+   :caption: scenes/first.script
    
    @hide kuro
 
@@ -68,7 +68,7 @@ Showing a Background
    :type: Rendering
 
 .. code-block::
-   :caption: scenes/first.kag
+   :caption: scenes/first.script
    
    @bg bedroom
 

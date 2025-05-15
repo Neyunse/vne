@@ -20,7 +20,7 @@ Background Music
    :type: Audio
 
 .. code-block::
-   :caption: scenes/first.kag
+   :caption: scenes/first.script
    
    @bgm 70_love
 
@@ -43,7 +43,7 @@ Background Music
    :type: Audio
 
 .. code-block::
-   :caption: scenes/first.kag
+   :caption: scenes/first.script
    
    @sfx phone
 

@@ -13,7 +13,7 @@ Added **SplashScreen**.
 
 The new **LoadSystem** allow to load all important files placed in :file:`system/**`
 
-The new **LoadMainMenu** import the main menu inside the :file:`startup.kag`
+The new **LoadMainMenu** import the main menu inside the :file:`startup.script`
 
 Added **checkpoint** and **goto** to add a rollback point
 

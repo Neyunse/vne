@@ -19,7 +19,7 @@ Defining a Variable
    :type: Definition
 
 .. code-block::
-   :caption: system/vars.kag
+   :caption: system/vars.script
    
    @def helloWorld = "Hello World!!!"
 
@@ -40,6 +40,6 @@ Updating a Variable value
    :require: @def
 
 .. code-block::
-   :caption: scenes/first.kag
+   :caption: scenes/first.script
    
    @set helloWorld = "¡Hello World! This is a vn engine variable!"

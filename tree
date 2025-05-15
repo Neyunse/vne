@@ -1,7 +1,7 @@
 engine/
 │
 ├── vne/
-│   ├── __init__.py     # Inicializa el paquete vne. / This file ensures that vne packages will be imported in the right order.
+│   ├── __init__.py     # Inicializa el paquete vne. / This file ensures that vne pacscriptes will be imported in the right order.
 │   ├── core.py         # Contiene la clase principal del motor (VNEngine).
 │   ├── lexer.py        # Maneja la carga y el procesamiento del script.
 │   ├── events.py       # Define los eventos y su manejo.
@@ -19,15 +19,15 @@ engine/
 │   ├── data/           # carpeta del juego donde estarán los scripts y recursos del juego.
 |        ├── i18n/      # carpeta donde se generan/almacenan los archivos de localización del juego.
 │             ├── default/     # contiene los archivos de localización por defecto.
-│                  ├── system.kag  # archivo de localización que contiene las traducciones de las interfaces del juego (menus, botones, etc). 
+│                  ├── system.script  # archivo de localización que contiene las traducciones de las interfaces del juego (menus, botones, etc). 
 │             ├── es/           # contiene los archivos de localización (por ejemplo español).
-│                  ├── system.kag  # archivo de localización que contiene las traducciones de las interfaces del juego (menus, botones, etc). 
+│                  ├── system.script  # archivo de localización que contiene las traducciones de las interfaces del juego (menus, botones, etc). 
 │                  ├── scenes/     # contiene los archivos de localización de las escenas del juego.
-│                        └── first.kag  # archivo de localización de la escena de ejemplo.
+│                        └── first.script  # archivo de localización de la escena de ejemplo.
 │        ├── images/            # contiene los recursos del juego (BG y sprites).
 │             ├── bg/           # contiene los fondos del juego.
 │             ├── sprites/      # contiene los sprites del juego.
-│             └── assets.kag    # script que contiene las definiciones de los recursos
+│             └── assets.script    # script que contiene las definiciones de los recursos
 │        ├── audio/         #  contiene los archivos de audio del juego.
 │              ├── bgm/     # contiene la música de fondo del juego.
 │              ├── sfx/     # contiene los efectos de sonido del juego.
@@ -40,12 +40,12 @@ engine/
 │             ├── namebox.png        # imagen del cuadro de nombre.
 │             ├── main_menu.png      # imagen del menú principal.
 │        ├── scenes/                 # contiene los scripts de las escenas del juego. 
-│               └── first.kag        # script de escena de ejemplo con dialogos.
+│               └── first.script        # script de escena de ejemplo con dialogos.
 │        ├── system/                 # contiene los script que conforman el juego. como el menú principal, menu de elección, etc.
-│               ├── ui.kag           # script de interfaz de usuario con los menus del juego (main menu, save/load, etc).
-│               ├── config.kag       # script con las variables de configuración del juego.
+│               ├── ui.script           # script de interfaz de usuario con los menus del juego (main menu, save/load, etc).
+│               ├── config.script       # script con las variables de configuración del juego.
 │               └── ...              # Otros script del juego.
-│        ├── startup.kag             # script de inicio del juego, se encarga de inicializar, ejecutar y cargar los recursos del juego.       
+│        ├── startup.script             # script de inicio del juego, se encarga de inicializar, ejecutar y cargar los recursos del juego.       
 │
 │
 ├── build.py  # script para compilar el motor (no el juego) el motor una vez compilado debe ser capaz de compilar el juego sin necesidad de este script.

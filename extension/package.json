@@ -2,7 +2,7 @@
   "name": "vne",
   "displayName": "Visual Novel Engine Syntax", 
   "description": "A custom visual novel engine",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "engines": {
     "vscode": "^1.96.0"
   },
@@ -15,21 +15,21 @@
   "contributes": {
     "languages": [
       {
-        "id": "kag",
+        "id": "script",
         "aliases": [
-          "KAG"
+          "SCRIPT"
         ],
         "extensions": [
-          ".kag"
+          ".script"
         ],
         "configuration": "./language-configuration.json"
       }
     ],
     "grammars": [
       {
-        "language": "kag",
-        "scopeName": "source.kag",
-        "path": "./syntaxes/kag.tmLanguage.json"
+        "language": "script",
+        "scopeName": "source.script",
+        "path": "./syntaxes/script.tmLanguage.json"
       }
     ]
   },

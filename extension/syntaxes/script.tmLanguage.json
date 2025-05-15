@@ -1,23 +1,43 @@
 {
-  "scopeName": "source.kag",
-  "name": "KAG",
+  "scopeName": "source.script",
+  "name": "SCRIPT",
   "patterns": [
-    { "include": "#comments" },
-    { "include": "#charCommand" },
-    { "include": "#menuCommands" },
-    { "include": "#sceneCommand" },
-    { "include": "#displayCommand" },
-    { "include": "#gametitleCommand" },
-    { "include": "#defCommand" },
-    { "include": "#choiceCommands" },
-    { "include": "#general" },
-    { "include": "#dialogue" }
+    {
+      "include": "#comments"
+    },
+    {
+      "include": "#charCommand"
+    },
+    {
+      "include": "#menuCommands"
+    },
+    {
+      "include": "#sceneCommand"
+    },
+    {
+      "include": "#displayCommand"
+    },
+    {
+      "include": "#gametitleCommand"
+    },
+    {
+      "include": "#defCommand"
+    },
+    {
+      "include": "#choiceCommands"
+    },
+    {
+      "include": "#general"
+    },
+    {
+      "include": "#dialogue"
+    }
   ],
   "repository": {
     "comments": {
       "patterns": [
         {
-          "name": "comment.line.number-sign.kag",
+          "name": "comment.line.number-sign.script",
           "match": "^\\s*#.*$"
         }
       ]
@@ -25,11 +45,11 @@
     "general": {
       "patterns": [
         {
-          "name": "keyword.definition.block.kag",
+          "name": "keyword.definition.block.script",
           "match": "^\\s*@\\w+\\b"
         },
         {
-          "name": "variable.embedded.kag",
+          "name": "variable.embedded.script",
           "match": "\\{[^\\}]+\\}"
         }
       ]
@@ -37,23 +57,25 @@
     "charCommand": {
       "patterns": [
         {
-          "name": "meta.definition.char.kag",
+          "name": "meta.definition.char.script",
           "begin": "^\\s*@char\\b",
           "beginCaptures": {
-            "0": { "name": "keyword.definition.char.kag" }
+            "0": {
+              "name": "keyword.definition.char.script"
+            }
           },
           "end": "$",
           "patterns": [
             {
-              "name": "constant.parameter.definition.char.kag",
+              "name": "constant.parameter.definition.char.script",
               "match": "(?<=@char\\s)\\S+"
             },
             {
-              "name": "keyword.modifier.definition.char.kag",
+              "name": "keyword.modifier.definition.char.script",
               "match": "\\bas\\b"
             },
             {
-              "name": "string.quoted.definition.char.kag",
+              "name": "string.quoted.definition.char.script",
               "match": "(?<=\\bas\\s)\"(?:\\\\.|[^\"\\\\])*\""
             }
           ]
@@ -63,47 +85,51 @@
     "menuCommands": {
       "patterns": [
         {
-          "name": "keyword.control.block.kag",
+          "name": "keyword.control.block.script",
           "match": "^\\s*@menu\\b"
         },
         {
-          "name": "meta.event.button.kag",
+          "name": "meta.event.button.script",
           "begin": "^\\s*@button\\b",
           "beginCaptures": {
-            "0": { "name": "keyword.event.button.kag" }
+            "0": {
+              "name": "keyword.event.button.script"
+            }
           },
           "end": "$",
           "patterns": [
             {
-              "name": "string.quoted.button.label.kag",
+              "name": "string.quoted.button.label.script",
               "match": "\"(?:\\\\.|[^\"\\\\])*\""
             },
             {
-              "name": "keyword.modifier.button.event.kag",
+              "name": "keyword.modifier.button.event.script",
               "match": "\\bevent\\b"
             },
             {
-              "name": "meta.event.button.action.kag",
+              "name": "meta.event.button.action.script",
               "begin": "(?<=event\\s)",
               "end": "(?=$)",
               "patterns": [
                 {
-                  "name": "meta.function.event.kag",
+                  "name": "meta.function.event.script",
                   "match": "(\\w+)\\(",
                   "captures": {
-                    "1": { "name": "entity.name.function.event.kag" }
+                    "1": {
+                      "name": "entity.name.function.event.script"
+                    }
                   }
                 },
                 {
-                  "name": "string.quoted.event.parameter.kag",
+                  "name": "string.quoted.event.parameter.script",
                   "match": "\"(?:\\\\.|[^\"\\\\])*\""
                 },
                 {
-                  "name": "punctuation.definition.parentheses.kag",
+                  "name": "punctuation.definition.parentheses.script",
                   "match": "[()]"
                 },
                 {
-                  "name": "constant.language.event.kag",
+                  "name": "constant.language.event.script",
                   "match": "\\b\\w+\\b"
                 }
               ]
@@ -111,7 +137,7 @@
           ]
         },
         {
-          "name": "keyword.control.endmenu.kag",
+          "name": "keyword.control.endmenu.script",
           "match": "^\\s*@endMenu\\b"
         }
       ]
@@ -119,47 +145,51 @@
     "choiceCommands": {
       "patterns": [
         {
-          "name": "keyword.control.block.kag",
+          "name": "keyword.control.block.script",
           "match": "^\\s*@choice\\b"
         },
         {
-          "name": "meta.event.button.kag",
+          "name": "meta.event.button.script",
           "begin": "^\\s*@option\\b",
           "beginCaptures": {
-            "0": { "name": "keyword.event.button.kag" }
+            "0": {
+              "name": "keyword.event.button.script"
+            }
           },
           "end": "$",
           "patterns": [
             {
-              "name": "string.quoted.button.label.kag",
+              "name": "string.quoted.button.label.script",
               "match": "\"(?:\\\\.|[^\"\\\\])*\""
             },
             {
-              "name": "keyword.modifier.button.event.kag",
+              "name": "keyword.modifier.button.event.script",
               "match": "\\bevent\\b"
             },
             {
-              "name": "meta.event.button.action.kag",
+              "name": "meta.event.button.action.script",
               "begin": "(?<=event\\s)",
               "end": "(?=$)",
               "patterns": [
                 {
-                  "name": "meta.function.event.kag",
+                  "name": "meta.function.event.script",
                   "match": "(\\w+)\\(",
                   "captures": {
-                    "1": { "name": "entity.name.function.event.kag" }
+                    "1": {
+                      "name": "entity.name.function.event.script"
+                    }
                   }
                 },
                 {
-                  "name": "string.quoted.event.parameter.kag",
+                  "name": "string.quoted.event.parameter.script",
                   "match": "\"(?:\\\\.|[^\"\\\\])*\""
                 },
                 {
-                  "name": "punctuation.definition.parentheses.kag",
+                  "name": "punctuation.definition.parentheses.script",
                   "match": "[()]"
                 },
                 {
-                  "name": "constant.language.event.kag",
+                  "name": "constant.language.event.script",
                   "match": "\\b\\w+\\b"
                 }
               ]
@@ -167,7 +197,7 @@
           ]
         },
         {
-          "name": "keyword.control.endmenu.kag",
+          "name": "keyword.control.endmenu.script",
           "match": "^\\s*@end_choice\\b"
         }
       ]
@@ -175,23 +205,25 @@
     "sceneCommand": {
       "patterns": [
         {
-          "name": "meta.definition.scene.kag",
+          "name": "meta.definition.scene.script",
           "begin": "^\\s*@scene\\b",
           "beginCaptures": {
-            "0": { "name": "keyword.definition.scene.kag" }
+            "0": {
+              "name": "keyword.definition.scene.script"
+            }
           },
           "end": "$",
           "patterns": [
             {
-              "name": "constant.parameter.scene.tag.kag",
+              "name": "constant.parameter.scene.tag.script",
               "match": "(?<=@scene\\s)\\S+"
             },
             {
-              "name": "punctuation.separator.assignment.scene.kag",
+              "name": "punctuation.separator.assignment.scene.script",
               "match": "\\s*=\\s*"
             },
             {
-              "name": "string.quoted.scene.kag",
+              "name": "string.quoted.scene.script",
               "match": "\"(?:\\\\.|[^\"\\\\])*\""
             }
           ]
@@ -201,26 +233,30 @@
     "displayCommand": {
       "patterns": [
         {
-          "name": "meta.configuration.display.kag",
+          "name": "meta.configuration.display.script",
           "begin": "^\\s*@Display\\(",
           "beginCaptures": {
-            "0": { "name": "keyword.configuration.display.kag" }
+            "0": {
+              "name": "keyword.configuration.display.script"
+            }
           },
           "end": "\\)",
           "endCaptures": {
-            "0": { "name": "punctuation.definition.parameters.display.kag" }
+            "0": {
+              "name": "punctuation.definition.parameters.display.script"
+            }
           },
           "patterns": [
             {
-              "name": "constant.numeric.width.display.kag",
+              "name": "constant.numeric.width.display.script",
               "match": "(?<=@Display\\()[0-9]+(?=\\s*,)"
             },
             {
-              "name": "punctuation.separator.parameters.display.kag",
+              "name": "punctuation.separator.parameters.display.script",
               "match": "\\s*,\\s*"
             },
             {
-              "name": "constant.numeric.height.display.kag",
+              "name": "constant.numeric.height.display.script",
               "match": "(?<=,\\s*)[0-9]+"
             }
           ]
@@ -230,18 +266,22 @@
     "gametitleCommand": {
       "patterns": [
         {
-          "name": "meta.configuration.gametitle.kag",
+          "name": "meta.configuration.gametitle.script",
           "begin": "^\\s*@GameTitle\\(",
           "beginCaptures": {
-            "0": { "name": "keyword.configuration.gametitle.kag" }
+            "0": {
+              "name": "keyword.configuration.gametitle.script"
+            }
           },
           "end": "\\)",
           "endCaptures": {
-            "0": { "name": "punctuation.definition.parameters.gametitle.kag" }
+            "0": {
+              "name": "punctuation.definition.parameters.gametitle.script"
+            }
           },
           "patterns": [
             {
-              "name": "string.quoted.gametitle.kag",
+              "name": "string.quoted.gametitle.script",
               "match": "\"(?:\\\\.|[^\"\\\\])*\""
             }
           ]
@@ -251,23 +291,25 @@
     "defCommand": {
       "patterns": [
         {
-          "name": "meta.definition.def.kag",
+          "name": "meta.definition.def.script",
           "begin": "^\\s*@def\\b",
           "beginCaptures": {
-            "0": { "name": "keyword.definition.def.kag" }
+            "0": {
+              "name": "keyword.definition.def.script"
+            }
           },
           "end": "$",
           "patterns": [
             {
-              "name": "constant.parameter.def.variable.kag",
+              "name": "constant.parameter.def.variable.script",
               "match": "(?<=@def\\s)\\S+"
             },
             {
-              "name": "punctuation.separator.assignment.def.kag",
+              "name": "punctuation.separator.assignment.def.script",
               "match": "\\s*=\\s*"
             },
             {
-              "name": "string.quoted.def.value.kag",
+              "name": "string.quoted.def.value.script",
               "match": "\"(?:\\\\.|[^\"\\\\])*\""
             }
           ]
@@ -277,37 +319,41 @@
     "dialogue": {
       "patterns": [
         {
-          "name": "meta.dialogue.colon.kag",
+          "name": "meta.dialogue.colon.script",
           "begin": "^\\s*([^:]+):\\s*",
           "beginCaptures": {
-            "1": { "name": "entity.name.character.dialogue.kag" }
+            "1": {
+              "name": "entity.name.character.dialogue.script"
+            }
           },
           "end": "$",
           "patterns": [
             {
-              "name": "variable.embedded.kag",
+              "name": "variable.embedded.script",
               "match": "\\{[^\\}]+\\}"
             },
             {
-              "name": "string.unquoted.dialogue.kag",
+              "name": "string.unquoted.dialogue.script",
               "match": "[^{}]+"
             }
           ]
         },
         {
-          "name": "meta.dialogue.star.kag",
+          "name": "meta.dialogue.star.script",
           "begin": "^\\s*([^\\s]+)\\*\\s*",
           "beginCaptures": {
-            "1": { "name": "entity.name.character.dialogue.kag" }
+            "1": {
+              "name": "entity.name.character.dialogue.script"
+            }
           },
           "end": "$",
           "patterns": [
             {
-              "name": "variable.embedded.kag",
+              "name": "variable.embedded.script",
               "match": "\\{[^\\}]+\\}"
             },
             {
-              "name": "string.unquoted.dialogue.kag",
+              "name": "string.unquoted.dialogue.script",
               "match": "[^{}]+"
             }
           ]

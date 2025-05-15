@@ -28,7 +28,7 @@ Folder Structure
         │   │   ├── images/  
         │   │   ├── scenes/   
                 ├── ui/   
-                └── startup.kag   
+                └── startup.script   
  
 
 How to start
@@ -43,37 +43,37 @@ To create your first project is to run the terminal and run the engine in projec
 
 **Simple dialog**
 
-to start writing your stories you must edit :file:`scenes/first.kag`, this file is very easy to edit. No experience is required
+to start writing your stories you must edit :file:`scenes/first.script`, this file is very easy to edit. No experience is required
 programming experience is not required, as it is plain text.
 
 .. code-block::
-   :caption: scenes/first.kag
+   :caption: scenes/first.script
 
    # This is a dialog without an assigned character.
    Hello world!
 
-|product| is prepared to be easy to use, the :file:`*.kag` files placed inside :file:`scene/**` are interpreted as labels or levels, so each file is unique.
+|product| is prepared to be easy to use, the :file:`*.script` files placed inside :file:`scene/**` are interpreted as labels or levels, so each file is unique.
 
 **Add characters**
 
-You can add your own characters easily, |product| use :file:`system/characters.kag` as a starting point for you to define your characters.
+You can add your own characters easily, |product| use :file:`system/characters.script` as a starting point for you to define your characters.
 
 .. code-block::
-   :caption: scenes/first.kag
+   :caption: scenes/first.script
 
    @char k as "Kuro"
  
-then in your file :file:`scenes/first.kag` you can use it in an easy way.
+then in your file :file:`scenes/first.script` you can use it in an easy way.
 
 .. code-block::
-   :caption: scenes/first.kag
+   :caption: scenes/first.script
 
    k: Hello world!
  
 **Adding Sprites & Backgrounds**
 
 .. code-block::
-   :caption: scenes/first.kag
+   :caption: scenes/first.script
 
    @bg school
    @sprite kuro
@@ -93,7 +93,7 @@ Sprites and Backgrounds are a fundamental part of visual novels, to use your ima
 If you want to write comments or prevent something from running by using "#" 
 
 .. code-block::
-   :caption: scenes/first.kag
+   :caption: scenes/first.script
 
    # TODO: This is my comment for you!
    # @sprite sayuri_normal this line is excluded
@@ -104,7 +104,7 @@ If you want to write comments or prevent something from running by using "#"
 |product| adds the possibility to jump between scenes in an easy way using "jump_scene". 
 
 .. code-block::
-   :caption: scenes/first.kag
+   :caption: scenes/first.script
    
    @bg school
    @sprite kuro
@@ -113,7 +113,7 @@ If you want to write comments or prevent something from running by using "#"
    @jump_scene second
  
 
-However, you must keep in mind that you must define the scenes in :file:`system/scenes.kag` in order to use them, since from the
+However, you must keep in mind that you must define the scenes in :file:`system/scenes.script` in order to use them, since from the
 new scenes you create are disconnected from the flow of your project.
 
 **Test your game**

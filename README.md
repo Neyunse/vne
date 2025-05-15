@@ -27,7 +27,7 @@
 
 3. Run the engine:
    ```bash
-   python main.py debug test-game
+   python main.py -r -f test-game
    ```
 
 ## License

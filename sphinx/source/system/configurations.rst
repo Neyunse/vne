@@ -15,7 +15,7 @@ Configurations
    :type: Configuration
    
 .. code-block::
-   :caption: system/ui.kag
+   :caption: system/ui.script
    
    @Display(800,800)
 
@@ -30,7 +30,7 @@ Configurations
    :type: Configuration
    
 .. code-block::
-   :caption: system/ui.kag
+   :caption: system/ui.script
    
    @GameTitle("My Awasome Game!")
 
@@ -44,6 +44,6 @@ Configurations
    :type: Configuration
    
 .. code-block::
-   :caption: system/ui.kag
+   :caption: system/ui.script
    
    @GameIconName("window_icon")
