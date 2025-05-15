@@ -1,0 +1,318 @@
+{
+  "scopeName": "source.kag",
+  "name": "KAG",
+  "patterns": [
+    { "include": "#comments" },
+    { "include": "#charCommand" },
+    { "include": "#menuCommands" },
+    { "include": "#sceneCommand" },
+    { "include": "#displayCommand" },
+    { "include": "#gametitleCommand" },
+    { "include": "#defCommand" },
+    { "include": "#choiceCommands" },
+    { "include": "#general" },
+    { "include": "#dialogue" }
+  ],
+  "repository": {
+    "comments": {
+      "patterns": [
+        {
+          "name": "comment.line.number-sign.kag",
+          "match": "^\\s*#.*$"
+        }
+      ]
+    },
+    "general": {
+      "patterns": [
+        {
+          "name": "keyword.definition.block.kag",
+          "match": "^\\s*@\\w+\\b"
+        },
+        {
+          "name": "variable.embedded.kag",
+          "match": "\\{[^\\}]+\\}"
+        }
+      ]
+    },
+    "charCommand": {
+      "patterns": [
+        {
+          "name": "meta.definition.char.kag",
+          "begin": "^\\s*@char\\b",
+          "beginCaptures": {
+            "0": { "name": "keyword.definition.char.kag" }
+          },
+          "end": "$",
+          "patterns": [
+            {
+              "name": "constant.parameter.definition.char.kag",
+              "match": "(?<=@char\\s)\\S+"
+            },
+            {
+              "name": "keyword.modifier.definition.char.kag",
+              "match": "\\bas\\b"
+            },
+            {
+              "name": "string.quoted.definition.char.kag",
+              "match": "(?<=\\bas\\s)\"(?:\\\\.|[^\"\\\\])*\""
+            }
+          ]
+        }
+      ]
+    },
+    "menuCommands": {
+      "patterns": [
+        {
+          "name": "keyword.control.block.kag",
+          "match": "^\\s*@menu\\b"
+        },
+        {
+          "name": "meta.event.button.kag",
+          "begin": "^\\s*@button\\b",
+          "beginCaptures": {
+            "0": { "name": "keyword.event.button.kag" }
+          },
+          "end": "$",
+          "patterns": [
+            {
+              "name": "string.quoted.button.label.kag",
+              "match": "\"(?:\\\\.|[^\"\\\\])*\""
+            },
+            {
+              "name": "keyword.modifier.button.event.kag",
+              "match": "\\bevent\\b"
+            },
+            {
+              "name": "meta.event.button.action.kag",
+              "begin": "(?<=event\\s)",
+              "end": "(?=$)",
+              "patterns": [
+                {
+                  "name": "meta.function.event.kag",
+                  "match": "(\\w+)\\(",
+                  "captures": {
+                    "1": { "name": "entity.name.function.event.kag" }
+                  }
+                },
+                {
+                  "name": "string.quoted.event.parameter.kag",
+                  "match": "\"(?:\\\\.|[^\"\\\\])*\""
+                },
+                {
+                  "name": "punctuation.definition.parentheses.kag",
+                  "match": "[()]"
+                },
+                {
+                  "name": "constant.language.event.kag",
+                  "match": "\\b\\w+\\b"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "keyword.control.endmenu.kag",
+          "match": "^\\s*@endMenu\\b"
+        }
+      ]
+    },
+    "choiceCommands": {
+      "patterns": [
+        {
+          "name": "keyword.control.block.kag",
+          "match": "^\\s*@choice\\b"
+        },
+        {
+          "name": "meta.event.button.kag",
+          "begin": "^\\s*@option\\b",
+          "beginCaptures": {
+            "0": { "name": "keyword.event.button.kag" }
+          },
+          "end": "$",
+          "patterns": [
+            {
+              "name": "string.quoted.button.label.kag",
+              "match": "\"(?:\\\\.|[^\"\\\\])*\""
+            },
+            {
+              "name": "keyword.modifier.button.event.kag",
+              "match": "\\bevent\\b"
+            },
+            {
+              "name": "meta.event.button.action.kag",
+              "begin": "(?<=event\\s)",
+              "end": "(?=$)",
+              "patterns": [
+                {
+                  "name": "meta.function.event.kag",
+                  "match": "(\\w+)\\(",
+                  "captures": {
+                    "1": { "name": "entity.name.function.event.kag" }
+                  }
+                },
+                {
+                  "name": "string.quoted.event.parameter.kag",
+                  "match": "\"(?:\\\\.|[^\"\\\\])*\""
+                },
+                {
+                  "name": "punctuation.definition.parentheses.kag",
+                  "match": "[()]"
+                },
+                {
+                  "name": "constant.language.event.kag",
+                  "match": "\\b\\w+\\b"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "keyword.control.endmenu.kag",
+          "match": "^\\s*@end_choice\\b"
+        }
+      ]
+    },
+    "sceneCommand": {
+      "patterns": [
+        {
+          "name": "meta.definition.scene.kag",
+          "begin": "^\\s*@scene\\b",
+          "beginCaptures": {
+            "0": { "name": "keyword.definition.scene.kag" }
+          },
+          "end": "$",
+          "patterns": [
+            {
+              "name": "constant.parameter.scene.tag.kag",
+              "match": "(?<=@scene\\s)\\S+"
+            },
+            {
+              "name": "punctuation.separator.assignment.scene.kag",
+              "match": "\\s*=\\s*"
+            },
+            {
+              "name": "string.quoted.scene.kag",
+              "match": "\"(?:\\\\.|[^\"\\\\])*\""
+            }
+          ]
+        }
+      ]
+    },
+    "displayCommand": {
+      "patterns": [
+        {
+          "name": "meta.configuration.display.kag",
+          "begin": "^\\s*@Display\\(",
+          "beginCaptures": {
+            "0": { "name": "keyword.configuration.display.kag" }
+          },
+          "end": "\\)",
+          "endCaptures": {
+            "0": { "name": "punctuation.definition.parameters.display.kag" }
+          },
+          "patterns": [
+            {
+              "name": "constant.numeric.width.display.kag",
+              "match": "(?<=@Display\\()[0-9]+(?=\\s*,)"
+            },
+            {
+              "name": "punctuation.separator.parameters.display.kag",
+              "match": "\\s*,\\s*"
+            },
+            {
+              "name": "constant.numeric.height.display.kag",
+              "match": "(?<=,\\s*)[0-9]+"
+            }
+          ]
+        }
+      ]
+    },
+    "gametitleCommand": {
+      "patterns": [
+        {
+          "name": "meta.configuration.gametitle.kag",
+          "begin": "^\\s*@GameTitle\\(",
+          "beginCaptures": {
+            "0": { "name": "keyword.configuration.gametitle.kag" }
+          },
+          "end": "\\)",
+          "endCaptures": {
+            "0": { "name": "punctuation.definition.parameters.gametitle.kag" }
+          },
+          "patterns": [
+            {
+              "name": "string.quoted.gametitle.kag",
+              "match": "\"(?:\\\\.|[^\"\\\\])*\""
+            }
+          ]
+        }
+      ]
+    },
+    "defCommand": {
+      "patterns": [
+        {
+          "name": "meta.definition.def.kag",
+          "begin": "^\\s*@def\\b",
+          "beginCaptures": {
+            "0": { "name": "keyword.definition.def.kag" }
+          },
+          "end": "$",
+          "patterns": [
+            {
+              "name": "constant.parameter.def.variable.kag",
+              "match": "(?<=@def\\s)\\S+"
+            },
+            {
+              "name": "punctuation.separator.assignment.def.kag",
+              "match": "\\s*=\\s*"
+            },
+            {
+              "name": "string.quoted.def.value.kag",
+              "match": "\"(?:\\\\.|[^\"\\\\])*\""
+            }
+          ]
+        }
+      ]
+    },
+    "dialogue": {
+      "patterns": [
+        {
+          "name": "meta.dialogue.colon.kag",
+          "begin": "^\\s*([^:]+):\\s*",
+          "beginCaptures": {
+            "1": { "name": "entity.name.character.dialogue.kag" }
+          },
+          "end": "$",
+          "patterns": [
+            {
+              "name": "variable.embedded.kag",
+              "match": "\\{[^\\}]+\\}"
+            },
+            {
+              "name": "string.unquoted.dialogue.kag",
+              "match": "[^{}]+"
+            }
+          ]
+        },
+        {
+          "name": "meta.dialogue.star.kag",
+          "begin": "^\\s*([^\\s]+)\\*\\s*",
+          "beginCaptures": {
+            "1": { "name": "entity.name.character.dialogue.kag" }
+          },
+          "end": "$",
+          "patterns": [
+            {
+              "name": "variable.embedded.kag",
+              "match": "\\{[^\\}]+\\}"
+            },
+            {
+              "name": "string.unquoted.dialogue.kag",
+              "match": "[^{}]+"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

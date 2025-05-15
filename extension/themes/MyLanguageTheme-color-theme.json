@@ -1,0 +1,40 @@
+{
+    "name": "My Language Theme",
+    "type": "dark",
+    "colors": {
+        "editor.background": "#1e1e1e",
+        "editor.foreground": "#d4d4d4"
+    },
+    "tokenColors": [
+        {
+            "scope": "comment.line.number-sign.mylanguage",
+            "settings": {
+                "foreground": "#6A9955"
+            }
+        },
+        {
+            "scope": "variable.language.mylanguage",
+            "settings": {
+                "foreground": "#9CDCFE"
+            }
+        },
+        {
+            "scope": "constant.character.mylanguage",
+            "settings": {
+                "foreground": "#B5CEA8"
+            }
+        },
+        {
+            "scope": "entity.name.function.mylanguage",
+            "settings": {
+                "foreground": "#C586C0"
+            }
+        },
+        {
+            "scope": "string.quoted.double.mylanguage",
+            "settings": {
+                "foreground": "#CE9178"
+            }
+        }
+    ]
+}

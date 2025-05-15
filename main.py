@@ -28,7 +28,7 @@ def compile_kag(source_file, target_file, key):
         tf.write(compiled_bytes)
     
  
-    print(f"[compile_kag] {source_file} -> {target_file}")
+    print(f"[compile] {source_file} -> {target_file}")
  
 
 def compile_all_kag_in_folder(data_folder, key):
