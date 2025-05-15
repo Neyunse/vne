@@ -209,6 +209,8 @@ class EventManager:
                 key = match.group(1).strip()
                 if key in speaker:
                     return speaker
+                elif key in engine.characters:
+                    return engine.characters[key]
                 elif key in engine.scenes:
                     return engine.scenes[key]
                 elif key in engine.vars:
