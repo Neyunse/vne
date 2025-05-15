@@ -61,7 +61,8 @@ class ScriptLexer:
         if self.current < len(self.commands):
             cmd = self.commands[self.current]
             self.current += 1
-            self.engine.Log(f"[get-next-command] {cmd}")
+            if cmd.startswith("@"):
+                self.engine.Log(f"[get-next-command] {cmd}")
             return cmd
         return None
     
