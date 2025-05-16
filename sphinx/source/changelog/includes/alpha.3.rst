@@ -3,7 +3,6 @@
 
 **Fixes**
 
-....
 
 **Changes**
 
@@ -26,3 +25,5 @@ Added 2 new configurations, **GameTitle** and **GameIconName**.
 New Event Set allow to update a variable from a menu button.
 
 :gh_release:`1.0.0-alpha.3`
+
+....
