@@ -122,12 +122,9 @@ class EventManager:
 
         command = command.strip()
 
-        # Si hay condiciones y no se debe ejecutar, saltamos la línea (excepto para @if, @else, @endif)
         if engine is not None and hasattr(engine, "should_execute_line"):
-            # Permitir siempre los comandos de control condicional para que el stack se mantenga correcto
             is_conditional_command = command.startswith("@if") or command.startswith("@else") or command.startswith("@endif")
             if not engine.should_execute_line() and not is_conditional_command:
-                # Saltamos la ejecución
                 return
 
         if command.startswith("@"):
@@ -252,6 +249,22 @@ class EventManager:
             raise Exception(f"[bg] Error loading background image: {e}")
     
     def handle_splash_screen(self, arg, engine):
+        """
+        This function handles displaying a splash screen image for a specified duration in a Python game
+        engine.
+        
+        :param arg: The `arg` parameter in the `handle_splash_screen` function is used to specify the
+        name of the splash screen image file to be displayed. It is processed to remove any leading or
+        trailing whitespace, parentheses, single quotes, or double quotes. If `arg` is empty after
+        processing, the
+        :param engine: The `engine` parameter in the `handle_splash_screen` function seems to be an
+        object that contains information and functionality related to the game engine. It is used to
+        access the game path, load images, and interact with the game renderer and screen. The `engine`
+        object is crucial for displaying
+        :return: The function `handle_splash_screen` returns either when the user closes the window (by
+        clicking the close button) or when the user presses a key or clicks the mouse during the splash
+        screen display.
+        """
         arg = arg.strip()
         if arg.startswith("(") and arg.endswith(")"):
             arg = arg[1:-1].strip()
@@ -332,6 +345,11 @@ class EventManager:
   
     
     def clear_scene(self, engine):
+        """
+        The `clear_scene` function resets various attributes and data structures in the game engine to
+        clear the current scene.
+
+        """
         engine.current_bg = None
         engine.current_bgm = None
         
@@ -551,6 +569,17 @@ class EventManager:
         engine.Log(f"[set] Variable '{var_name}' updated to '{new_value}'.")
     
     def handle_if(self, arg, engine):
+        """
+        The function `handle_if` evaluates a condition based on a variable in the `engine` object and
+        logs the result.
+        
+        :param arg: The `arg` parameter in the `handle_if` method is a string that represents a variable
+        name. It is stripped of any leading or trailing whitespace before being used in the method
+        :param engine: The `engine` parameter in the `handle_if` function seems to be an object that
+        contains some properties and methods related to handling conditions and logging. It appears to
+        have a `vars` property that stores variables, a `condition_stack` property to keep track of
+        conditions, and a `Log`
+        """
         var_name = arg.strip()
         if not hasattr(engine, "condition_stack"):
             engine.condition_stack = []
@@ -563,6 +592,19 @@ class EventManager:
         engine.Log(f"[if] Evaluation of '{var_name}': {condition}")
 
     def handle_else(self, arg, engine):
+        """
+        The function `handle_else` reverses the current condition in the engine's condition stack if
+        there is an open if block.
+        
+        :param arg: The `arg` parameter in the `handle_else` method is likely used to pass any
+        additional arguments or values that may be needed for processing the "else" condition. In this
+        context, it may be used to provide any specific data or instructions related to the "else" block
+        within the code logic
+        :param engine: The `engine` parameter in the `handle_else` function seems to be an object that
+        has a `condition_stack` attribute. This function is designed to handle an "else" statement in
+        some sort of conditional logic. The function checks if there is an open "if" block in the
+        `engine
+        """
         if not hasattr(engine, "condition_stack") or not engine.condition_stack:
             raise Exception("[else] No open if block.")
         current = engine.condition_stack.pop()
@@ -570,6 +612,19 @@ class EventManager:
         engine.Log(f"[else] Condition reversed: now {not current}")
 
     def handle_endif(self, arg, engine):
+        """
+        The function `handle_endif` checks for an open if block in the condition stack of the engine and
+        pops it if found, logging the end of the if block.
+        
+        :param arg: The `arg` parameter in the `handle_endif` method is typically used to pass any
+        arguments or values that are relevant to the operation being performed. In this context, `arg`
+        might contain information related to the `endif` statement or the if block that is being closed.
+        It could be
+        :param engine: The `engine` parameter is likely an object that contains information and methods
+        related to the execution of the code or script. In this specific function `handle_endif`, the
+        `engine` object is used to access a `condition_stack` attribute, which is assumed to be a stack
+        data structure used to
+        """
         if not hasattr(engine, "condition_stack") or not engine.condition_stack:
             raise Exception("[endif] No open if block.")
         engine.condition_stack.pop()
@@ -698,12 +753,9 @@ class EventManager:
             "border_color": current_dialogue_cfg.get("border_color", (255, 255, 255))
         }
 
-
-        # Calcular el rectángulo del namebox basándose en el diálogo:
-        # Se posiciona justo encima del cuadro de diálogo, con un margen (por ejemplo, 5 píxeles).
         namebox_height = engine.renderer.name_font.get_height()
         margin = 23
-        # La coordenada Y se basa en dialogue_rect["y"] menos la altura del namebox y el margen.
+        
         namebox_y = engine.config["dialogue_rect"]["y"] - namebox_height - margin
 
         engine.config["namebox_rect"] = {
@@ -754,8 +806,19 @@ class EventManager:
     
     def handle_end_choice(self, arg, engine):
         """
+        The function `handle_end_choice` creates a menu with buttons for the user to select an action in
+        a game engine using Pygame.
+        
+        :param arg: The `arg` parameter in the `handle_end_choice` method seems to be unused in the
+        provided code snippet. It is not being referenced or utilized within the method. If you have a
+        specific purpose or intended use for the `arg` parameter in this method, you may need to update
+        the code
+        :param engine: The `engine` parameter in the `handle_end_choice` method seems to be an object
+        that contains configuration settings, current choice buttons, a renderer, and a logging
+        functionality. It is used to handle user choices in a menu interface. The method creates a menu
+        panel with buttons based on the current choice
         """
-        clock = engine.clock
+
         if not hasattr(engine, "current_choice_buttons") or not engine.current_choice_buttons:
             raise Exception("[endmenu] There are no buttons defined in the menu.")
         screen_width = engine.config.get("screen_width", 800)
@@ -767,7 +830,6 @@ class EventManager:
         panel_x = (screen_width - panel_width) // 2
         panel_y = (screen_height - panel_height) // 2
         panel_rect = pygame.Rect(panel_x, panel_y, panel_width, panel_height)
-        panel_bg_color = (50, 50, 50, 200)
         border_color = (255, 255, 255)
         font = engine.renderer.font
         buttons = []
@@ -936,52 +998,10 @@ class EventManager:
     # TODO: IMPLEMENT SAVE AND LOAD
 
     def handle_save(self, arg, engine):
-        """
-        Saves the game state to a file. The saved state includes variables, characters, scenes, the current 
-        lexer position, the original commands of the script, and any checkpoints.
-        
-        :param arg: Optional argument (not used in this implementation).
-        :param engine: The game engine instance containing state information.
-        """
-        state = {
-            "vars": engine.vars,
-            "characters": engine.characters,
-            "scenes": engine.scenes,
-            "lexer_current": engine.lexer.current,
-            "original_commands": engine.lexer.original_commands,
-            "checkpoints": getattr(engine, "checkpoints", {})
-        }
-        save_file = os.path.join(engine.game_path, "data.save")
-        try:
-            with open(save_file, "wb") as f:
-                pickle.dump(state, f)
-            engine.Log(f"[save] Game saved to '{save_file}'.")
-        except Exception as e:
-            raise Exception(f"[save] Error saving game: {e}")
+        pass
     
     def handle_load_save(self, arg, engine):
-        """
-        Loads the game state from a save file. The state includes variables, characters, scenes, the lexer's
-        original commands, current position, and checkpoints.
-        
-        :param arg: Optional argument (not used in this implementation).
-        :param engine: The game engine instance to which the state will be applied.
-        """
-        save_file = os.path.join(engine.game_path, "data.save")
-        try:
-            with open(save_file, "rb") as f:
-                state = pickle.load(f)
-            engine.vars = state.get("vars", {})
-            engine.characters = state.get("characters", {})
-            engine.scenes = state.get("scenes", {})
-            if "original_commands" in state and "lexer_current" in state:
-                engine.lexer.original_commands = state["original_commands"]
-                engine.lexer.commands = state["original_commands"][state["lexer_current"]:]
-                engine.lexer.current = 0
-            engine.checkpoints = state.get("checkpoints", {})
-            engine.Log(f"[load] Game loaded from '{save_file}'.")
-        except Exception as e:
-            raise Exception(f"[load] Error loading game: {e}")
+        pass
     
     def handle_bgm(self, arg, engine):
         """
