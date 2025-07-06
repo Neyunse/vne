@@ -20,7 +20,14 @@
    cd vne
    ```
 
-2. Install necessary dependencies:
+2. Create a virtual environment (optional but recommended):
+   ```bash
+   python -m venv .venv
+   source .venv/bin/activate  # On Windows use .venv\Scripts\activate
+   ```
+more info [here](https://packaging.python.org/en/latest/guides/installing-using-pip-and-virtual-environments).
+
+3. Install necessary dependencies:
    ```bash
    pip install -r requirements.txt
    ```
