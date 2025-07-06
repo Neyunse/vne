@@ -47,3 +47,8 @@ VNengine © 2024 by Neyunse is licensed under Creative Commons Attribution-NoDer
 ## Contributions
 
 Feel free to fork and contribute to this engine.
+
+## Fork rules
+
+- create a new branch and work there
+- if you create a fork please contribute to this repo
