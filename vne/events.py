@@ -9,6 +9,7 @@ from vne.aes import AES
 from vne.config import key, file_extension, aes_extension, bundle_extension
 import pickle
 from vne.Audio import Audio
+from vne.visual import VisualElement, Button, MenuPanel, VerticalLayout, DialogPanel, SpriteVisual
 
 class EventManager:
     def __init__(self):
@@ -178,6 +179,7 @@ class EventManager:
         """
         Processes dialogue for characters, replacing variables with their corresponding values before waiting for user input.
         """
+        # Instead of setting engine.current_dialogue, show a DialogPanel overlay
         if ':' in arg:
             speaker, dialogue = arg.split(":", 1)
             speaker = speaker.strip()
@@ -197,13 +199,10 @@ class EventManager:
                     raise Exception(f"[ERROR] The variable for '{key}' is not defined.")
             dialogue = re.sub(r"\{([^}]+)\}", replacer, dialogue)
             engine.current_dialogue = dialogue
-        
         elif '*' in arg:
-       
             speaker, dialogue = arg.split("*", 1)
             speaker = speaker.strip()
             dialogue = dialogue.strip()
-            
             engine.current_character_name = speaker
             def replacer(match):
                 key = match.group(1).strip()
@@ -233,21 +232,96 @@ class EventManager:
                 else:
                     raise Exception(f"[ERROR] The variable for '{key}' is not defined.")
             engine.current_dialogue = re.sub(r"\{([^}]+)\}", replacer, engine.current_dialogue)
-        engine.wait_for_keypress()
+        # Usar un único DialogPanel persistente y mantenerlo siempre visible
+        font = engine.renderer.font
+        name_font = getattr(engine.renderer, 'name_font', font)
+        screen_w = engine.config.get("screen_width", 800)
+        screen_h = engine.config.get("screen_height", 600)
+        padding = 35
+        panel_x = padding
+        panel_y = screen_h - 120 - padding
+        panel_width = screen_w - 2 * padding
+        panel_height = 120
+        if not hasattr(engine, "current_dialog_panel") or engine.current_dialog_panel is None:
+            engine.current_dialog_panel = DialogPanel("", font=font, x=panel_x, y=panel_y, width=panel_width, height=panel_height)
+            engine.current_dialog_panel.name_font = name_font
+            engine.screen_manager.show(engine.current_dialog_panel)
+        panel = engine.current_dialog_panel
+        panel.text = ""
+        # Mostrar nombre del personaje si existe
+        if engine.current_character_name:
+            panel.character_name = engine.current_character_name
+            panel.name_font = name_font
+        else:
+            panel.character_name = None
+        if panel not in engine.screen_manager.screens:
+            engine.screen_manager.show(panel)
+        # Efecto máquina de escribir
+        full_text = engine.current_dialogue
+        text_cps = 30
+        typewriter_index = 0
+        last_update = pygame.time.get_ticks()
+        mostrar_todo = False
+        waiting = True
+        # Control de texto visto (estricto: incluye nombre, texto, y snapshot de variables)
+        if not hasattr(engine, "seen_dialogue"):
+            engine.seen_dialogue = set()
+        scene_id = getattr(engine, "current_scene", None) or engine.vars.get("scene", "")
+        context_vars = tuple(sorted((k, str(v)) for k, v in engine.vars.items()))
+        key_seen = (scene_id, engine.current_character_name, engine.current_dialogue, context_vars)
+        while waiting and engine.running:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    engine.running = False
+                    waiting = False
+                elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                    if typewriter_index < len(full_text):
+                        mostrar_todo = True
+                    else:
+                        waiting = False
+                else:
+                    engine.screen_manager.handle_event(event)
+            now = pygame.time.get_ticks()
+            if typewriter_index < len(full_text):
+                if mostrar_todo:
+                    typewriter_index = len(full_text)
+                    panel.text = full_text
+                else:
+                    chars_to_add = int((now - last_update) * text_cps / 1000)
+                    if chars_to_add > 0:
+                        typewriter_index = min(typewriter_index + chars_to_add, len(full_text))
+                        panel.text = full_text[:typewriter_index]
+                        last_update = now
+            engine.clock.tick(30)
+            engine.screen_manager.render(engine.renderer.screen)
+            pygame.display.update()
+        engine.seen_dialogue.add(key_seen)
         engine.current_dialogue = ""
         engine.current_character_name = ""
-    
+
     def handle_bg(self, arg, engine):
         """
-        Loads and scales a background image.
+        Loads and scales a background image to fit the window, manteniendo aspecto.
         """
         load_image = ScriptLexer(engine.game_path, engine).load_image
         relative_path = os.path.join("images", "bg", arg + ".jpg")
         try:
             bg_image = load_image(relative_path)
-            bg_image = pygame.transform.scale(bg_image, (engine.renderer.screen.get_width(),
-                                                         engine.renderer.screen.get_height()))
-            engine.current_bg = bg_image
+            # Obtener tamaño de ventana
+            win_w = engine.renderer.screen.get_width()
+            win_h = engine.renderer.screen.get_height()
+            img_w, img_h = bg_image.get_width(), bg_image.get_height()
+            scale = min(win_w / img_w, win_h / img_h)
+            new_w, new_h = int(img_w * scale), int(img_h * scale)
+            scaled_bg = pygame.transform.smoothscale(bg_image, (new_w, new_h))
+            # Centrar
+            bg_visual = SpriteVisual(scaled_bg, x=(win_w-new_w)//2, y=(win_h-new_h)//2, width=new_w, height=new_h)
+            engine.current_bg_visual = bg_visual
+            # Show as background overlay (lowest layer)
+            if hasattr(engine, "bg_layer"):
+                engine.screen_manager.hide(engine.bg_layer)
+            engine.bg_layer = bg_visual
+            engine.screen_manager.screens.insert(0, bg_visual)
         except Exception as e:
             raise Exception(f"[bg] Error loading background image: {e}")
     
@@ -304,29 +378,59 @@ class EventManager:
      
     def handle_sprite(self, arg, engine):
         """
-        Loads and stores a sprite image with a specified alias and position.
+        Loads and stores a sprite image with a specified alias, position y animación.
+        Sintaxis: @sprite personaje at left fadein
+        Sintaxis: @sprite personaje at x=100,y=200 slidein
         """
         load_image = ScriptLexer(engine.game_path, engine).load_image
         parts = arg.split(" at ")
         sprite_alias = parts[0].strip()
-        position = parts[1].strip().lower() if len(parts) > 1 else "center"
+        position = "center"
+        animation = None
+        if len(parts) > 1:
+            # Permitir: at <pos> <anim>
+            pos_anim = parts[1].strip().split()
+            if len(pos_anim) == 2:
+                position, anim = pos_anim
+            elif len(pos_anim) == 1:
+                position, anim = pos_anim[0], None
+            else:
+                position, anim = "center", None
+            # Animaciones básicas
+            if anim == "fadein":
+                from vne.visual import FadeAnimation
+                animation = FadeAnimation(fade_in=True, duration=0.5)
+            elif anim == "fadeout":
+                from vne.visual import FadeAnimation
+                animation = FadeAnimation(fade_in=False, duration=0.5)
+            elif anim == "slidein":
+                from vne.visual import SlideAnimation
+                animation = SlideAnimation(direction="left", duration=0.5)
+            elif anim == "slideout":
+                from vne.visual import SlideAnimation
+                animation = SlideAnimation(direction="right", duration=0.5)
         relative_path = os.path.join("images", "sprites", sprite_alias + ".png")
         try:
             sprite_image = load_image(relative_path)
+            from vne.visual import SpriteVisual
+            sprite_visual = SpriteVisual(sprite_image, position=position, animation=animation)
+            if not hasattr(engine, "sprite_layers"):
+                engine.sprite_layers = {}
+            if sprite_alias in engine.sprite_layers:
+                engine.screen_manager.hide(engine.sprite_layers[sprite_alias])
+            engine.sprite_layers[sprite_alias] = sprite_visual
+            engine.screen_manager.show(sprite_visual)
         except Exception as e:
             raise Exception(f"[sprite] {e}")
-        if not hasattr(engine, "sprites"):
-            engine.sprites = {}
-        engine.sprites[sprite_alias] = {"image": sprite_image, "position": position}
-        engine.Log(f"[sprite] Sprite '{sprite_alias}' displayed at position '{position}'.")
-    
+
     def handle_hide_sprite(self, arg, engine):
         """
         Hides a sprite by removing it from the engine's sprite dictionary.
         """
         sprite_alias = arg.strip()
-        if hasattr(engine, "sprites") and sprite_alias in engine.sprites:
-            del engine.sprites[sprite_alias]
+        if hasattr(engine, "sprite_layers") and sprite_alias in engine.sprite_layers:
+            engine.screen_manager.hide(engine.sprite_layers[sprite_alias])
+            del engine.sprite_layers[sprite_alias]
             engine.Log(f"[hide] Sprite '{sprite_alias}' hidden.")
         else:
             engine.Log(f"[hide] Sprite '{sprite_alias}' not found to hide.")
@@ -340,12 +444,40 @@ class EventManager:
     
     def handle_end(self, arg, engine):
         """
-        Return to the main menu
+        Return to the main menu, limpia todos los sprites y overlays visuales, y aplica un efecto dissolve.
         """
+        # Efecto dissolve (fundido a negro)
+        surface = engine.renderer.screen
+        clock = engine.clock
+        fade_surface = pygame.Surface(surface.get_size())
+        fade_surface.fill((0,0,0))
+        for alpha in range(0, 256, 16):
+            fade_surface.set_alpha(alpha)
+            engine.screen_manager.render(surface)
+            surface.blit(fade_surface, (0,0))
+            pygame.display.update()
+            clock.tick(60)
+        # Limpiar sprites visuales y overlays
+        if hasattr(engine, "sprite_layers"):
+            for sprite in list(engine.sprite_layers.values()):
+                engine.screen_manager.hide(sprite)
+            engine.sprite_layers.clear()
+        if hasattr(engine, "current_menu_panel") and engine.current_menu_panel:
+            engine.screen_manager.hide(engine.current_menu_panel)
+            engine.current_menu_panel = None
+        if hasattr(engine, "current_bg_visual") and engine.current_bg_visual:
+            engine.screen_manager.hide(engine.current_bg_visual)
+            engine.current_bg_visual = None
+        if hasattr(engine, "bg_layer") and engine.bg_layer:
+            engine.screen_manager.hide(engine.bg_layer)
+            engine.bg_layer = None
+        if hasattr(engine, "current_dialog_panel") and engine.current_dialog_panel:
+            engine.screen_manager.hide(engine.current_dialog_panel)
+            engine.current_dialog_panel = None
+ 
         engine.lexer.current = 0
         engine.lexer.load_scripts()
         self.clear_scene(engine)
-  
     
     def clear_scene(self, engine):
         """
@@ -370,7 +502,7 @@ class EventManager:
         
     def handle_Load(self, arg, engine):
         """
-        Loads and processes KAG/KAGC files.
+        Loads and processes .script files.
         """
         arg = arg.strip()
         if arg.startswith("(") and arg.endswith(")"):
@@ -809,19 +941,8 @@ class EventManager:
     
     def handle_end_choice(self, arg, engine):
         """
-        The function `handle_end_choice` creates a menu with buttons for the user to select an action in
-        a game engine using Pygame.
-        
-        :param arg: The `arg` parameter in the `handle_end_choice` method seems to be unused in the
-        provided code snippet. It is not being referenced or utilized within the method. If you have a
-        specific purpose or intended use for the `arg` parameter in this method, you may need to update
-        the code
-        :param engine: The `engine` parameter in the `handle_end_choice` method seems to be an object
-        that contains configuration settings, current choice buttons, a renderer, and a logging
-        functionality. It is used to handle user choices in a menu interface. The method creates a menu
-        panel with buttons based on the current choice
+        Crea y muestra el panel visual para el menú de opciones (choicemenu).
         """
-
         if not hasattr(engine, "current_choice_buttons") or not engine.current_choice_buttons:
             raise Exception("[endmenu] There are no buttons defined in the menu.")
         screen_width = engine.config.get("screen_width", 800)
@@ -832,84 +953,67 @@ class EventManager:
         panel_height = len(engine.current_choice_buttons) * (button_height + margin) + margin
         panel_x = (screen_width - panel_width) // 2
         panel_y = (screen_height - panel_height) // 2
-        panel_rect = pygame.Rect(panel_x, panel_y, panel_width, panel_height)
-        border_color = (255, 255, 255)
+        # Crear el panel visual si no existe
+        from vne.visual import MenuPanel, Button, VerticalLayout
+        engine.current_menu_panel = MenuPanel(
+            width=panel_width, 
+            height=panel_height, 
+            layout=VerticalLayout(),
+            x=panel_x,
+            y=panel_y,
+        )
         font = engine.renderer.font
-        buttons = []
         for i, btn in enumerate(engine.current_choice_buttons):
             label_text = self.substitute_variables(btn["raw_label"], engine)
-            text_surface = font.render(label_text, True, (255, 255, 255))
-            text_rect = text_surface.get_rect()
-            btn_y = margin + i * (button_height + margin)
-            btn_rect = pygame.Rect(0, btn_y, panel_width, button_height)
-            text_rect.center = btn_rect.center
-            buttons.append({"rect": btn_rect, "event": btn["event"], "text": text_surface, "text_rect": text_rect})
-        selected_action = None
-        running_menu = True
-        while running_menu and engine.running:
+            def make_action(event_str=btn["event"]):
+                def action():
+                    engine.Log(f"[menu] Selected action: @{event_str}")
+                    engine.screen_manager.hide(engine.current_menu_panel)
+                    engine.event_manager.handle(f"@{event_str}", engine)
+                return action
+            button = Button(
+                label=label_text,
+                action=make_action(),
+                width=panel_width - 2*margin,
+                height=button_height,
+                font=font
+            )
+            engine.current_menu_panel.add_child(button)
+        engine.screen_manager.show(engine.current_menu_panel, force_top=True)
+        # Esperar a que se cierre el menú, procesando eventos para evitar freeze
+        while engine.current_menu_panel in engine.screen_manager.screens and engine.running:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     engine.running = False
-                    running_menu = False
-                elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-                    mouse_x, mouse_y = event.pos
-                    if panel_rect.collidepoint(mouse_x, mouse_y):
-                        local_x = mouse_x - panel_x
-                        local_y = mouse_y - panel_y
-                        for btn in buttons:
-                            if btn["rect"].collidepoint(local_x, local_y):
-                                selected_action = btn["event"]
-                                running_menu = False
-                                break
-            panel_surface = pygame.Surface((panel_width, panel_height), pygame.SRCALPHA)
-            for btn in buttons:
-                pygame.draw.rect(panel_surface, (100, 100, 100), btn["rect"])
-                pygame.draw.rect(panel_surface, border_color, btn["rect"], 2)
-                panel_surface.blit(btn["text"], btn["text_rect"])
-            engine.renderer.draw_background()
-            engine.renderer.screen.blit(panel_surface, (panel_x, panel_y))
+                else:
+                    engine.screen_manager.handle_event(event)
+            engine.clock.tick(30)
+            engine.screen_manager.render(engine.renderer.screen)
             pygame.display.update()
-        if selected_action:
-            if not selected_action.startswith("@"):
-                selected_action = "@" + selected_action
-            engine.Log(f"[menu] Selected action: {selected_action}")
-            self.handle(selected_action, engine)
+        engine.current_menu_buttons = []
+        engine.current_menu_panel = None
 
     def handle_menu(self, arg, engine):
-        """
-        Initiates a menu block where subsequent @button commands define menu options.
-        
-        :param arg: Unused argument.
-        :param engine: The game engine instance.
-        """
+        engine.current_menu_panel = MenuPanel(width=500, height=400, layout=VerticalLayout(), no_bg=True, no_border=True)
         engine.current_menu_buttons = []
         engine.Log("[menu] Menu block started.")
 
     def handle_button(self, arg, engine):
-        """
-        Parsing extendido: permite parámetros visuales opcionales, pero mantiene compatibilidad total con el formato clásico.
-        Sintaxis clásica: @button "Label" event <comando>
-        Sintaxis extendida: @button "Label" event <comando> [x=.. y=.. width=.. height=.. color=.. font=.. ...]
-        """
         arg = arg.strip()
-        # Primero, intenta el formato clásico
         pattern = r'^"([^"]+)"\s+event\s+(.+)$'
         match = re.match(pattern, arg)
         if not match:
             raise Exception('[button] Invalid format. Expected: @button "Label" event <command>.')
         raw_label = match.group(1)
         rest = match.group(2).strip()
-        # Separa el comando del resto de parámetros (si existen)
         parts = rest.split()
         action = parts[0]
         params = parts[1:] if len(parts) > 1 else []
-        # Parsing de parámetros visuales extendidos (x=, y=, width=, height=, color=, font=, etc)
         visual_params = {}
         for p in params:
             if '=' in p:
                 k, v = p.split('=', 1)
                 visual_params[k.strip().lower()] = v.strip()
-        # Construye el diccionario del botón
         button_data = {"raw_label": raw_label, "event": action}
         if visual_params:
             button_data["visual_params"] = visual_params
@@ -919,28 +1023,13 @@ class EventManager:
         engine.Log(f"[button] Button added: '{raw_label}' -> '{action}' params: {visual_params if visual_params else '{}'}.")
 
     def handle_endmenu(self, arg, engine):
-        """
-        Renderizado extendido: el panel se ajusta automáticamente para contener todos los botones personalizados.
-        """
-        clock = engine.clock
         if not hasattr(engine, "current_menu_buttons") or not engine.current_menu_buttons:
             raise Exception("[endmenu] There are no buttons defined in the menu.")
-        screen_width = engine.config.get("screen_width", 800)
-        screen_height = engine.config.get("screen_height", 600)
-        margin = 10
-        # Calcula posición y tamaño de cada botón
-        buttons = []
-        min_x, min_y, max_x, max_y = None, None, None, None
         font = engine.renderer.font
-        for i, btn in enumerate(engine.current_menu_buttons):
-            label_text = self.substitute_variables(btn["raw_label"], engine)
+        for btn in engine.current_menu_buttons:
             v = btn.get("visual_params", {})
-            # Tamaño y posición
-            btn_width = int(v.get("width", int(screen_width * 0.3)))
-            btn_height = int(v.get("height", 40))
-            btn_x = int(v.get("x", 0))
-            btn_y = int(v.get("y", margin + i * (btn_height + margin)))
-            # Color y fuente
+            width = int(v.get("width", 200))
+            height = int(v.get("height", 40))
             color = (100, 100, 100)
             if "color" in v:
                 try:
@@ -957,73 +1046,34 @@ class EventManager:
                     btn_font = engine.renderer.get_font(v["font"])
                 except:
                     pass
-            text_surface = btn_font.render(label_text, True, (255, 255, 255))
-            text_rect = text_surface.get_rect()
-            text_rect.center = (btn_x + btn_width // 2, btn_y + btn_height // 2)
-            buttons.append({
-                "rect": pygame.Rect(btn_x, btn_y, btn_width, btn_height),
-                "event": btn["event"],
-                "text": text_surface,
-                "text_rect": text_rect,
-                "color": color
-            })
-            # Calcula el área mínima que contiene todos los botones
-            bx1, by1 = btn_x, btn_y
-            bx2, by2 = btn_x + btn_width, btn_y + btn_height
-            min_x = bx1 if min_x is None else min(min_x, bx1)
-            min_y = by1 if min_y is None else min(min_y, by1)
-            max_x = bx2 if max_x is None else max(max_x, bx2)
-            max_y = by2 if max_y is None else max(max_y, by2)
-        # Si no hay parámetros personalizados, usa layout clásico
-        if all((btn.get("visual_params") is None or ("x" not in btn["visual_params"] and "y" not in btn["visual_params"])) for btn in engine.current_menu_buttons):
-            panel_width = int(screen_width * 0.3)
-            panel_height = len(engine.current_menu_buttons) * (40 + margin) + margin
-            panel_x = 10
-            panel_y = (screen_height - panel_height) * 1
-        else:
-            # Ajusta el panel al área mínima de los botones
-            panel_x = max(min_x - margin, 0)
-            panel_y = max(min_y - margin, 0)
-            panel_width = min(max_x - min_x + 2 * margin, screen_width - panel_x)
-            panel_height = min(max_y - min_y + 2 * margin, screen_height - panel_y)
-            # Corrige las posiciones relativas de los botones
-            for btn in buttons:
-                btn["rect"].x = btn["rect"].x - panel_x
-                btn["rect"].y = btn["rect"].y - panel_y
-                btn["text_rect"].center = btn["rect"].center
-        panel_rect = pygame.Rect(panel_x, panel_y, panel_width, panel_height)
-        border_color = (255, 255, 255)
-        selected_action = None
-        running_menu = True
-        while running_menu and engine.running:
+            def make_action(event_str=btn["event"]):
+                def action():
+                    engine.Log(f"[menu] Selected action: @{event_str}")
+                    engine.screen_manager.hide(engine.current_menu_panel)
+                    engine.event_manager.handle(f"@{event_str}", engine)
+                return action
+            button = Button(
+                label=btn["raw_label"],
+                action=make_action(),
+                width=width,
+                height=height,
+                color=color,
+                font=btn_font
+            )
+            engine.current_menu_panel.add_child(button)
+        engine.screen_manager.show(engine.current_menu_panel)
+        # Wait for menu to close, process events to avoid freeze
+        while engine.current_menu_panel in engine.screen_manager.screens and engine.running:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     engine.running = False
-                    running_menu = False
-                elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-                    mouse_x, mouse_y = event.pos
-                    if panel_rect.collidepoint(mouse_x, mouse_y):
-                        local_x = mouse_x - panel_x
-                        local_y = mouse_y - panel_y
-                        for btn in buttons:
-                            if btn["rect"].collidepoint(local_x, local_y):
-                                selected_action = btn["event"]
-                                running_menu = False
-                                break
-            panel_surface = pygame.Surface((panel_width, panel_height), pygame.SRCALPHA)
-            for btn in buttons:
-                pygame.draw.rect(panel_surface, btn["color"], btn["rect"])
-                pygame.draw.rect(panel_surface, border_color, btn["rect"], 2)
-                panel_surface.blit(btn["text"], btn["text_rect"])
-            engine.renderer.draw_background()
-            engine.renderer.screen.blit(panel_surface, (panel_x, panel_y))
+                else:
+                    engine.screen_manager.handle_event(event)
+            engine.clock.tick(30)
+            engine.screen_manager.render(engine.renderer.screen)
             pygame.display.update()
-            clock.tick(30)
-        if selected_action:
-            if not selected_action.startswith("@"):
-                selected_action = "@" + selected_action
-            engine.Log(f"[menu] Selected action: {selected_action}")
-            self.handle(selected_action, engine)
+        engine.current_menu_buttons = []
+        engine.current_menu_panel = None
 
     def handle_Set_event(self, arg, engine):
         """

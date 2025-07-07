@@ -9,6 +9,31 @@ from vne.config import CONFIG
 from vne.config import key, engine_version, file_extension, aes_extension, init_file
 from vne.rm import ResourceManager
 from vne.aes import AES
+from vne.visual import VisualElement, MenuPanel, Button, VerticalLayout
+
+class ScreenManager:
+    def __init__(self):
+        self.screens = []
+    def show(self, screen, force_top=True):
+        # Elimina si ya existe para evitar duplicados
+        if screen in self.screens:
+            self.screens.remove(screen)
+        # Si es overlay crítico, siempre al tope
+        if force_top:
+            self.screens.append(screen)
+        else:
+            self.screens.insert(0, screen)
+    def hide(self, screen):
+        if screen in self.screens:
+            self.screens.remove(screen)
+    def render(self, surface):
+        for screen in self.screens:
+            screen.render(surface)
+    def handle_event(self, event):
+        for screen in reversed(self.screens):
+            if screen.handle_event(event):
+                return True
+        return False
 
 class VNEngine:
     def __init__(self, game_path, devMode=False):
@@ -44,6 +69,11 @@ class VNEngine:
 
         self.Log(f"Starting the game from {self.game_path}...")
     
+        self.screen_manager = ScreenManager()
+        self.theme = None
+        self.audio_volume = 1.0
+        self.audio_muted = False
+    
     def should_execute_line(self):
         """
         Returns True if all conditions are True, or if there are no active conditions.
@@ -66,8 +96,8 @@ class VNEngine:
                 if event.type == pygame.QUIT:
                     self.running = False
                     return
-                
-                if event.type == pygame.MOUSEBUTTONDOWN:
+            
+                if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                     waiting = False
                 
                                
@@ -88,6 +118,21 @@ class VNEngine:
             f.write(log)
             f.close()
     
+    def set_theme(self, theme):
+        self.theme = theme
+    def set_audio_volume(self, volume):
+        self.audio_volume = max(0.0, min(1.0, volume))
+        pygame.mixer.music.set_volume(self.audio_volume)
+    def mute_audio(self):
+        self.audio_muted = True
+        pygame.mixer.music.set_volume(0.0)
+    def unmute_audio(self):
+        self.audio_muted = False
+        pygame.mixer.music.set_volume(self.audio_volume)
+    def fade_audio(self, to_volume, duration=1000):
+        pygame.mixer.music.fadeout(duration)
+        self.audio_volume = to_volume
+        pygame.mixer.music.set_volume(self.audio_volume)
     def run(self):
         """
         This Python function runs a game by loading a script, handling events, and updating the display
@@ -151,7 +196,8 @@ VNE %(engineVersion)s
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     self.running = False
-            
+                else:
+                    self.screen_manager.handle_event(event)
             self.typewriter_index += int(delta_time * 20)
             command = self.lexer.get_next_command()
             if command is None:
@@ -160,7 +206,6 @@ VNE %(engineVersion)s
             else:
                 try:
                     self.event_manager.handle(command, self)
-                    pass
                 except Exception as e:
                     self.running = False
                     traceback_template = '''Exception error:
@@ -187,6 +232,8 @@ VNE %(engineVersion)s
                         f.close()
   
           
+            # Render overlays and stacking
+            self.screen_manager.render(self.renderer.screen)
             pygame.display.update()
         pygame.quit()
         self.Log("Game finished.")
