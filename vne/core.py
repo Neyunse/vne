@@ -66,6 +66,7 @@ class VNEngine:
 
         self.current_dialogue = ""
         self.current_character_name = ""
+        self.sprite_layers = {}
 
         self.Log(f"Starting the game from {self.game_path}...")
     

@@ -416,10 +416,8 @@ class EventManager:
             sprite_image = load_image(relative_path)
             
             sprite_visual = SpriteVisual(sprite_image, position=position, animation=animation)
-            sprite_visual.z_index = 0
-            if not hasattr(engine, "sprite_layers"):
-                engine.sprite_layers = {}
-            
+            sprite_visual.z_index = 1
+  
             # TODO: THIS DON'T WORK CORRECTLY WITH @HIDE  
             # if sprite_alias in engine.sprite_layers:
             #     engine.screen_manager.hide(engine.sprite_layers[sprite_alias])
@@ -452,22 +450,11 @@ class EventManager:
         """
         Return to the main menu, limpia todos los sprites y overlays visuales, y aplica un efecto dissolve.
         """
-        # Efecto dissolve (fundido a negro)
-        surface = engine.renderer.screen
-        clock = engine.clock
-        fade_surface = pygame.Surface(surface.get_size())
-        fade_surface.fill((0,0,0))
-        for alpha in range(0, 256, 16):
-            fade_surface.set_alpha(alpha)
-            engine.screen_manager.render(surface)
-            surface.blit(fade_surface, (0,0))
-            pygame.display.update()
-            clock.tick(60)
         # Limpiar sprites visuales y overlays
         if hasattr(engine, "sprite_layers"):
-            for sprite in list(engine.sprite_layers.values()):
-                engine.screen_manager.hide(sprite)
             engine.sprite_layers.clear()
+            engine.sprite_layers = { }
+           
         if hasattr(engine, "current_menu_panel") and engine.current_menu_panel:
             engine.screen_manager.hide(engine.current_menu_panel)
             engine.current_menu_panel = None
@@ -480,6 +467,18 @@ class EventManager:
         if hasattr(engine, "current_dialog_panel") and engine.current_dialog_panel:
             engine.screen_manager.hide(engine.current_dialog_panel)
             engine.current_dialog_panel = None
+            
+        # Efecto dissolve (fundido a negro)
+        surface = engine.renderer.screen
+        clock = engine.clock
+        fade_surface = pygame.Surface(surface.get_size())
+        fade_surface.fill((0,0,0))
+        for alpha in range(0, 256, 16):
+            fade_surface.set_alpha(alpha)
+            engine.screen_manager.render(surface)
+            surface.blit(fade_surface, (0,0))
+            pygame.display.update()
+            clock.tick(60)
  
         engine.lexer.current = 0
         engine.lexer.load_scripts()
@@ -491,8 +490,10 @@ class EventManager:
         clear the current scene.
 
         """
+        engine.screen_manager.screens.clear()
         engine.current_bg = None
         engine.current_bgm = None
+        engine.sprite_layers = {}
         
         engine.characters.clear()
         engine.vars.clear()
