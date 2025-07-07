@@ -9,6 +9,7 @@ K: everything seems to be working properly...
 @choice
   @option "I found a bug!" event Set(chek, true)
   @option "No bugs" event Set(chek, false)
+  
 @end_choice
 
 @if chek

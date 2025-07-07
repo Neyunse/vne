@@ -9,6 +9,38 @@ from vne.config import CONFIG
 from vne.config import key, engine_version, file_extension, aes_extension, init_file
 from vne.rm import ResourceManager
 from vne.aes import AES
+from vne.visual import VisualElement, MenuPanel, Button, VerticalLayout
+
+class ScreenManager:
+    def __init__(self):
+        self.screens = []
+    def show(self, screen, force_top=True):
+        # Elimina si ya existe para evitar duplicados
+        if screen in self.screens:
+            self.screens.remove(screen)
+        # Si es overlay crítico, siempre al tope
+        if force_top:
+            self.screens.append(screen)
+        else:
+            self.screens.insert(0, screen)
+    def hide(self, screen):
+        if screen in self.screens:
+            self.screens.remove(screen)
+    def hide_all(self):
+        """
+        Hides and removes all screens from the manager.
+        """
+        for screen in self.screens[:]:  # Copia para evitar modificación durante iteración
+            self.hide(screen)
+            
+    def render(self, surface):
+        for screen in sorted(self.screens, key=lambda e: getattr(e, 'z_index', 0)):
+            screen.render(surface)
+    def handle_event(self, event):
+        for screen in reversed(self.screens):
+            if screen.handle_event(event):
+                return True
+        return False
 
 class VNEngine:
     def __init__(self, game_path, devMode=False):
@@ -41,8 +73,15 @@ class VNEngine:
 
         self.current_dialogue = ""
         self.current_character_name = ""
+        self.sprite_layers = {}
 
         self.Log(f"Starting the game from {self.game_path}...")
+    
+        self.screen_manager = ScreenManager()
+        self.theme = None
+        self.audio_volume = 1.0
+        self.audio_muted = False
+        self.force_clear_sprites = False
     
     def should_execute_line(self):
         """
@@ -52,26 +91,6 @@ class VNEngine:
             return True
         return all(self.condition_stack)
     
-    def wait_for_keypress(self):
-        """
-        The `wait_for_keypress` function in Python uses Pygame to wait for a keypress or mouse click
-        while rendering and updating the display.
-        :return: If the event type is pygame.QUIT, the method will set self.running to False and return.
-        Otherwise, if the event type is pygame.MOUSEBUTTONDOWN, the method will set waiting to False. No
-        explicit return value is provided in this code snippet.
-        """
-        waiting = True
-        while waiting and self.running:
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    self.running = False
-                    return
-                
-                if event.type == pygame.MOUSEBUTTONDOWN:
-                    waiting = False
-                
-                               
-            self.renderer.render()
          
     def Log(self, log, _=None):
         """
@@ -88,6 +107,40 @@ class VNEngine:
             f.write(log)
             f.close()
     
+    def set_theme(self, theme):
+        self.theme = theme
+    def set_audio_volume(self, volume):
+        self.audio_volume = max(0.0, min(1.0, volume))
+        pygame.mixer.music.set_volume(self.audio_volume)
+    def mute_audio(self):
+        self.audio_muted = True
+        pygame.mixer.music.set_volume(0.0)
+    def unmute_audio(self):
+        self.audio_muted = False
+        pygame.mixer.music.set_volume(self.audio_volume)
+    def fade_audio(self, to_volume, duration=1000):
+        pygame.mixer.music.fadeout(duration)
+        self.audio_volume = to_volume
+        pygame.mixer.music.set_volume(self.audio_volume)
+    
+    def window_icon(self):
+        """
+        Loads and stores a sprite image with a specified alias and position.
+        """
+        load_image = self.lexer.load_image
+        relative_path = os.path.join("ui", "icon", "window_icon" + ".png")
+        try:
+            image_bytes = self.resource_manager.get_bytes(relative_path)
+
+            if image_bytes:
+                icon = load_image(relative_path)
+
+                return icon
+             
+            return None
+        except Exception as e:
+            pass
+        
     def run(self):
         """
         This Python function runs a game by loading a script, handling events, and updating the display
@@ -151,7 +204,8 @@ VNE %(engineVersion)s
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     self.running = False
-            
+                else:
+                    self.screen_manager.handle_event(event)
             self.typewriter_index += int(delta_time * 20)
             command = self.lexer.get_next_command()
             if command is None:
@@ -160,7 +214,6 @@ VNE %(engineVersion)s
             else:
                 try:
                     self.event_manager.handle(command, self)
-                    pass
                 except Exception as e:
                     self.running = False
                     traceback_template = '''Exception error:
@@ -187,6 +240,8 @@ VNE %(engineVersion)s
                         f.close()
   
           
+            # Render overlays and stacking
+            self.screen_manager.render(self.renderer.screen)
             pygame.display.update()
         pygame.quit()
         self.Log("Game finished.")
