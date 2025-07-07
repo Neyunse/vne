@@ -27,7 +27,7 @@ class ScreenManager:
         if screen in self.screens:
             self.screens.remove(screen)
     def render(self, surface):
-        for screen in self.screens:
+        for screen in sorted(self.screens, key=lambda e: getattr(e, 'z_index', 0)):
             screen.render(surface)
     def handle_event(self, event):
         for screen in reversed(self.screens):

@@ -175,9 +175,9 @@ class Renderer:
     def render(self):
             
         self.draw_background()
-        self.draw_sprites()
         self.draw_character_name()
         self.draw_dialogue()
+        self.draw_sprites()
         
         self.clock.tick(30)
         self.fps = int(self.clock.get_fps())

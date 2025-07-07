@@ -44,7 +44,7 @@ class FadeAnimation(Animation):
             self.finished = True
 
 class VisualElement:
-    def __init__(self, x=0, y=0, width=100, height=40, visible=True, theme=None):
+    def __init__(self, x=0, y=0, width=100, height=40, visible=True, theme=None, z_index=0):
         self.x = x
         self.y = y
         self.width = width
@@ -64,6 +64,7 @@ class VisualElement:
         self.shadow_color = (0,0,0,128)
         self.shadow_offset = (2,2)
         self.blur = False
+        self.z_index = z_index
 
     def add_child(self, child):
         child.parent = self
@@ -98,6 +99,7 @@ class VisualElement:
                 pygame.draw.rect(temp_surface, border_color, temp_surface.get_rect(), border_width, border_radius=self.radius or self.theme.radius)
             temp_surface.set_alpha(self.alpha)
             surface.blit(temp_surface, (abs_x, abs_y))
+        self.children.sort(key=lambda c: c.z_index)
         for child in self.children:
             child.render(surface)
 
@@ -252,6 +254,23 @@ class DialogPanel(VisualElement):
         self.name_border_color = (255,255,255)  # Borde del frame del nombre
         self.name_border_width = 2
         self.name_radius = 5
+    
+    def wrap_text(self, text, font, max_width):
+      words = text.split(' ')
+      lines = []
+      current_line = ''
+      for word in words:
+          test_line = current_line + (' ' if current_line else '') + word
+          width, _ = font.size(test_line)
+          if width <= max_width:
+              current_line = test_line
+          else:
+              lines.append(current_line)
+              current_line = word
+      if current_line:
+          lines.append(current_line)
+      return lines
+  
     def render(self, surface):
         super().render(surface)
         abs_x, abs_y = self.get_absolute_position()
@@ -277,12 +296,16 @@ class DialogPanel(VisualElement):
                 pygame.draw.rect(surface, self.name_border_color, frame_rect, self.name_border_width, border_radius=self.name_radius)
                 surface.blit(name_surface, name_rect)
         if font:
-            text_surface = font.render(self.text, True, self.text_color)
-            if self.shadow:
-                shadow_surface = font.render(self.text, True, self.shadow_color)
-                surface.blit(shadow_surface, (abs_x+self.shadow_offset[0], abs_y+self.shadow_offset[1]))
-            surface.blit(text_surface, (abs_x+10, abs_y+10))
-
+          max_text_width = self.width - 20  # margen interno
+          lines = self.wrap_text(self.text, font, max_text_width)
+          line_height = font.get_linesize()
+          for i, line in enumerate(lines):
+              y = abs_y + 10 + i * line_height
+              if self.shadow:
+                  shadow_surface = font.render(line, True, self.shadow_color)
+                  surface.blit(shadow_surface, (abs_x + 10 + self.shadow_offset[0], y + self.shadow_offset[1]))
+              text_surface = font.render(line, True, self.text_color)
+              surface.blit(text_surface, (abs_x + 10, y))
 class SpriteVisual(VisualElement):
     def __init__(self, image, x=None, y=None, width=None, height=None, theme=None, position="center", animation=None):
         screen = pygame.display.get_surface()

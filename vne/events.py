@@ -10,7 +10,8 @@ from vne.config import key, file_extension, aes_extension, bundle_extension
 import pickle
 from vne.Audio import Audio
 from vne.visual import VisualElement, Button, MenuPanel, VerticalLayout, DialogPanel, SpriteVisual
-
+from vne.visual import SpriteVisual
+from vne.visual import FadeAnimation, SlideAnimation
 class EventManager:
     def __init__(self):
         self.event_handlers = {}
@@ -245,8 +246,9 @@ class EventManager:
         if not hasattr(engine, "current_dialog_panel") or engine.current_dialog_panel is None:
             engine.current_dialog_panel = DialogPanel("", font=font, x=panel_x, y=panel_y, width=panel_width, height=panel_height)
             engine.current_dialog_panel.name_font = name_font
-            engine.screen_manager.show(engine.current_dialog_panel)
+            engine.screen_manager.show(engine.current_dialog_panel, force_top=True)
         panel = engine.current_dialog_panel
+        panel.z_index = 10
         panel.text = ""
         # Mostrar nombre del personaje si existe
         if engine.current_character_name:
@@ -255,7 +257,7 @@ class EventManager:
         else:
             panel.character_name = None
         if panel not in engine.screen_manager.screens:
-            engine.screen_manager.show(panel)
+            engine.screen_manager.show(panel, force_top=True)
         # Efecto máquina de escribir
         full_text = engine.current_dialogue
         text_cps = 30
@@ -398,22 +400,23 @@ class EventManager:
                 position, anim = "center", None
             # Animaciones básicas
             if anim == "fadein":
-                from vne.visual import FadeAnimation
+            
                 animation = FadeAnimation(fade_in=True, duration=0.5)
             elif anim == "fadeout":
-                from vne.visual import FadeAnimation
+             
                 animation = FadeAnimation(fade_in=False, duration=0.5)
             elif anim == "slidein":
-                from vne.visual import SlideAnimation
+          
                 animation = SlideAnimation(direction="left", duration=0.5)
             elif anim == "slideout":
-                from vne.visual import SlideAnimation
+          
                 animation = SlideAnimation(direction="right", duration=0.5)
         relative_path = os.path.join("images", "sprites", sprite_alias + ".png")
         try:
             sprite_image = load_image(relative_path)
-            from vne.visual import SpriteVisual
+            
             sprite_visual = SpriteVisual(sprite_image, position=position, animation=animation)
+            sprite_visual.z_index = 0
             if not hasattr(engine, "sprite_layers"):
                 engine.sprite_layers = {}
             if sprite_alias in engine.sprite_layers:
