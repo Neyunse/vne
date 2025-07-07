@@ -3,4 +3,5 @@
 @menu
   @button "Start game" event Scene("script")
   @button "Quit" event Quit()
+ 
 @endMenu

@@ -190,13 +190,20 @@ def distribute_game(game_path):
 
     print(f"Distribution completed at: {dest_folder}")
 
+def get_data_folder(game_path):
+    data_folder = os.path.join(game_path, "data")
+    if not os.path.exists(data_folder):
+        print(f"Data folder '{data_folder}' does not exist.")
+        return None
+    return data_folder
+
 def run_game(game_path):
     """
     Compiles all KAG files in the specified folder and runs the game engine with the given game path in development mode.
     
     :param game_path: The path to the directory where the game files are located.
     """
-    data_folder = os.path.join(game_path, "data")
+    data_folder = get_data_folder(game_path) 
 
     print("---------[DEVELOPER]---------")
     compile_all_kag_in_folder(data_folder, key)
@@ -217,7 +224,7 @@ def main():
     parser.add_argument('-r', dest="debug_project", default=False, action="store_true", help="debug a project")
     parser.add_argument('-d', dest="distribute_project", default=False, action="store_true", help="distribute a project")
     
-    parser.add_argument('-f', dest="project_folder", default=None, type=str, help="Project Folder (required)", required=True)
+    parser.add_argument('-f', dest="project_folder", default="launcher", type=str, help="Project Folder (required)", required='-f' in sys.argv)
     
     args = parser.parse_args()
 
@@ -235,7 +242,8 @@ def main():
     elif distribute_project and project_folder and not "python.exe" in exe_name:
         distribute_game(project_folder)
     else:
-        raise Exception("Mising aguments or argument is invalid")
+        raise Exception("Invalid command or missing arguments.")
+    
 
 if __name__ == "__main__":
 

@@ -1,5 +1,9 @@
 {
     "files.exclude": {
-      "**/*.aes": true
+      "**/*.aes": true,
+      "**/*.rpyc": true,
+      "**/*.rpa": true,
+      "**/*.rpymc": true,
+      "**/cache/": true
     }
 }

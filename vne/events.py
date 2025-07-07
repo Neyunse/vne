@@ -24,8 +24,10 @@ class EventManager:
 
     def register_default_events(self):
         """
-        Registers various event handlers for different events.
+        The function `register_default_events` registers various event handlers for different actions in
+        a game engine.
         """
+  
         # Primitive
         self.register_event("say", self.handle_say)
         self.register_event("end", self.handle_end)
@@ -73,6 +75,7 @@ class EventManager:
         # Menu
         self.register_event("menu", self.handle_menu)
         self.register_event("button", self.handle_button)
+        # Eliminar registro de ImageButton
         self.register_event("endMenu", self.handle_endmenu)
 
         # ALIAS (MENU)
@@ -884,57 +887,112 @@ class EventManager:
 
     def handle_button(self, arg, engine):
         """
-        Parses a button command to extract a label and an event action, then adds them to the current menu.
-        Expected syntax: @button "Label" event <command>
-        
-        :param arg: The argument string containing the label and the event command.
-        :param engine: The game engine instance.
+        Parsing extendido: permite parámetros visuales opcionales, pero mantiene compatibilidad total con el formato clásico.
+        Sintaxis clásica: @button "Label" event <comando>
+        Sintaxis extendida: @button "Label" event <comando> [x=.. y=.. width=.. height=.. color=.. font=.. ...]
         """
-        pattern = r'^"([^"]+)"\s+event\s+(.+)$'
         arg = arg.strip()
+        # Primero, intenta el formato clásico
+        pattern = r'^"([^"]+)"\s+event\s+(.+)$'
         match = re.match(pattern, arg)
         if not match:
             raise Exception('[button] Invalid format. Expected: @button "Label" event <command>.')
         raw_label = match.group(1)
-        action = match.group(2).strip()
+        rest = match.group(2).strip()
+        # Separa el comando del resto de parámetros (si existen)
+        parts = rest.split()
+        action = parts[0]
+        params = parts[1:] if len(parts) > 1 else []
+        # Parsing de parámetros visuales extendidos (x=, y=, width=, height=, color=, font=, etc)
+        visual_params = {}
+        for p in params:
+            if '=' in p:
+                k, v = p.split('=', 1)
+                visual_params[k.strip().lower()] = v.strip()
+        # Construye el diccionario del botón
+        button_data = {"raw_label": raw_label, "event": action}
+        if visual_params:
+            button_data["visual_params"] = visual_params
         if not hasattr(engine, "current_menu_buttons"):
             engine.current_menu_buttons = []
-        
-        engine.current_menu_buttons.append({"raw_label": raw_label, "event": action})
-        engine.Log(f"[button] Button added: '{raw_label}' -> '{action}'.")
-        
+        engine.current_menu_buttons.append(button_data)
+        engine.Log(f"[button] Button added: '{raw_label}' -> '{action}' params: {visual_params if visual_params else '{}'}.")
+
     def handle_endmenu(self, arg, engine):
         """
-        Handles the display and interaction with a menu interface. It renders a centered panel with buttons,
-        waits for user selection, and then executes the associated event command.
-        
-        :param arg: Unused argument.
-        :param engine: The game engine instance.
+        Renderizado extendido: el panel se ajusta automáticamente para contener todos los botones personalizados.
         """
         clock = engine.clock
         if not hasattr(engine, "current_menu_buttons") or not engine.current_menu_buttons:
             raise Exception("[endmenu] There are no buttons defined in the menu.")
         screen_width = engine.config.get("screen_width", 800)
         screen_height = engine.config.get("screen_height", 600)
-        panel_width = int(screen_width * 0.3)
-        button_height = 40
         margin = 10
-        panel_height = len(engine.current_menu_buttons) * (button_height + margin) + margin
-        panel_x = 10
-        panel_y = (screen_height - panel_height) * 1
-        panel_rect = pygame.Rect(panel_x, panel_y, panel_width, panel_height)
-        panel_bg_color = (50, 50, 50, 200)
-        border_color = (255, 255, 255)
-        font = engine.renderer.font
+        # Calcula posición y tamaño de cada botón
         buttons = []
+        min_x, min_y, max_x, max_y = None, None, None, None
+        font = engine.renderer.font
         for i, btn in enumerate(engine.current_menu_buttons):
             label_text = self.substitute_variables(btn["raw_label"], engine)
-            text_surface = font.render(label_text, True, (255, 255, 255))
+            v = btn.get("visual_params", {})
+            # Tamaño y posición
+            btn_width = int(v.get("width", int(screen_width * 0.3)))
+            btn_height = int(v.get("height", 40))
+            btn_x = int(v.get("x", 0))
+            btn_y = int(v.get("y", margin + i * (btn_height + margin)))
+            # Color y fuente
+            color = (100, 100, 100)
+            if "color" in v:
+                try:
+                    c = v["color"]
+                    if c.startswith('#'):
+                        c = c[1:]
+                    if len(c) == 6:
+                        color = tuple(int(c[i:i+2], 16) for i in (0, 2, 4))
+                except:
+                    pass
+            btn_font = font
+            if "font" in v and hasattr(engine.renderer, "get_font"):
+                try:
+                    btn_font = engine.renderer.get_font(v["font"])
+                except:
+                    pass
+            text_surface = btn_font.render(label_text, True, (255, 255, 255))
             text_rect = text_surface.get_rect()
-            btn_y = margin + i * (button_height + margin)
-            btn_rect = pygame.Rect(0, btn_y, panel_width, button_height)
-            text_rect.center = btn_rect.center
-            buttons.append({"rect": btn_rect, "event": btn["event"], "text": text_surface, "text_rect": text_rect})
+            text_rect.center = (btn_x + btn_width // 2, btn_y + btn_height // 2)
+            buttons.append({
+                "rect": pygame.Rect(btn_x, btn_y, btn_width, btn_height),
+                "event": btn["event"],
+                "text": text_surface,
+                "text_rect": text_rect,
+                "color": color
+            })
+            # Calcula el área mínima que contiene todos los botones
+            bx1, by1 = btn_x, btn_y
+            bx2, by2 = btn_x + btn_width, btn_y + btn_height
+            min_x = bx1 if min_x is None else min(min_x, bx1)
+            min_y = by1 if min_y is None else min(min_y, by1)
+            max_x = bx2 if max_x is None else max(max_x, bx2)
+            max_y = by2 if max_y is None else max(max_y, by2)
+        # Si no hay parámetros personalizados, usa layout clásico
+        if all((btn.get("visual_params") is None or ("x" not in btn["visual_params"] and "y" not in btn["visual_params"])) for btn in engine.current_menu_buttons):
+            panel_width = int(screen_width * 0.3)
+            panel_height = len(engine.current_menu_buttons) * (40 + margin) + margin
+            panel_x = 10
+            panel_y = (screen_height - panel_height) * 1
+        else:
+            # Ajusta el panel al área mínima de los botones
+            panel_x = max(min_x - margin, 0)
+            panel_y = max(min_y - margin, 0)
+            panel_width = min(max_x - min_x + 2 * margin, screen_width - panel_x)
+            panel_height = min(max_y - min_y + 2 * margin, screen_height - panel_y)
+            # Corrige las posiciones relativas de los botones
+            for btn in buttons:
+                btn["rect"].x = btn["rect"].x - panel_x
+                btn["rect"].y = btn["rect"].y - panel_y
+                btn["text_rect"].center = btn["rect"].center
+        panel_rect = pygame.Rect(panel_x, panel_y, panel_width, panel_height)
+        border_color = (255, 255, 255)
         selected_action = None
         running_menu = True
         while running_menu and engine.running:
@@ -953,10 +1011,8 @@ class EventManager:
                                 running_menu = False
                                 break
             panel_surface = pygame.Surface((panel_width, panel_height), pygame.SRCALPHA)
-            #panel_surface.fill(panel_bg_color)
-            #pygame.draw.rect(panel_surface, border_color, panel_surface.get_rect(), 2)
             for btn in buttons:
-                pygame.draw.rect(panel_surface, (100, 100, 100), btn["rect"])
+                pygame.draw.rect(panel_surface, btn["color"], btn["rect"])
                 pygame.draw.rect(panel_surface, border_color, btn["rect"], 2)
                 panel_surface.blit(btn["text"], btn["text_rect"])
             engine.renderer.draw_background()
@@ -1027,3 +1083,5 @@ class EventManager:
 
         sfx.play(loop=-1)
         engine.Log(f"[sfx] Playing sound effect '{filename}'.")
+
+### despues de aqui realiza la implementaciones.
