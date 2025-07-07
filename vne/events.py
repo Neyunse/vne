@@ -428,16 +428,34 @@ class EventManager:
 
     def handle_hide_sprite(self, arg, engine):
         """
-        Hides a sprite by removing it from the engine's sprite dictionary.
+        Hides a sprite from the screen and removes it from the sprite_layers dictionary.
         """
         sprite_alias = arg.strip()
-        if hasattr(engine, "sprite_layers") and sprite_alias in engine.sprite_layers:
-            engine.screen_manager.hide(engine.sprite_layers[sprite_alias])
+
+        if not sprite_alias:
+            engine.Log("[hide] Error: No sprite alias provided.")
+            return
+
+        if not hasattr(engine, "sprite_layers"):
+            engine.Log("[hide] Error: Engine has no 'sprite_layers' attribute.")
+            return
+
+        sprite = engine.sprite_layers.get(sprite_alias)
+        if not sprite:
+            engine.Log(f"[hide] Warning: Sprite '{sprite_alias}' not found.")
+            return
+
+        try:
+            # Hide the sprite visually
+            engine.screen_manager.hide(sprite)
+
+            # Remove the sprite from the dictionary
             del engine.sprite_layers[sprite_alias]
-            engine.Log(f"[hide] Sprite '{sprite_alias}' hidden.")
-        else:
-            engine.Log(f"[hide] Sprite '{sprite_alias}' not found to hide.")
-    
+
+            engine.Log(f"[hide] Sprite '{sprite_alias}' hidden and removed from sprite_layers.")
+        except Exception as e:
+            engine.Log(f"[hide] Error while hiding sprite '{sprite_alias}': {e}")
+
     def handle_Quit(self, arg, engine):
         """
         Prints a message and stops the engine.
@@ -447,38 +465,26 @@ class EventManager:
     
     def handle_end(self, arg, engine):
         """
-        Return to the main menu, limpia todos los sprites y overlays visuales, y aplica un efecto dissolve.
+        Returns to the main menu by clearing all visual elements (sprites, overlays)
+        and applying a dissolve-to-black effect.
         """
-        # Limpiar sprites visuales y overlays
-        if hasattr(engine, "sprite_layers"):
-            engine.sprite_layers.clear()
-            engine.sprite_layers = { }
-           
-        if hasattr(engine, "current_menu_panel") and engine.current_menu_panel:
-            engine.screen_manager.hide(engine.current_menu_panel)
-            engine.current_menu_panel = None
-        if hasattr(engine, "current_bg_visual") and engine.current_bg_visual:
-            engine.screen_manager.hide(engine.current_bg_visual)
-            engine.current_bg_visual = None
-        if hasattr(engine, "bg_layer") and engine.bg_layer:
-            engine.screen_manager.hide(engine.bg_layer)
-            engine.bg_layer = None
-        if hasattr(engine, "current_dialog_panel") and engine.current_dialog_panel:
-            engine.screen_manager.hide(engine.current_dialog_panel)
-            engine.current_dialog_panel = None
-            
-        # Efecto dissolve (fundido a negro)
+        
+        # hide all sprites and overlays 
+        engine.screen_manager.hide_all()
+        # Dissolve to black effect
         surface = engine.renderer.screen
         clock = engine.clock
         fade_surface = pygame.Surface(surface.get_size())
-        fade_surface.fill((0,0,0))
+        fade_surface.fill((0, 0, 0))
+        
         for alpha in range(0, 256, 16):
             fade_surface.set_alpha(alpha)
             engine.screen_manager.render(surface)
-            surface.blit(fade_surface, (0,0))
+            surface.blit(fade_surface, (0, 0))
             pygame.display.update()
             clock.tick(60)
- 
+
+        # Reset and reload scene
         engine.lexer.current = 0
         engine.lexer.load_scripts()
         self.clear_scene(engine)
@@ -489,7 +495,8 @@ class EventManager:
         clear the current scene.
 
         """
-        engine.screen_manager.screens.clear()
+
+        engine.sprite_layers.clear()
         engine.current_bg = None
         engine.current_bgm = None
         engine.sprite_layers = {}
@@ -968,6 +975,7 @@ class EventManager:
             x=panel_x,
             y=panel_y,
         )
+        engine.current_menu_panel.z_index = 10
         font = engine.renderer.font
         for i, btn in enumerate(engine.current_choice_buttons):
             label_text = self.substitute_variables(btn["raw_label"], engine)

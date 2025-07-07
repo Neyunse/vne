@@ -26,6 +26,13 @@ class ScreenManager:
     def hide(self, screen):
         if screen in self.screens:
             self.screens.remove(screen)
+    def hide_all(self):
+        """
+        Hides and removes all screens from the manager.
+        """
+        for screen in self.screens[:]:  # Copia para evitar modificación durante iteración
+            self.hide(screen)
+            
     def render(self, surface):
         for screen in sorted(self.screens, key=lambda e: getattr(e, 'z_index', 0)):
             screen.render(surface)
@@ -74,6 +81,7 @@ class VNEngine:
         self.theme = None
         self.audio_volume = 1.0
         self.audio_muted = False
+        self.force_clear_sprites = False
     
     def should_execute_line(self):
         """
@@ -134,6 +142,25 @@ class VNEngine:
         pygame.mixer.music.fadeout(duration)
         self.audio_volume = to_volume
         pygame.mixer.music.set_volume(self.audio_volume)
+    
+    def window_icon(self):
+        """
+        Loads and stores a sprite image with a specified alias and position.
+        """
+        load_image = self.lexer.load_image
+        relative_path = os.path.join("ui", "icon", "window_icon" + ".png")
+        try:
+            image_bytes = self.resource_manager.get_bytes(relative_path)
+
+            if image_bytes:
+                icon = load_image(relative_path)
+
+                return icon
+             
+            return None
+        except Exception as e:
+            pass
+        
     def run(self):
         """
         This Python function runs a game by loading a script, handling events, and updating the display
