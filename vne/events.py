@@ -400,17 +400,16 @@ class EventManager:
                 position, anim = "center", None
             # Animaciones básicas
             if anim == "fadein":
-            
                 animation = FadeAnimation(fade_in=True, duration=0.5)
             elif anim == "fadeout":
-             
                 animation = FadeAnimation(fade_in=False, duration=0.5)
-            elif anim == "slidein":
+                
+            # elif anim == "slidein":
           
-                animation = SlideAnimation(direction="left", duration=0.5)
-            elif anim == "slideout":
+            #     animation = SlideAnimation(direction="left", duration=0.5)
+            # elif anim == "slideout":
           
-                animation = SlideAnimation(direction="right", duration=0.5)
+            #     animation = SlideAnimation(direction="right", duration=0.5)
         relative_path = os.path.join("images", "sprites", sprite_alias + ".png")
         try:
             sprite_image = load_image(relative_path)
