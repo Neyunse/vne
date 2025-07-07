@@ -91,26 +91,6 @@ class VNEngine:
             return True
         return all(self.condition_stack)
     
-    def wait_for_keypress(self):
-        """
-        The `wait_for_keypress` function in Python uses Pygame to wait for a keypress or mouse click
-        while rendering and updating the display.
-        :return: If the event type is pygame.QUIT, the method will set self.running to False and return.
-        Otherwise, if the event type is pygame.MOUSEBUTTONDOWN, the method will set waiting to False. No
-        explicit return value is provided in this code snippet.
-        """
-        waiting = True
-        while waiting and self.running:
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    self.running = False
-                    return
-            
-                if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-                    waiting = False
-                
-                               
-            self.renderer.render()
          
     def Log(self, log, _=None):
         """
