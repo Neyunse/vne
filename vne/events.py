@@ -419,8 +419,11 @@ class EventManager:
             sprite_visual.z_index = 0
             if not hasattr(engine, "sprite_layers"):
                 engine.sprite_layers = {}
-            if sprite_alias in engine.sprite_layers:
-                engine.screen_manager.hide(engine.sprite_layers[sprite_alias])
+            
+            # TODO: THIS DON'T WORK CORRECTLY WITH @HIDE  
+            # if sprite_alias in engine.sprite_layers:
+            #     engine.screen_manager.hide(engine.sprite_layers[sprite_alias])
+            
             engine.sprite_layers[sprite_alias] = sprite_visual
             engine.screen_manager.show(sprite_visual)
         except Exception as e:
