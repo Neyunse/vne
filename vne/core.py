@@ -62,6 +62,8 @@ class VNEngine:
         self.current_menu_buttons = []
         self.typewriter_index = 0
         self.current_bgm = None
+        self.current_bg_filename = None
+        self.current_bgm_filename = None
         
         self.resource_manager = ResourceManager(self.game_path, self.Log)
         self.lexer = ScriptLexer(self.game_path, self)

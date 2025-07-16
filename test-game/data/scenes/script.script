@@ -1,3 +1,6 @@
+@menu
+  @button "Save" event Save()
+@endMenu
 @bg school
 @sprite kuro
 @bgm 70_Love

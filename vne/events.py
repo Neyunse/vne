@@ -6,12 +6,16 @@ from collections import ChainMap
 import re
 from vne.lexer import ScriptLexer
 from vne.aes import AES
-from vne.config import key, file_extension, aes_extension, bundle_extension
+from vne.config import (key, file_extension, aes_extension, bundle_extension,
+                        engine_version)
 import pickle
 from vne.Audio import Audio
 from vne.visual import VisualElement, Button, MenuPanel, VerticalLayout, DialogPanel, SpriteVisual
 from vne.visual import SpriteVisual
 from vne.visual import FadeAnimation, SlideAnimation
+
+QUICKSAVE_SLOT = "__quicksave__"
+
 class EventManager:
     def __init__(self):
         self.event_handlers = {}
@@ -75,10 +79,10 @@ class EventManager:
         self.register_event("endif", self.handle_endif)
 
         # Menu
-        self.register_event("menu", self.handle_menu)
+        self.register_event("mainMenu", self.handle_menu)
         self.register_event("button", self.handle_button)
         # Eliminar registro de ImageButton
-        self.register_event("endMenu", self.handle_endmenu)
+        self.register_event("endMainMenu", self.handle_endmenu)
 
         # ALIAS (MENU)
         self.register_event("choice", self.handle_choice_menu)
@@ -93,6 +97,8 @@ class EventManager:
         #TOOLS
         
         self.register_event("Log", self.handle_log)
+        self.register_event("Save", self.handle_save)
+        self.register_event("Continue", self.handle_load_save)
     
     def handle_log(self, arg, engine):
         arg = arg.strip()
@@ -305,6 +311,7 @@ class EventManager:
         """
         Loads and scales a background image to fit the window, manteniendo aspecto.
         """
+        engine.current_bg_filename = arg
         load_image = ScriptLexer(engine.game_path, engine).load_image
         relative_path = os.path.join("images", "bg", arg + ".jpg")
         try:
@@ -1115,13 +1122,116 @@ class EventManager:
         engine.vars[var_name] = new_value
         engine.Log(f"[Set] Variable '{var_name}' updated to '{new_value}'.")
     
-    # TODO: IMPLEMENT SAVE AND LOAD
-
     def handle_save(self, arg, engine):
-        pass
+        """
+        Saves the current game state to a slot.
+        Syntax: @save("slot1") or @save() for quicksave.
+        """
+        slot_name = arg.strip().strip('()').strip('"')
+        if not slot_name:
+            # If no slot name is provided, use the default quicksave slot.
+            slot_name = QUICKSAVE_SLOT
+
+        saves_dir = os.path.join(engine.game_path, "saves")
+        if not os.path.exists(saves_dir):
+            os.makedirs(saves_dir)
+
+        save_path = os.path.join(saves_dir, f"{slot_name}.sav")
+
+        # Gather serializable state.
+        # SpriteVisual objects contain pygame surfaces, which are not pickleable.
+        # We need to store the information required to recreate them.
+        sprite_states = {}
+        for alias, sprite_visual in engine.sprite_layers.items():
+            sprite_states[alias] = {
+                'alias': alias,
+                'position': sprite_visual.position,
+                'x': sprite_visual.x,
+                'y': sprite_visual.y,
+                'z_index': sprite_visual.z_index,
+                'alpha': sprite_visual.alpha,
+                # Note: animations are not saved in this implementation.
+            }
+
+        save_data = {
+            'version': engine_version,
+            'vars': engine.vars,
+            'characters': engine.characters,
+            'scenes': engine.scenes,
+            'checkpoints': engine.checkpoints,
+            'condition_stack': engine.condition_stack,
+            'lexer_state': {
+                'commands': engine.lexer.commands,
+                'original_commands': engine.lexer.original_commands,
+                'current': engine.lexer.current
+            },
+            'visual_state': {
+                'bg_filename': getattr(engine, 'current_bg_filename', None),
+                'sprites': sprite_states,
+            },
+            'audio_state': {
+                'bgm_filename': getattr(engine, 'current_bgm_filename', None)
+            }
+        }
+
+        try:
+            with open(save_path, 'wb') as f:
+                pickle.dump(save_data, f)
+            engine.Log(f"[save] Game state saved to slot '{slot_name}'.")
+        except Exception as e:
+            raise Exception(f"[save] Failed to save game to slot '{slot_name}': {e}")
     
     def handle_load_save(self, arg, engine):
-        pass
+        """
+        Loads the game state from a slot.
+        Syntax: @load("slot1") or @load() for quickload.
+        """
+        slot_name = arg.strip().strip('()').strip('"')
+        if not slot_name:
+            # If no slot name is provided, use the default quickload slot.
+            slot_name = QUICKSAVE_SLOT
+
+        save_path = os.path.join(engine.game_path, "saves", f"{slot_name}.sav")
+
+        if not os.path.exists(save_path):
+            raise Exception(f"[load] Save slot '{slot_name}' not found.")
+
+        try:
+            with open(save_path, 'rb') as f:
+                loaded_data = pickle.load(f)
+        except Exception as e:
+            raise Exception(f"[load] Failed to load game from slot '{slot_name}': {e}")
+
+        if loaded_data.get('version') != engine_version:
+            engine.Log(f"[load] Warning: Save file version '{loaded_data.get('version')}' differs from engine version '{engine_version}'.")
+
+        # --- Restore State ---
+        engine.screen_manager.hide_all()
+        engine.sprite_layers.clear()
+        
+        engine.vars.update(loaded_data['vars'])
+        engine.characters.update(loaded_data['characters'])
+        engine.scenes.update(loaded_data['scenes'])
+        engine.checkpoints = loaded_data['checkpoints']
+        engine.condition_stack = loaded_data['condition_stack']
+
+        lexer_state = loaded_data['lexer_state']
+        engine.lexer.commands = lexer_state['commands']
+        engine.lexer.original_commands = lexer_state['original_commands']
+        engine.lexer.current = lexer_state['current']
+
+        visual_state = loaded_data['visual_state']
+        if visual_state.get('bg_filename'):
+            self.handle_bg(visual_state['bg_filename'], engine)
+
+        for alias, state in visual_state.get('sprites', {}).items():
+            self.handle_sprite(f"{alias} at x={state['x']},y={state['y']}", engine)
+
+        audio_state = loaded_data.get('audio_state', {})
+        if audio_state.get('bgm_filename'):
+            self.handle_bgm(audio_state['bgm_filename'], engine)
+
+        engine.Log(f"[load] Game state loaded from slot '{slot_name}'.")
     
     def handle_bgm(self, arg, engine):
         """
@@ -1129,6 +1239,7 @@ class EventManager:
         data/audio/bgm/<filename>.mp3.
         """
         filename = arg.strip()
+        engine.current_bgm_filename = filename
 
         bgm = Audio(filename, "bgm", engine)
 
