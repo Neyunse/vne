@@ -1,5 +1,6 @@
-import pygame
 import os
+os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
+import pygame
 import platform
 from datetime import datetime
 from vne.lexer import ScriptLexer

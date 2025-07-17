@@ -9,7 +9,15 @@ from vne import Core
 from vne import aes
 from vne import config as CONFIG
 from vne.config import key, engine_version
-
+import re  
+import hashlib
+from PyQt6.QtWidgets import (
+    QApplication, QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel,
+    QFrame, QSizePolicy, QTextEdit, QStackedWidget, QTabWidget, QInputDialog, 
+    QMessageBox, QPlainTextEdit, QToolBar, QFileDialog, QDialog, QLineEdit, QFormLayout, QDialogButtonBox
+)
+from PyQt6.QtCore import Qt, QTimer, QRegularExpression, QSize, pyqtSignal, QProcess
+from PyQt6.QtGui import QCursor, QKeySequence, QShortcut, QSyntaxHighlighter, QTextCharFormat, QColor, QFont, QAction
 
 def compile_kag(source_file, target_file, key):
     """
@@ -30,7 +38,6 @@ def compile_kag(source_file, target_file, key):
  
     print(f"[compile] {source_file} -> {target_file}")
  
-
 def compile_all_kag_in_folder(data_folder, key):
     """
     Compiles all KAG files in the specified folder using the given key.
@@ -44,7 +51,6 @@ def compile_all_kag_in_folder(data_folder, key):
                 source_path = os.path.join(root, file)
                 target_path = os.path.splitext(source_path)[0] + CONFIG.aes_extension
                 compile_kag(source_path, target_path, key)
-
 
 def create_data_pkg(source_folder, output_pkg):
     """
@@ -195,8 +201,6 @@ def distribute_game(game_path):
     except Exception as e:
         raise Exception(e)
 
-
-
 def get_data_folder(game_path):
     data_folder = os.path.join(game_path, "data")
     if not os.path.exists(data_folder):
@@ -225,6 +229,8 @@ def arguments():
     """
     exe_name = os.path.basename(sys.executable).lower()
     parser = argparse.ArgumentParser()
+ 
+    
     parser.add_argument('-i', dest="new_project", default=False, action="store_true", help="initializes a new project")
     parser.add_argument('-p', dest="project_name", default=None, type=str, help="allows you to add a name to the project if -i is present", required='-i' in sys.argv)
     
@@ -254,27 +260,16 @@ def arguments():
 def engine_path(exePath=False):
     engine = os.path.dirname(os.path.abspath(__file__))
     engine = os.path.abspath(engine)
-    
+  
     if exePath:
-        return os.path.abspath(sys.executable)
+        if sys.executable:
+            return os.path.abspath(sys.executable)
+        
+        return engine
     
     return engine
 
-import sys
-import os
-import re  
-import hashlib
-import shutil
-from PyQt6.QtWidgets import (
-    QApplication, QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel,
-    QFrame, QSizePolicy, QTextEdit, QStackedWidget, QTabWidget, QInputDialog, 
-    QMessageBox, QPlainTextEdit, QToolBar, QFileDialog, QDialog, QLineEdit, QFormLayout, QDialogButtonBox
-)
-from PyQt6.QtCore import Qt, QTimer, QRegularExpression, QStringListModel, QSize, pyqtSignal, QProcess
-from PyQt6.QtGui import QCursor, QKeySequence, QShortcut, QSyntaxHighlighter, QTextCharFormat, QColor, QFont, QAction
-
 PROJECT_FOLDER = "projects"
-
 class NewProjectDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -304,7 +299,6 @@ class NewProjectDialog(QDialog):
 
     def get_data(self):
         return self.title_input.text().strip(), self.directory_input.text().strip()
-
 class VNScriptHighlighter(QSyntaxHighlighter):
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -383,11 +377,14 @@ class VNScriptHighlighter(QSyntaxHighlighter):
 
 class MainView(QWidget):
     openExternalProject = pyqtSignal(str)
-    def __init__(self, go_to_editor, projects):
+    openNewProject = pyqtSignal(str)
+    
+    def __init__(self, go_to_editor, projects, projects_dir):
         super().__init__()
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         self.go_to_editor = go_to_editor
         self.projects = projects
+        self.projects_dir = projects_dir
         self.init_ui()
 
     def init_ui(self):
@@ -443,9 +440,14 @@ class MainView(QWidget):
                 return
 
             # Validate directory doesn't already exist in projects
-            destination = os.path.join(PROJECT_FOLDER, directory)
+            destination = os.path.join(self.projects_dir, directory)
             
-            init_game(destination, title)
+            if destination:
+                init_game(destination, title)
+                
+                path = os.path.join(destination, title)
+                
+                self.openNewProject.emit(path)
         else:
             dialog.close()
     
@@ -469,7 +471,7 @@ class MainView(QWidget):
         text_area = QVBoxLayout()
         title = QLabel(name)
         title.setStyleSheet("font-weight: bold; font-size: 15px;")
-        subtitle = QLabel(f"/{PROJECT_FOLDER}/{name}")
+        subtitle = QLabel(os.path.abspath(f"{self.projects_dir}/{name}"))
         subtitle.setStyleSheet("font-size: 11px; color: #9999bb;")
         text_area.addWidget(title)
         text_area.addWidget(subtitle)
@@ -481,12 +483,11 @@ class MainView(QWidget):
         run_btn.setObjectName("runbtn")
         run_btn.setFixedSize(70, 30)
         
-        run_btn.clicked.connect(lambda: run_game(os.path.join(PROJECT_FOLDER, name)))
+        run_btn.clicked.connect(lambda: run_game(os.path.join(self.projects_dir, name)))
         layout.addWidget(run_btn)
 
         box.mousePressEvent = lambda e: self.go_to_editor(name)
         return box
-
 
 class EditorView(QWidget):
     def __init__(self, back_func, file_structure):
@@ -856,7 +857,6 @@ class EditorView(QWidget):
             if item.widget():
                 item.widget().deleteLater()
 
-
 class MainWindow(QWidget):
     def __init__(self):
         super().__init__()
@@ -865,13 +865,14 @@ class MainWindow(QWidget):
         self.setStyleSheet(self.qss())
 
         # Projects directory at same level as this script
-        self.projects_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), PROJECT_FOLDER)
+        self.engineDir = engine_path(True)
+        self.projects_dir = os.path.join(os.path.dirname(self.engineDir), PROJECT_FOLDER)
 
         self.projects = self.load_projects()
         self.mock_fs = {}
 
         self.stack = QStackedWidget(self)
-        self.main_view = MainView(self.go_to_editor, self.projects)
+        self.main_view = MainView(self.go_to_editor, self.projects, self.projects_dir)
         self.editor_view = EditorView(self.go_to_list, self.mock_fs)
 
         self.stack.addWidget(self.main_view)
@@ -884,6 +885,8 @@ class MainWindow(QWidget):
         layout.setSpacing(0)
         
         self.main_view.openExternalProject.connect(self.add_project_from_path)
+        self.main_view.openNewProject.connect(self.add_new_project)
+        
         
         self.process = QProcess(self)
         self.process.readyReadStandardOutput.connect(self.read_process_output)
@@ -914,6 +917,17 @@ class MainWindow(QWidget):
         print(f"Process finished with code {exitCode}, status {exitStatus}")
         QMessageBox.information(self, "VNEngine", f"Process finished with code {exitCode}")
     
+    def add_new_project(self, path):
+        name = os.path.basename(path)
+   
+        self.projects.append(name)
+        # Rebuild main view to reflect changes:
+        self.main_view.deleteLater()
+        self.main_view = MainView(self.go_to_editor, self.projects, self.projects_dir)
+        self.main_view.openNewProject.connect(self.add_new_project)
+        self.stack.insertWidget(0, self.main_view)
+        self.stack.setCurrentWidget(self.main_view)
+    
     def add_project_from_path(self, path):
   
         name = os.path.basename(path)
@@ -937,7 +951,7 @@ class MainWindow(QWidget):
         self.projects.append(name)
         # Rebuild main view to reflect changes:
         self.main_view.deleteLater()
-        self.main_view = MainView(self.go_to_editor, self.projects)
+        self.main_view = MainView(self.go_to_editor, self.projects, self.projects_dir)
         self.main_view.openExternalProject.connect(self.add_project_from_path)
         self.stack.insertWidget(0, self.main_view)
         self.stack.setCurrentWidget(self.main_view)
@@ -1073,12 +1087,12 @@ class MainWindow(QWidget):
         """
 
 if __name__ == "__main__":
-
     try:
         app = QApplication(sys.argv)
         window = MainWindow()
         window.show()
         sys.exit(app.exec())
+        
     except Exception as e:
         traceback_template = '''Exception error:
   %(message)s\n
