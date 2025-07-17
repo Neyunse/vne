@@ -106,10 +106,10 @@ def init_game(game_path, project_name):
 
     with open(main_menu_file, "w", encoding="utf-8") as f:
         f.write("# Main Menu\n")
-        f.write("@menu\n")
+        f.write("@mainMenu\n")
         f.write("  @button \"Start game\" event Scene(\"first\") \n")
         f.write("  @button \"Quit\" event Quit() \n")
-        f.write("@endMenu\n")
+        f.write("@endMainMenu\n")
 
     with open(ui_file, "w", encoding="utf-8") as f:
         f.write("# set the window size. eg: @Display(800,600)\n")
@@ -159,42 +159,49 @@ def distribute_game(game_path):
     
     :param game_path: The path to the directory containing the game files to be distributed.
     """
-    print(f"Packaging game from '{game_path}'...")
-    game_path = os.path.abspath(game_path)
-    game_name = os.path.basename(game_path)
- 
-    data_folder = os.path.join(game_path, "data")
-    compile_all_kag_in_folder(data_folder, key)
- 
-    pkg_path = os.path.join(game_path, "data.pkg")
-    create_data_pkg(data_folder, pkg_path)
+    try:
+        print(f"Packaging game from '{game_path}'...")
+        game_path = os.path.abspath(game_path)
+        game_name = os.path.basename(game_path)
+    
+        data_folder = os.path.join(game_path, "data")
+        compile_all_kag_in_folder(data_folder, key)
+    
+        pkg_path = os.path.join(game_path, "data.pkg")
+        create_data_pkg(data_folder, pkg_path)
 
-    current_dir = os.getcwd()
-    dist_root = os.path.join(current_dir, "dist")
-    if not os.path.exists(dist_root):
-        os.makedirs(dist_root)
-    dest_folder = os.path.join(dist_root, game_name)
-    if os.path.exists(dest_folder):
-        shutil.rmtree(dest_folder)
-    os.makedirs(dest_folder)
+        current_dir = os.getcwd()
+        dist_root = os.path.join(current_dir, "dist")
+        if not os.path.exists(dist_root):
+            os.makedirs(dist_root)
+        dest_folder = os.path.join(dist_root, game_name)
+        if os.path.exists(dest_folder):
+            shutil.rmtree(dest_folder)
+        os.makedirs(dest_folder)
 
-    shutil.copy2(pkg_path, os.path.join(dest_folder, f"data{CONFIG.bundle_extension}"))
-    print(f"[distribute] data{CONFIG.bundle_extension} copied to {dest_folder}")
- 
-    os.unlink(pkg_path)
- 
-    exe_source = os.path.abspath(sys.executable)
-    exe_dest = os.path.join(dest_folder, "game.exe")
-    shutil.copy2(exe_source, exe_dest)
-    print(f"[distribute] Binary copied: {exe_source} → {exe_dest}")
+        shutil.copy2(pkg_path, os.path.join(dest_folder, f"data{CONFIG.bundle_extension}"))
+        print(f"[distribute] data{CONFIG.bundle_extension} copied to {dest_folder}")
+    
+        os.unlink(pkg_path)
+        
+        exe_source = os.path.join(os.path.dirname(sys.executable),"lib", "win", "bootstrapper.exe")
+        exe_source = os.path.abspath(exe_source)
+   
+        exe_dest = os.path.join(dest_folder, "game.exe")
+        shutil.copy2(exe_source, exe_dest)
+        print(f"[distribute] Binary copied: {exe_source} → {exe_dest}")
 
-    print(f"Distribution completed at: {dest_folder}")
+        print(f"Distribution completed at: {dest_folder}")
+    except Exception as e:
+        raise Exception(e)
+
+
 
 def get_data_folder(game_path):
     data_folder = os.path.join(game_path, "data")
     if not os.path.exists(data_folder):
-        print(f"Data folder '{data_folder}' does not exist.")
-        return None
+        raise Exception(f"Data folder '{data_folder}' does not exist.")
+ 
     return data_folder
 
 def run_game(game_path):
@@ -243,17 +250,21 @@ def main():
         distribute_game(project_folder)
     else:
         raise Exception("Invalid command or missing arguments.")
+
+def engine_path(exePath=False):
+    engine = os.path.dirname(os.path.abspath(__file__))
+    engine = os.path.abspath(engine)
     
+    if exePath:
+        return os.path.abspath(sys.executable)
+    
+    return engine
+
 
 if __name__ == "__main__":
 
     try:
-        exe_name = os.path.basename(sys.executable).lower()
-        if "game.exe" in exe_name or "game" in exe_name:
-            engine = Core(os.path.abspath("."))
-            engine.run()
-        else:
-            main()
+        main()
     except Exception as e:
         traceback_template = '''Exception error:
   %(message)s\n
