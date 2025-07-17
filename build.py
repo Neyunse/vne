@@ -4,18 +4,23 @@ import sys
 import subprocess
 import zipfile
 
-def zip_folder_and_file(folder_path, file_path, zip_path):
+def zip_folders_and_files(folders, files, zip_path):
     with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
-      
-        for root, dirs, files in os.walk(folder_path):
-            for file in files:
-                full_path = os.path.join(root, file)
-                
-                arcname = os.path.relpath(full_path, start=os.path.dirname(folder_path))
-                zipf.write(full_path, arcname)
-        
-         
-        zipf.write(file_path, os.path.basename(file_path))
+ 
+        if folders:
+            for folder_path in folders:
+                if folder_path and os.path.isdir(folder_path):
+                    for root, dirs, folder_files in os.walk(folder_path):
+                        for file in folder_files:
+                            full_path = os.path.join(root, file)
+                            arcname = os.path.relpath(full_path, start=os.path.dirname(folder_path))
+                            zipf.write(full_path, arcname)
+
+ 
+        if files:
+            for file_path in files:
+                if file_path and os.path.isfile(file_path):
+                    zipf.write(file_path, os.path.basename(file_path))
 
 def build(spec="engine"):
     if spec == "bootstrapper":
@@ -35,6 +40,17 @@ def build(spec="engine"):
         f"{spec}.spec"
     ]
 
+def buildDoc():
+    return [
+        "sphinx-build",
+        "-b",
+        "dirhtml",
+        "-E",
+        "-a",
+        "./sphinx/source",
+        "./dist/docs"
+    ]
+
 def build_engine():
     # Verify that main.py exists in the current directory.
     if not os.path.exists("main.py"):
@@ -44,6 +60,7 @@ def build_engine():
     try:
         engine = build()
         bootstrapper = build("bootstrapper")
+        doc = buildDoc()
         
         
         print("[build.py] Compiling the engine with PyInstaller...")
@@ -54,7 +71,11 @@ def build_engine():
         subprocess.check_call(bootstrapper)
         print("[build.py] Engine compiled successfully in the 'dist' folder.")
         
-        zip_folder_and_file('./dist/lib', './dist/engine.exe', './dist/vne.zip')
+        print("[build.py] Building local documentation")
+        subprocess.check_call(doc)
+        print("[build.py] The documentation was correctly constructed")
+        
+        zip_folders_and_files(['./dist/lib', './dist/docs'], ['./dist/engine.exe'], './dist/vne.zip')
     except subprocess.CalledProcessError as e:
         print(f"[build.py] Error during compilation: {e}")
         sys.exit(1)

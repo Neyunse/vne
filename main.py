@@ -269,6 +269,7 @@ def engine_path(exePath=False):
     
     return engine
 
+
 PROJECT_FOLDER = "projects"
 class NewProjectDialog(QDialog):
     def __init__(self, parent=None):
@@ -400,6 +401,8 @@ class MainView(QWidget):
         new_btn.clicked.connect(self.create_new_project)
         open_btn = QPushButton("\ud83d\udcc2 Import Project")
         open_btn.clicked.connect(self.open_project_directory)
+ 
+        
         for btn in (new_btn, open_btn):
             btn.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
             btn.setFixedHeight(35)

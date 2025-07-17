@@ -11,6 +11,7 @@
 - @endMenu was renamed to @endMainMenu
 - Partial game saves were implemented.
 - Now the engine has UI
+- Added local documentation
 
 
 :gh_release:`1.0.0-alpha.11`
