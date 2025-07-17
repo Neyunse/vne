@@ -3,7 +3,7 @@ Menus, Button and Events
 
 Menu & Button
 +++++++++++++
-.. py:function:: @menu
+.. py:function:: @mainMenu
 
    Starts a menu block.
    It is expected that, after this command, @button commands will be issued to define the options.
@@ -20,22 +20,22 @@ Menu & Button
    
    :type: Event
 
-   :require: @menu 
-   :parent: @menu
+   :require: @mainMenu 
+   :parent: @mainMenu
    
-.. py:function:: @endMenu
+.. py:function:: @endMainMenu
 
    Close and render the menu and buttons
 
-   :require: @menu, @buttons
-   :parent: @menu
+   :require: @mainMenu, @buttons
+   :parent: @mainMenu
 
 .. code-block::
    :caption: system/main_menu.script
    
-   @menu
+   @mainMenu
    @button "Start" event Scene("first")
-   @endMenu
+   @endMainMenu
 
 Events
 +++++++++++++

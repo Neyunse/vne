@@ -86,7 +86,7 @@
       "patterns": [
         {
           "name": "keyword.control.block.script",
-          "match": "^\\s*@menu\\b"
+          "match": "^\\s*@mainMenu\\b"
         },
         {
           "name": "meta.event.button.script",
