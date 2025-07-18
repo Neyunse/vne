@@ -10,7 +10,7 @@ from vne.config import (key, file_extension, aes_extension, bundle_extension,
                         engine_version)
 import pickle
 from vne.Audio import Audio
-from vne.visual import VisualElement, Button, MenuPanel, VerticalLayout, DialogPanel, SpriteVisual
+from vne.visual import VisualElement, Button, MenuPanel, VerticalLayout, DialogPanel, SpriteVisual, AutoSizedBackground
 from vne.visual import SpriteVisual
 from vne.visual import FadeAnimation, SlideAnimation
 
@@ -316,33 +316,80 @@ class EventManager:
         engine.seen_dialogue.add(key_seen)
         engine.current_dialogue = ""
         engine.current_character_name = ""
+        
+    def parse_color(self, arg):
+        """
+        Converts a color name or hexadecimal code to an RGB color.
+        """
+        named_colors = {
+            "black": (0, 0, 0),
+            "white": (255, 255, 255),
+        }
+
+        if arg.lower() in named_colors:
+            return named_colors[arg.lower()]
+        
+        # Hex: #rgb o #rrggbb
+        hex_match = re.match(r"#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})", arg)
+        if hex_match:
+            hex_value = hex_match.group(1)
+            if len(hex_value) == 3:
+                r = int(hex_value[0]*2, 16)
+                g = int(hex_value[1]*2, 16)
+                b = int(hex_value[2]*2, 16)
+            else:
+                r = int(hex_value[0:2], 16)
+                g = int(hex_value[2:4], 16)
+                b = int(hex_value[4:6], 16)
+            return (r, g, b)
+
+        return None  
 
     def handle_bg(self, arg, engine):
         """
         Loads and scales a background image to fit the window, manteniendo aspecto.
         """
         engine.current_bg_filename = arg
-        load_image = ScriptLexer(engine.game_path, engine).load_image
-        relative_path = os.path.join("images", "bg", arg + ".jpg")
+        win_w = engine.renderer.screen.get_width()
+        win_h = engine.renderer.screen.get_height()
+
         try:
-            bg_image = load_image(relative_path)
-            # Obtener tamaño de ventana
-            win_w = engine.renderer.screen.get_width()
-            win_h = engine.renderer.screen.get_height()
-            img_w, img_h = bg_image.get_width(), bg_image.get_height()
-            scale = min(win_w / img_w, win_h / img_h)
-            new_w, new_h = int(img_w * scale), int(img_h * scale)
-            scaled_bg = pygame.transform.smoothscale(bg_image, (new_w, new_h))
-            # Centrar
-            bg_visual = SpriteVisual(scaled_bg, x=(win_w-new_w)//2, y=(win_h-new_h)//2, width=new_w, height=new_h)
+            color = self.parse_color(arg)
+
+            if color:
+                # Color sólido
+                bg_visual = AutoSizedBackground(0, 0, win_w, win_h)
+                bg_visual.bg_color = color
+                bg_visual.border_width = 0
+            else:
+                # Imagen
+                load_image = ScriptLexer(engine.game_path, engine).load_image
+                relative_path = os.path.join("images", "bg", arg + ".jpg")
+                bg_image = load_image(relative_path)
+
+                img_w, img_h = bg_image.get_width(), bg_image.get_height()
+                scale = min(win_w / img_w, win_h / img_h)
+                new_w, new_h = int(img_w * scale), int(img_h * scale)
+                scaled_bg = pygame.transform.smoothscale(bg_image, (new_w, new_h))
+
+                bg_visual = SpriteVisual(
+                    scaled_bg,
+                    x=(win_w - new_w) // 2,
+                    y=(win_h - new_h) // 2,
+                    width=new_w,
+                    height=new_h
+                )
+
             engine.current_bg_visual = bg_visual
-            # Show as background overlay (lowest layer)
+
+            # Fondo en capa más baja
             if hasattr(engine, "bg_layer"):
                 engine.screen_manager.hide(engine.bg_layer)
             engine.bg_layer = bg_visual
             engine.screen_manager.screens.insert(0, bg_visual)
+
         except Exception as e:
-            raise Exception(f"[bg] Error loading background image: {e}")
+            raise Exception(f"[bg] Error loading background: {e}")
     
     def handle_splash_screen(self, arg, engine):
         """
@@ -518,6 +565,10 @@ class EventManager:
         engine.current_bgm = None
         engine.sprite_layers = {}
         
+        engine.current_bg_visual = None 
+        engine.bg_layer = None 
+        engine.current_bg_filename = None
+        
         engine.characters.clear()
         engine.vars.clear()
         engine.scenes.clear()
@@ -608,14 +659,11 @@ class EventManager:
         """
         Processes a scene by loading and parsing a script file based on the scene alias.
         """
-        for screen in engine.screen_manager.screens[:]:
-            if getattr(screen, "is_main_menu", False):
-                engine.screen_manager.hide(screen)
-                self.current_menu = None
-                self.current_menu_buttons.clear()
-                self.current_menu_buttons = []
-                engine.current_menu_panel = None
-                break
+  
+        
+        if engine.current_bg_visual is None and engine.bg_layer is None and engine.current_bg_filename is None:
+            # SET A DEFAULT BG
+            self.dispatch("bg", "black", engine)
         arg = arg.strip()
         if arg.startswith("(") and arg.endswith(")"):
             arg = arg[1:-1].strip()

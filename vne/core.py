@@ -77,6 +77,8 @@ class VNEngine:
         self.current_bg_filename = None
         self.current_bgm_filename = None
         self.quick_menu_panel = None
+        self.current_bg_visual = None
+        self.bg_layer = None
         self.resource_manager = ResourceManager(self.game_path, self.Log)
         self.lexer = ScriptLexer(self.game_path, self)
         self.event_manager = EventManager()
