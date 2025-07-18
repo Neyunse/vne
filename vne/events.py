@@ -1102,7 +1102,8 @@ class EventManager:
             pygame.display.update()
         engine.current_menu_buttons = []
         engine.current_menu_panel = None
-
+        
+    # TODO: FIX MAIN MENU, PERSIST IF @BG NOT EXIST IN THE SCRIPT
     def handle_menu(self, arg, engine):
         engine.current_menu_buttons = []
         engine.Log("[menu] Menu block started.")
