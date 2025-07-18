@@ -81,10 +81,14 @@ class EventManager:
         # Menu
         self.register_event("mainMenu", self.handle_menu)
         self.register_event("button", self.handle_button)
-        # Eliminar registro de ImageButton
         self.register_event("endMainMenu", self.handle_endmenu)
+        
+        # quick menu
+        self.register_event("qm", self.handle_qm)
+        self.register_event("qmBtn", self.handle_qm_button)
+        self.register_event("qmEnd", self.handle_qm_end)
 
-        # ALIAS (MENU)
+        # choices
         self.register_event("choice", self.handle_choice_menu)
         self.register_event("option", self.handle_option_button)
         self.register_event("end_choice", self.handle_end_choice)
@@ -925,7 +929,78 @@ class EventManager:
         engine.renderer.update_set_mode((width, height))
         
         engine.Log(f"[Display] Window set to {width}x{height}.")
+    
+    # TODO: add quick menu 
+    def handle_qm(self, arg, engine):
+        """
+        Inicia un nuevo menú rápido (resetea botones actuales).
+        Este menú NO bloquea el flujo del juego.
+        """
+        engine.quick_menu_buttons = []
+        engine.Log("[quickmenu] Preparando Quick Menu.")
 
+    def handle_qm_button(self, arg, engine):
+        """
+        Agrega un botón al Quick Menu.
+        """
+        import re
+        pattern = r'^"([^"]+)"\s+event\s+(.+)$'
+        match = re.match(pattern, arg.strip())
+        if not match:
+            raise Exception('[quickmenu-button] Formato inválido. Usa: @qm-button "Texto" event Acción')
+        
+        label = match.group(1)
+        event = match.group(2).strip()
+        engine.quick_menu_buttons.append({"label": label, "event": event})
+        engine.Log(f"[quickmenu] Botón agregado: '{label}' -> @{event}")
+
+    def handle_qm_end(self, arg, engine):
+        """
+        Crea y muestra el panel del Quick Menu en pantalla.
+        Se mantiene visible durante el juego.
+        """
+        from vne.visual import MenuPanel, Button, VerticalLayout
+        screen_width = engine.config.get("screen_width", 800)
+        width = 140
+        height = len(engine.quick_menu_buttons) * 50 + 20
+        x = screen_width - width - 10
+        y = 10
+
+        panel = MenuPanel(
+            width=width,
+            height=height,
+            layout=VerticalLayout(),
+            x=x,
+            y=y
+        )
+        panel.z_index = 50  # z-index alto para estar siempre visible
+        font = engine.renderer.font
+
+        for btn in engine.quick_menu_buttons:
+            label_text = self.substitute_variables(btn["label"], engine)
+            def make_action(event_str=btn["event"]):
+                def action():
+                    engine.Log(f"[quickmenu] Acción: @{event_str}")
+                    engine.event_manager.handle(f"@{event_str}", engine)
+                return action
+            button = Button(
+                label=label_text,
+                action=make_action(),
+                width=width - 20,
+                height=40,
+                font=font
+            )
+            panel.add_child(button)
+
+        # Si ya había uno, reemplazarlo
+        if engine.quick_menu_panel:
+            engine.screen_manager.hide(engine.quick_menu_panel)
+
+        engine.quick_menu_panel = panel
+        engine.screen_manager.show(panel, force_top=True)
+        engine.Log("[quickmenu] Quick Menu activo.")
+
+    # example
     def handle_choice_menu(self, arg, engine):
         """
         Initiates a choicemenu block where subsequent @option commands define menu options.

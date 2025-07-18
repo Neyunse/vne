@@ -2,6 +2,10 @@
 @sprite kuro
 @bgm 70_Love
 
+@qm
+@qmBtn "Guardar" event Save()
+@qmEnd
+
 K: Hello, welcome to this engine test!
 K: my name is {K} and I am here for the sole purpose of debugging this project....
 K: everything seems to be working properly...
@@ -9,7 +13,6 @@ K: everything seems to be working properly...
 @choice
   @option "I found a bug!" event Set(chek, true)
   @option "No bugs" event Set(chek, false)
-  
 @end_choice
 
 @if chek

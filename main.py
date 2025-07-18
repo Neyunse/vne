@@ -17,7 +17,7 @@ from PyQt6.QtWidgets import (
     QMessageBox, QPlainTextEdit, QToolBar, QFileDialog, QDialog, QLineEdit, QFormLayout, QDialogButtonBox
 )
 from PyQt6.QtCore import Qt, QTimer, QRegularExpression, QSize, pyqtSignal, QProcess
-from PyQt6.QtGui import QCursor, QKeySequence, QShortcut, QSyntaxHighlighter, QTextCharFormat, QColor, QFont, QAction
+from PyQt6.QtGui import QCursor, QTextDocument ,QKeySequence, QShortcut, QSyntaxHighlighter, QTextCharFormat, QColor, QFont, QAction
 
 def compile_kag(source_file, target_file, key):
     """
@@ -257,16 +257,17 @@ def arguments():
     else:
         raise Exception("Invalid command or missing arguments.")
 
-def engine_path(exePath=False):
+def engine_path():
+    executable_path = os.path.abspath(sys.executable)
+    
+    if executable_path.endswith(".exe") and not executable_path.lower().endswith("python.exe"):
+        executable = os.path.dirname(sys.executable)
+        executable = os.path.abspath(executable)
+        return executable
+        
     engine = os.path.dirname(os.path.abspath(__file__))
     engine = os.path.abspath(engine)
-  
-    if exePath:
-        if sys.executable:
-            return os.path.abspath(sys.executable)
         
-        return engine
-    
     return engine
 
 
@@ -301,8 +302,8 @@ class NewProjectDialog(QDialog):
     def get_data(self):
         return self.title_input.text().strip(), self.directory_input.text().strip()
 class VNScriptHighlighter(QSyntaxHighlighter):
-    def __init__(self, parent=None):
-        super().__init__(parent)
+    def __init__(self, document: QTextDocument):
+        super().__init__(document)
         
         # Formats
         self.keywordFormat = QTextCharFormat()
@@ -355,7 +356,7 @@ class VNScriptHighlighter(QSyntaxHighlighter):
         self.rules.append((QRegularExpression(r'#.*'), self.commentFormat))
         
         # Numbers 
-        self.rules.append((QRegularExpression(r'^[0-9]*$'), self.keywordFormat))
+        self.rules.append((QRegularExpression(r'\b\d+(\.\d+)?\b'), self.keywordFormat))
         
         # Defined (e.g. m: Hello)
         self.rules.append((
@@ -366,6 +367,7 @@ class VNScriptHighlighter(QSyntaxHighlighter):
             QRegularExpression(r'^\s*([a-zA-Z_]\w*)\*'), self.stringFormat))
 
     def highlightBlock(self, text):
+        has_format = False
         for pattern, fmt in self.rules:
             it = pattern.globalMatch(text)
             while it.hasNext():
@@ -373,7 +375,10 @@ class VNScriptHighlighter(QSyntaxHighlighter):
                 start = match.capturedStart()
                 length = match.capturedLength()
                 self.setFormat(start, length, fmt)
-
+                has_format = True
+        if not has_format:
+            # Asegura que la línea se redibuje si no hay ningún match
+            self.setFormat(0, len(text), QTextCharFormat())
         self.setCurrentBlockState(0)
 
 class MainView(QWidget):
@@ -503,6 +508,7 @@ class EditorView(QWidget):
         self.timers = {}            # {path: QTimer for auto save}
         self.mock_fs_base_path = ""  # absolute path of the project
         self.exclude = [".aes", ".sav", "saves"]
+        self.highlighters = {}
         self.init_ui()
     
     def run_project(self,_):
@@ -772,8 +778,7 @@ class EditorView(QWidget):
         self.tabs.addTab(editor, path.split("/")[-1])
         self.tabs.setCurrentWidget(editor)
         self.opened_files[path] = editor
-      
-
+       
         # Save original and initial hash
         initial_hash = self.calculate_hash(content)
         self.file_hashes[path] = initial_hash
@@ -787,7 +792,7 @@ class EditorView(QWidget):
         self.timers[path] = timer
 
         editor.textChanged.connect(lambda r=path, e=editor: self.on_text_changed(r, e))
-
+        editor.textChanged.connect(lambda: QTimer.singleShot(0, highlighter.rehighlight))
     def on_text_changed(self, path, editor):
         current_text = editor.toPlainText()
         new_hash = self.calculate_hash(current_text)
@@ -868,8 +873,9 @@ class MainWindow(QWidget):
         self.setStyleSheet(self.qss())
 
         # Projects directory at same level as this script
-        self.engineDir = engine_path(True)
-        self.projects_dir = os.path.join(os.path.dirname(self.engineDir), PROJECT_FOLDER)
+        self.engineDir = engine_path()
+        print(self.engineDir)
+        self.projects_dir = os.path.join(self.engineDir, PROJECT_FOLDER)
 
         self.projects = self.load_projects()
         self.mock_fs = {}
