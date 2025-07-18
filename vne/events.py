@@ -608,11 +608,14 @@ class EventManager:
         """
         Processes a scene by loading and parsing a script file based on the scene alias.
         """
-        if hasattr(engine, "current_menu_panel") and engine.current_menu_panel:
-            engine.screen_manager.hide(engine.current_menu_panel)
-            engine.current_menu_panel = None
-            engine.current_menu_buttons = []
-            
+        for screen in engine.screen_manager.screens[:]:
+            if getattr(screen, "is_main_menu", False):
+                engine.screen_manager.hide(screen)
+                self.current_menu = None
+                self.current_menu_buttons.clear()
+                self.current_menu_buttons = []
+                engine.current_menu_panel = None
+                break
         arg = arg.strip()
         if arg.startswith("(") and arg.endswith(")"):
             arg = arg[1:-1].strip()
@@ -1131,7 +1134,7 @@ class EventManager:
     def handle_endmenu(self, arg, engine):
         if not hasattr(engine, "current_menu_buttons") or not engine.current_menu_buttons:
             raise Exception("[endmenu] There are no buttons defined in the menu.")
-        engine.current_menu_panel = MenuPanel(width=500, height=400, layout=VerticalLayout(), no_bg=True, no_border=True, is_main_menu=True, is_modal=False)
+        engine.current_menu_panel = MenuPanel(width=500, height=400, layout=VerticalLayout(), no_bg=True, no_border=True, is_main_menu=True)
         font = engine.renderer.font
         for btn in engine.current_menu_buttons:
             v = btn.get("visual_params", {})
@@ -1153,17 +1156,10 @@ class EventManager:
                     btn_font = engine.renderer.get_font(v["font"])
                 except:
                     pass
-            
-            button = None
             def make_action(event_str=btn["event"]):
                 def action():
-                    # 💥 LIMPIEZA del menú actual antes de ejecutar el evento
-                  
-                  
-                    engine.screen_manager.hide(engine.current_menu_panel)
-                    engine.current_menu_panel.remove_child(button)
                     engine.Log(f"[menu] Selected action: @{event_str}")
-                     
+                    engine.screen_manager.hide(engine.current_menu_panel)
                     engine.event_manager.handle(f"@{event_str}", engine)
                 return action
             button = Button(
@@ -1175,7 +1171,7 @@ class EventManager:
                 font=btn_font
             )
             engine.current_menu_panel.add_child(button)
-        engine.screen_manager.show(engine.current_menu_panel, False)
+        engine.screen_manager.show(engine.current_menu_panel)
         # Wait for menu to close, process events to avoid freeze
         while engine.current_menu_panel in engine.screen_manager.screens and engine.running:
             for event in pygame.event.get():
@@ -1186,7 +1182,6 @@ class EventManager:
             engine.clock.tick(30)
             engine.screen_manager.render(engine.renderer.screen)
             pygame.display.update()
-            
         engine.current_menu_buttons = []
         engine.current_menu_panel = None
 
