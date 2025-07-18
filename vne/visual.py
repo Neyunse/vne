@@ -69,6 +69,11 @@ class VisualElement:
     def add_child(self, child):
         child.parent = self
         self.children.append(child)
+    
+    def remove_child(self, child):
+        if child in self.children:
+            self.children.remove(child)
+            child.parent = None
 
     def add_animation(self, animation):
         self.animations.append(animation)
@@ -195,13 +200,17 @@ class MenuPanel(VisualElement):
                  layout=None, 
                  theme=None,
                  no_bg=False,
-                 no_border=False
+                 no_border=False,
+                 is_main_menu=False,
+                 is_modal=True
         ):
         super().__init__(x, y, width, height, theme=theme)
         self.layout = layout
         # Eliminar fondo y borde para el menú principal
         self.no_bg = no_bg
         self.no_border = no_border
+        self.is_modal = is_modal
+        self.is_main_menu = is_main_menu
     def render(self, surface):
         if not self.visible:
             return
@@ -464,43 +473,4 @@ class ScaleAnimation(Animation):
         element.height = int(element.height * scale)
         if t >= 1.0:
             self.finished = True
-
-class QuickMenu(VisualElement):
-    def __init__(self, screen, font, actions):
-        self.screen = screen
-        self.font = font
-        self.actions = actions  # Diccionario: {"Guardar": función, ...}
-        self.buttons = []
-        self.visible = True
-        self.build_buttons()
-
-    def build_buttons(self):
-        labels = list(self.actions.keys())
-        width = 120
-        height = 40
-        padding = 10
-        x = self.screen.get_width() - width - 10
-        y = 10
-
-        for label in labels:
-            rect = pygame.Rect(x, y, width, height)
-            self.buttons.append((label, rect))
-            y += height + padding
-
-    def render(self):
-        if not self.visible:
-            return
-        for label, rect in self.buttons:
-            pygame.draw.rect(self.screen, (60, 60, 60), rect)
-            pygame.draw.rect(self.screen, (255, 255, 255), rect, 2)
-            text_surf = self.font.render(label, True, (255, 255, 255))
-            text_rect = text_surf.get_rect(center=rect.center)
-            self.screen.blit(text_surf, text_rect)
-
-    def handle_event(self, event):
-        if not self.visible or event.type != pygame.MOUSEBUTTONDOWN:
-            return
-        for label, rect in self.buttons:
-            if rect.collidepoint(event.pos):
-                if label in self.actions:
-                    self.actions[label]()
+ 

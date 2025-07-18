@@ -148,8 +148,13 @@ def init_game(game_path, project_name):
     
     with open(vars_file, "w", encoding="utf-8") as f:
         f.write("# Include variables here")
-
+ 
     with open(first_scene_file, "w", encoding="utf-8") as f:
+        f.write("# QuickMenu\n")
+        f.write("@qm\n")
+        f.write('@qmBtn "Save" event Save()\n')
+        f.write("@qmEnd\n\n")
+        f.write("# Start writing your story here!\n")
         f.write("K: Hello!\n")
         f.write("K: my name is {K}.\n")
         f.write(f"K: start editing scenes/first{CONFIG.file_extension} to add dialogues.\n")
@@ -509,6 +514,7 @@ class EditorView(QWidget):
         self.mock_fs_base_path = ""  # absolute path of the project
         self.exclude = [".aes", ".sav", "saves"]
         self.highlighters = {}
+        self.save_action = None
         self.init_ui()
     
     def run_project(self,_):
@@ -566,14 +572,14 @@ class EditorView(QWidget):
         self.toolbar.setIconSize(QSize(16, 16))
 
         
-        save_action = QAction("💾", self)
-        save_action.setToolTip("Save the currently opened file")
-        
-        save_action.triggered.connect(self.save_current_file)
-        self.toolbar.addAction(save_action)
+        self.save_action = QAction("💾", self)
+        self.save_action.setToolTip("Save the currently opened file. Alias (Ctrl+S)")
+ 
+        self.save_action.triggered.connect(self.save_current_file)
+        self.toolbar.addAction(self.save_action)
         # Action: Run
         run_action = QAction("▶", self)
-        run_action.setToolTip("Run project")
+        run_action.setToolTip("Run project. Alias (Ctrl+R)")
 
         run_action.triggered.connect(self.run_project)
         self.toolbar.addAction(run_action)
@@ -593,12 +599,7 @@ class EditorView(QWidget):
         self.tabs.setTabsClosable(True)
         self.tabs.tabCloseRequested.connect(self.close_tab)
         self.editor_layout.addWidget(self.tabs)
-        
-        if self.tabs.count() == 0:
-            save_action.setVisible(False)
-        else:
-            save_action.setVisible(True)
-        
+
         container = QWidget()
         container.setLayout(self.editor_layout)
 
@@ -607,7 +608,11 @@ class EditorView(QWidget):
         layout.setSpacing(0)
         
         shortcut_save = QShortcut(QKeySequence("Ctrl+S"), self)
+        shortcut_run = QShortcut(QKeySequence("Ctrl+R"), self)
+        
         shortcut_save.activated.connect(self.save_current_file)
+        shortcut_run.activated.connect(lambda: self.run_project(""))
+        
         
     
     def save_current_file(self):
@@ -761,7 +766,7 @@ class EditorView(QWidget):
             QMessageBox.warning(self, "VNEngine Launcher", "⚠️ Limit of 10 active tabs reached.",
                                 QMessageBox.StandardButton.Ok)
             return
-
+        
         # 🔽 Read from the real file on disk
         absolute_path = os.path.join(self.mock_fs_base_path, path)
         try:

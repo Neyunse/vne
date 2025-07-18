@@ -1,0 +1,5 @@
+# Main Menu
+@mainMenu
+  @button "Start game" event Scene("first") 
+  @button "Quit" event Quit() 
+@endMainMenu

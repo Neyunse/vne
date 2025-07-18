@@ -13,25 +13,26 @@ from vne.aes import AES
 from vne.visual import VisualElement, MenuPanel, Button, VerticalLayout
 
 class ScreenManager:
-    def __init__(self):
+    def __init__(self, modal=False):
         self.screens = []
+        self.modal = modal
+        self.z_index = 0
     def show(self, screen, force_top=True):
-        # Elimina si ya existe para evitar duplicados
         if screen in self.screens:
             self.screens.remove(screen)
-        # Si es overlay crítico, siempre al tope
+  
         if force_top:
             self.screens.append(screen)
         else:
             self.screens.insert(0, screen)
     def hide(self, screen):
         if screen in self.screens:
-            self.screens.remove(screen)
+            self.screens.remove(screen) 
     def hide_all(self):
         """
         Hides and removes all screens from the manager.
         """
-        for screen in self.screens[:]:  # Copia para evitar modificación durante iteración
+        for screen in self.screens[:]: 
             self.hide(screen)
             
     def render(self, surface):
@@ -39,7 +40,16 @@ class ScreenManager:
             screen.render(surface)
     def handle_event(self, event):
         for screen in reversed(self.screens):
-            if screen.handle_event(event):
+            handled = screen.handle_event(event)
+            if handled:
+                # Si la pantalla es modal, no dejar pasar el evento a otras pantallas
+                if getattr(screen, 'modal', False):
+                    return True
+                # Si la pantalla no es modal pero manejó el evento, puede dejar pasar o no según necesidad
+                return True
+            # Si la pantalla es modal pero no manejó el evento, igualmente bloqueamos el evento para otras pantallas
+            if getattr(screen, 'modal', False):
+                # Modal que no manejó evento, bloqueamos para pantallas debajo
                 return True
         return False
 
@@ -222,16 +232,19 @@ VNE %(engineVersion)s
                     self.running = False
                     traceback_template = '''Exception error:
   %(message)s\n
-
+  
+  created %(createdAt)s
   %(plataform)s
   VNE %(engineVersion)s
   '''
                     self.Log(f"[Exception] Script was failed. Check the traceback.txt file for more information.")
                     
                     traceback_details = {
-                        'message' : e,
                         'plataform': f"{platform.system()}-{platform.version()}",
-                        'engineVersion': engine_version 
+                        'engineVersion': engine_version,
+                        'createdAt': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                        
+                        'message' : e,
                     }
                     
                     print(traceback_template % traceback_details)

@@ -3,7 +3,7 @@
 @bgm 70_Love
 
 @qm
-@qmBtn "Guardar" event Save()
+@qmBtn "Save" event Save()
 @qmEnd
 
 K: Hello, welcome to this engine test!
@@ -23,6 +23,8 @@ K: everything seems to be working properly...
   @bgm escape-ofv
   K: Perfect! everything works correctly
 @endif
+
+@jump_scene second
 
 @end
 

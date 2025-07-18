@@ -1,0 +1,11 @@
+# QuickMenu
+@qm
+@qmBtn "Save" event Save()
+@qmEnd
+
+# Start writing your story here!
+K: Hello!
+K: my name is {K}.
+K: start editing scenes/first.script to add dialogues.
+K: good luck in your stories.
+@end

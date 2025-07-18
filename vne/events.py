@@ -287,6 +287,12 @@ class EventManager:
                     engine.running = False
                     waiting = False
                 elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                    # Primero dejar que los paneles manejen el evento
+                    handled = engine.screen_manager.handle_event(event)
+                    if handled:
+                        # El evento fue consumido por un panel, no avanzar el diálogo
+                        continue
+                    # Si no fue manejado, entonces avanzamos el diálogo
                     if typewriter_index < len(full_text):
                         mostrar_todo = True
                     else:
@@ -602,6 +608,11 @@ class EventManager:
         """
         Processes a scene by loading and parsing a script file based on the scene alias.
         """
+        if hasattr(engine, "current_menu_panel") and engine.current_menu_panel:
+            engine.screen_manager.hide(engine.current_menu_panel)
+            engine.current_menu_panel = None
+            engine.current_menu_buttons = []
+            
         arg = arg.strip()
         if arg.startswith("(") and arg.endswith(")"):
             arg = arg[1:-1].strip()
@@ -627,7 +638,7 @@ class EventManager:
         new_lexer.current = 0
         engine.lexer = new_lexer
         engine.Log(f"[process_scene] New scene loaded with {len(engine.lexer.commands)} commands.")
-    
+        
     def handle_jump_scene(self, arg, engine):
         """
         Processes the scene jump command.
@@ -1090,7 +1101,6 @@ class EventManager:
         engine.current_menu_panel = None
 
     def handle_menu(self, arg, engine):
-        engine.current_menu_panel = MenuPanel(width=500, height=400, layout=VerticalLayout(), no_bg=True, no_border=True)
         engine.current_menu_buttons = []
         engine.Log("[menu] Menu block started.")
 
@@ -1121,6 +1131,7 @@ class EventManager:
     def handle_endmenu(self, arg, engine):
         if not hasattr(engine, "current_menu_buttons") or not engine.current_menu_buttons:
             raise Exception("[endmenu] There are no buttons defined in the menu.")
+        engine.current_menu_panel = MenuPanel(width=500, height=400, layout=VerticalLayout(), no_bg=True, no_border=True, is_main_menu=True, is_modal=False)
         font = engine.renderer.font
         for btn in engine.current_menu_buttons:
             v = btn.get("visual_params", {})
@@ -1142,10 +1153,17 @@ class EventManager:
                     btn_font = engine.renderer.get_font(v["font"])
                 except:
                     pass
+            
+            button = None
             def make_action(event_str=btn["event"]):
                 def action():
-                    engine.Log(f"[menu] Selected action: @{event_str}")
+                    # 💥 LIMPIEZA del menú actual antes de ejecutar el evento
+                  
+                  
                     engine.screen_manager.hide(engine.current_menu_panel)
+                    engine.current_menu_panel.remove_child(button)
+                    engine.Log(f"[menu] Selected action: @{event_str}")
+                     
                     engine.event_manager.handle(f"@{event_str}", engine)
                 return action
             button = Button(
@@ -1157,7 +1175,7 @@ class EventManager:
                 font=btn_font
             )
             engine.current_menu_panel.add_child(button)
-        engine.screen_manager.show(engine.current_menu_panel)
+        engine.screen_manager.show(engine.current_menu_panel, False)
         # Wait for menu to close, process events to avoid freeze
         while engine.current_menu_panel in engine.screen_manager.screens and engine.running:
             for event in pygame.event.get():
@@ -1168,6 +1186,7 @@ class EventManager:
             engine.clock.tick(30)
             engine.screen_manager.render(engine.renderer.screen)
             pygame.display.update()
+            
         engine.current_menu_buttons = []
         engine.current_menu_panel = None
 
@@ -1216,18 +1235,21 @@ class EventManager:
         # Gather serializable state.
         # SpriteVisual objects contain pygame surfaces, which are not pickleable.
         # We need to store the information required to recreate them.
+        
         sprite_states = {}
         for alias, sprite_visual in engine.sprite_layers.items():
+          
             sprite_states[alias] = {
                 'alias': alias,
+      
                 'position': sprite_visual.position,
                 'x': sprite_visual.x,
                 'y': sprite_visual.y,
                 'z_index': sprite_visual.z_index,
                 'alpha': sprite_visual.alpha,
-                # Note: animations are not saved in this implementation.
+                # Animación no guardada
             }
-
+        
         save_data = {
             'version': engine_version,
             'vars': engine.vars,
@@ -1235,10 +1257,11 @@ class EventManager:
             'scenes': engine.scenes,
             'checkpoints': engine.checkpoints,
             'condition_stack': engine.condition_stack,
+            'qm': engine.quick_menu_buttons,
             'lexer_state': {
                 'commands': engine.lexer.commands,
                 'original_commands': engine.lexer.original_commands,
-                'current': engine.lexer.current
+                'current': engine.lexer.current-1 # adding -1 improve the save fidelity
             },
             'visual_state': {
                 'bg_filename': getattr(engine, 'current_bg_filename', None),
@@ -1283,7 +1306,8 @@ class EventManager:
         # --- Restore State ---
         engine.screen_manager.hide_all()
         engine.sprite_layers.clear()
-        
+        engine.quick_menu_buttons.clear()
+      
         engine.vars.update(loaded_data['vars'])
         engine.characters.update(loaded_data['characters'])
         engine.scenes.update(loaded_data['scenes'])
@@ -1294,13 +1318,18 @@ class EventManager:
         engine.lexer.commands = lexer_state['commands']
         engine.lexer.original_commands = lexer_state['original_commands']
         engine.lexer.current = lexer_state['current']
+        
+        for qm in loaded_data['qm']:
+            engine.quick_menu_buttons.append(qm)
+
+        self.dispatch("qmEnd", arg, engine)
 
         visual_state = loaded_data['visual_state']
         if visual_state.get('bg_filename'):
             self.handle_bg(visual_state['bg_filename'], engine)
 
         for alias, state in visual_state.get('sprites', {}).items():
-            self.handle_sprite(f"{alias} at x={state['x']},y={state['y']}", engine)
+            self.handle_sprite(f"{alias}", engine)
 
         audio_state = loaded_data.get('audio_state', {})
         if audio_state.get('bgm_filename'):
