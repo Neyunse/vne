@@ -99,7 +99,7 @@ class VisualElement:
             temp_surface = pygame.Surface((self.width, self.height), pygame.SRCALPHA)
             pygame.draw.rect(temp_surface, color, temp_surface.get_rect(), border_radius=self.radius or self.theme.radius)
             border_color = self.border_color or self.theme.border_color
-            border_width = self.border_width or self.theme.border_width
+            border_width = self.border_width if self.border_width is not None else self.theme.border_width
             if border_width > 0:
                 pygame.draw.rect(temp_surface, border_color, temp_surface.get_rect(), border_width, border_radius=self.radius or self.theme.radius)
             temp_surface.set_alpha(self.alpha)
@@ -141,6 +141,12 @@ class VisualElement:
     def set_blur(self, enabled=True):
         # Placeholder for blur effect (requires pygame/surface manipulation)
         self.blur = enabled
+
+class AutoSizedBackground(VisualElement):
+    def render(self, surface):
+        self.width = surface.get_width()
+        self.height = surface.get_height()
+        super().render(surface)
 
 class Button(VisualElement):
     def __init__(self, label, action, x=0, y=0, width=200, height=40, color=None, font=None, theme=None, image=None, text_color=None):
