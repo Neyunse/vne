@@ -3,6 +3,7 @@
 
 **Fixes**
 
+- Fixed a bug that blocked the main menu in the scene and did not delete correctly.
 
 **Changes**
 
@@ -12,6 +13,7 @@
 - Partial game saves were implemented.
 - Now the engine has UI
 - Added local documentation
+- The CLI version was temporarily removed.
 
 
 :gh_release:`1.0.0-alpha.11`
