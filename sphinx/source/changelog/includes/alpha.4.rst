@@ -13,6 +13,6 @@ Moved menu
 
 @option menu needs Set event, so you need create a variable to use it. `Check this example <https://github.com/Neyunse/vne/blob/v1.0.0-alpha.4/test-game/data/scenes/first.script>`_
 
-:gh_release:`1.0.0-alpha.4`
+:gh_release:`v1.0.0-alpha.4`
 
 ....
