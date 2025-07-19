@@ -6,15 +6,9 @@ To start download the |currentLink|
 The engine
 ++++++++++
 
-The engine does not have a graphical interface, so most of the time it must be used from the CLI/Terminal.
+The engine has an easy to understand and use UI, allows you to create, debug, edit scripts and build projects easily and quickly.
 
-**CLI**
 
-- **-i**: If the engine will run in project creation mode, **-f** and **-p** are required.
-- **-r**: If the engine will run in project execution mode, **-f** is required.
-- **-d**: If the engine will run in distribution mode, **-f** is required.
-- **-f**: If this is present, the engine expects you to provide the name of the folder where your project is located.
-- **-p**: If this option is present, the engine expects you to provide the name of your project (different from **-f**), **-f** and **-i** are required.
 
 Folder Structure
 ++++++++++++++++++++
@@ -22,11 +16,12 @@ Folder Structure
 ::
 
         ├── engine.exe        
-        ├── test-game/          
-        │   ├── data/         
-        │   │   ├── system/       
-        │   │   ├── images/  
-        │   │   ├── scenes/   
+        ├── projects
+        │    ├── test-game/          
+        │       ├── data/         
+        │       ├── system/       
+        │       ├── images/  
+        │       ├── scenes/   
                 ├── ui/   
                 └── startup.script   
  
@@ -34,12 +29,7 @@ Folder Structure
 How to start
 ++++++++++++++++++++
 
-To create your first project is to run the terminal and run the engine in project creation mode.
-
-::
-        
-        .\engine.exe -f test-game -p "My awasome game" -i
- 
+To start creating a project, use the “New Project” button to create your project by choosing a title and the name of the directory to be used. remember to use the format XXX-XXX-XXX in the directory name if you decide to change it.
 
 **Simple dialog**
 
@@ -118,15 +108,8 @@ new scenes you create are disconnected from the flow of your project.
 
 **Test your game**
 
-Once you have finished editing to your liking you can preview your project using
-::
-        
-        .\engine.exe -f test-game -r
+Once you have finished editing your project, you can use the play button from the toolbar menu in the editor view or from the start by clicking on the green button.
 
 **Export your project**
 
-To export your project you need to use the CLI/Terminal to distribute your game...
-
-::
-        
-        .\engine.exe -f test-game -d
+To export your project, enter the editor and then click on the hammer emoji. This will generate a folder “/dist/*”.

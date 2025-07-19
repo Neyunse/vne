@@ -2,7 +2,7 @@
   "name": "vne",
   "displayName": "Visual Novel Engine Syntax", 
   "description": "A custom visual novel engine",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "engines": {
     "vscode": "^1.96.0"
   },

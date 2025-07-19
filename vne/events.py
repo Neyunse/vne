@@ -6,12 +6,16 @@ from collections import ChainMap
 import re
 from vne.lexer import ScriptLexer
 from vne.aes import AES
-from vne.config import key, file_extension, aes_extension, bundle_extension
+from vne.config import (key, file_extension, aes_extension, bundle_extension,
+                        engine_version)
 import pickle
 from vne.Audio import Audio
-from vne.visual import VisualElement, Button, MenuPanel, VerticalLayout, DialogPanel, SpriteVisual
+from vne.visual import VisualElement, Button, MenuPanel, VerticalLayout, DialogPanel, SpriteVisual, AutoSizedBackground
 from vne.visual import SpriteVisual
 from vne.visual import FadeAnimation, SlideAnimation
+
+QUICKSAVE_SLOT = "__quicksave__"
+
 class EventManager:
     def __init__(self):
         self.event_handlers = {}
@@ -75,12 +79,16 @@ class EventManager:
         self.register_event("endif", self.handle_endif)
 
         # Menu
-        self.register_event("menu", self.handle_menu)
+        self.register_event("mainMenu", self.handle_menu)
         self.register_event("button", self.handle_button)
-        # Eliminar registro de ImageButton
-        self.register_event("endMenu", self.handle_endmenu)
+        self.register_event("endMainMenu", self.handle_endmenu)
+        
+        # quick menu
+        self.register_event("qm", self.handle_qm)
+        self.register_event("qmBtn", self.handle_qm_button)
+        self.register_event("qmEnd", self.handle_qm_end)
 
-        # ALIAS (MENU)
+        # choices
         self.register_event("choice", self.handle_choice_menu)
         self.register_event("option", self.handle_option_button)
         self.register_event("end_choice", self.handle_end_choice)
@@ -93,6 +101,8 @@ class EventManager:
         #TOOLS
         
         self.register_event("Log", self.handle_log)
+        self.register_event("Save", self.handle_save)
+        self.register_event("Continue", self.handle_load_save)
     
     def handle_log(self, arg, engine):
         arg = arg.strip()
@@ -277,6 +287,12 @@ class EventManager:
                     engine.running = False
                     waiting = False
                 elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                    # Primero dejar que los paneles manejen el evento
+                    handled = engine.screen_manager.handle_event(event)
+                    if handled:
+                        # El evento fue consumido por un panel, no avanzar el diálogo
+                        continue
+                    # Si no fue manejado, entonces avanzamos el diálogo
                     if typewriter_index < len(full_text):
                         mostrar_todo = True
                     else:
@@ -300,32 +316,80 @@ class EventManager:
         engine.seen_dialogue.add(key_seen)
         engine.current_dialogue = ""
         engine.current_character_name = ""
+        
+    def parse_color(self, arg):
+        """
+        Converts a color name or hexadecimal code to an RGB color.
+        """
+        named_colors = {
+            "black": (0, 0, 0),
+            "white": (255, 255, 255),
+        }
+
+        if arg.lower() in named_colors:
+            return named_colors[arg.lower()]
+        
+        # Hex: #rgb o #rrggbb
+        hex_match = re.match(r"#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})", arg)
+        if hex_match:
+            hex_value = hex_match.group(1)
+            if len(hex_value) == 3:
+                r = int(hex_value[0]*2, 16)
+                g = int(hex_value[1]*2, 16)
+                b = int(hex_value[2]*2, 16)
+            else:
+                r = int(hex_value[0:2], 16)
+                g = int(hex_value[2:4], 16)
+                b = int(hex_value[4:6], 16)
+            return (r, g, b)
+
+        return None  
 
     def handle_bg(self, arg, engine):
         """
         Loads and scales a background image to fit the window, manteniendo aspecto.
         """
-        load_image = ScriptLexer(engine.game_path, engine).load_image
-        relative_path = os.path.join("images", "bg", arg + ".jpg")
+        engine.current_bg_filename = arg
+        win_w = engine.renderer.screen.get_width()
+        win_h = engine.renderer.screen.get_height()
+
         try:
-            bg_image = load_image(relative_path)
-            # Obtener tamaño de ventana
-            win_w = engine.renderer.screen.get_width()
-            win_h = engine.renderer.screen.get_height()
-            img_w, img_h = bg_image.get_width(), bg_image.get_height()
-            scale = min(win_w / img_w, win_h / img_h)
-            new_w, new_h = int(img_w * scale), int(img_h * scale)
-            scaled_bg = pygame.transform.smoothscale(bg_image, (new_w, new_h))
-            # Centrar
-            bg_visual = SpriteVisual(scaled_bg, x=(win_w-new_w)//2, y=(win_h-new_h)//2, width=new_w, height=new_h)
+            color = self.parse_color(arg)
+
+            if color:
+                # Color sólido
+                bg_visual = AutoSizedBackground(0, 0, win_w, win_h)
+                bg_visual.bg_color = color
+                bg_visual.border_width = 0
+            else:
+                # Imagen
+                load_image = ScriptLexer(engine.game_path, engine).load_image
+                relative_path = os.path.join("images", "bg", arg + ".jpg")
+                bg_image = load_image(relative_path)
+
+                img_w, img_h = bg_image.get_width(), bg_image.get_height()
+                scale = min(win_w / img_w, win_h / img_h)
+                new_w, new_h = int(img_w * scale), int(img_h * scale)
+                scaled_bg = pygame.transform.smoothscale(bg_image, (new_w, new_h))
+
+                bg_visual = SpriteVisual(
+                    scaled_bg,
+                    x=(win_w - new_w) // 2,
+                    y=(win_h - new_h) // 2,
+                    width=new_w,
+                    height=new_h
+                )
+
             engine.current_bg_visual = bg_visual
-            # Show as background overlay (lowest layer)
+
+            # Fondo en capa más baja
             if hasattr(engine, "bg_layer"):
                 engine.screen_manager.hide(engine.bg_layer)
             engine.bg_layer = bg_visual
             engine.screen_manager.screens.insert(0, bg_visual)
+
         except Exception as e:
-            raise Exception(f"[bg] Error loading background image: {e}")
+            raise Exception(f"[bg] Error loading background: {e}")
     
     def handle_splash_screen(self, arg, engine):
         """
@@ -501,6 +565,10 @@ class EventManager:
         engine.current_bgm = None
         engine.sprite_layers = {}
         
+        engine.current_bg_visual = None 
+        engine.bg_layer = None 
+        engine.current_bg_filename = None
+        
         engine.characters.clear()
         engine.vars.clear()
         engine.scenes.clear()
@@ -591,6 +659,11 @@ class EventManager:
         """
         Processes a scene by loading and parsing a script file based on the scene alias.
         """
+  
+        
+        if engine.current_bg_visual is None and engine.bg_layer is None and engine.current_bg_filename is None:
+            # SET A DEFAULT BG
+            self.dispatch("bg", "black", engine)
         arg = arg.strip()
         if arg.startswith("(") and arg.endswith(")"):
             arg = arg[1:-1].strip()
@@ -616,7 +689,7 @@ class EventManager:
         new_lexer.current = 0
         engine.lexer = new_lexer
         engine.Log(f"[process_scene] New scene loaded with {len(engine.lexer.commands)} commands.")
-    
+        
     def handle_jump_scene(self, arg, engine):
         """
         Processes the scene jump command.
@@ -918,7 +991,78 @@ class EventManager:
         engine.renderer.update_set_mode((width, height))
         
         engine.Log(f"[Display] Window set to {width}x{height}.")
+    
+    # TODO: add quick menu 
+    def handle_qm(self, arg, engine):
+        """
+        Inicia un nuevo menú rápido (resetea botones actuales).
+        Este menú NO bloquea el flujo del juego.
+        """
+        engine.quick_menu_buttons = []
+        engine.Log("[quickmenu] Preparando Quick Menu.")
 
+    def handle_qm_button(self, arg, engine):
+        """
+        Agrega un botón al Quick Menu.
+        """
+        import re
+        pattern = r'^"([^"]+)"\s+event\s+(.+)$'
+        match = re.match(pattern, arg.strip())
+        if not match:
+            raise Exception('[quickmenu-button] Formato inválido. Usa: @qm-button "Texto" event Acción')
+        
+        label = match.group(1)
+        event = match.group(2).strip()
+        engine.quick_menu_buttons.append({"label": label, "event": event})
+        engine.Log(f"[quickmenu] Botón agregado: '{label}' -> @{event}")
+
+    def handle_qm_end(self, arg, engine):
+        """
+        Crea y muestra el panel del Quick Menu en pantalla.
+        Se mantiene visible durante el juego.
+        """
+        from vne.visual import MenuPanel, Button, VerticalLayout
+        screen_width = engine.config.get("screen_width", 800)
+        width = 140
+        height = len(engine.quick_menu_buttons) * 50 + 20
+        x = screen_width - width - 10
+        y = 10
+
+        panel = MenuPanel(
+            width=width,
+            height=height,
+            layout=VerticalLayout(),
+            x=x,
+            y=y
+        )
+        panel.z_index = 50  # z-index alto para estar siempre visible
+        font = engine.renderer.font
+
+        for btn in engine.quick_menu_buttons:
+            label_text = self.substitute_variables(btn["label"], engine)
+            def make_action(event_str=btn["event"]):
+                def action():
+                    engine.Log(f"[quickmenu] Acción: @{event_str}")
+                    engine.event_manager.handle(f"@{event_str}", engine)
+                return action
+            button = Button(
+                label=label_text,
+                action=make_action(),
+                width=width - 20,
+                height=40,
+                font=font
+            )
+            panel.add_child(button)
+
+        # Si ya había uno, reemplazarlo
+        if engine.quick_menu_panel:
+            engine.screen_manager.hide(engine.quick_menu_panel)
+
+        engine.quick_menu_panel = panel
+        engine.screen_manager.show(panel, force_top=True)
+        engine.Log("[quickmenu] Quick Menu activo.")
+
+    # example
     def handle_choice_menu(self, arg, engine):
         """
         Initiates a choicemenu block where subsequent @option commands define menu options.
@@ -1006,9 +1150,9 @@ class EventManager:
             pygame.display.update()
         engine.current_menu_buttons = []
         engine.current_menu_panel = None
-
+        
+    # TODO: FIX MAIN MENU, PERSIST IF @BG NOT EXIST IN THE SCRIPT
     def handle_menu(self, arg, engine):
-        engine.current_menu_panel = MenuPanel(width=500, height=400, layout=VerticalLayout(), no_bg=True, no_border=True)
         engine.current_menu_buttons = []
         engine.Log("[menu] Menu block started.")
 
@@ -1039,6 +1183,7 @@ class EventManager:
     def handle_endmenu(self, arg, engine):
         if not hasattr(engine, "current_menu_buttons") or not engine.current_menu_buttons:
             raise Exception("[endmenu] There are no buttons defined in the menu.")
+        engine.current_menu_panel = MenuPanel(width=500, height=400, layout=VerticalLayout(), no_bg=True, no_border=True, is_main_menu=True)
         font = engine.renderer.font
         for btn in engine.current_menu_buttons:
             v = btn.get("visual_params", {})
@@ -1115,13 +1260,126 @@ class EventManager:
         engine.vars[var_name] = new_value
         engine.Log(f"[Set] Variable '{var_name}' updated to '{new_value}'.")
     
-    # TODO: IMPLEMENT SAVE AND LOAD
-
     def handle_save(self, arg, engine):
-        pass
+        """
+        Saves the current game state to a slot.
+        Syntax: @save("slot1") or @save() for quicksave.
+        """
+        slot_name = arg.strip().strip('()').strip('"')
+        if not slot_name:
+            # If no slot name is provided, use the default quicksave slot.
+            slot_name = QUICKSAVE_SLOT
+
+        saves_dir = os.path.join(engine.game_path, "saves")
+        if not os.path.exists(saves_dir):
+            os.makedirs(saves_dir)
+
+        save_path = os.path.join(saves_dir, f"{slot_name}.sav")
+
+        # Gather serializable state.
+        # SpriteVisual objects contain pygame surfaces, which are not pickleable.
+        # We need to store the information required to recreate them.
+        
+        sprite_states = {}
+        for alias, sprite_visual in engine.sprite_layers.items():
+          
+            sprite_states[alias] = {
+                'alias': alias,
+      
+                'position': sprite_visual.position,
+                'x': sprite_visual.x,
+                'y': sprite_visual.y,
+                'z_index': sprite_visual.z_index,
+                'alpha': sprite_visual.alpha,
+                # Animación no guardada
+            }
+        
+        save_data = {
+            'version': engine_version,
+            'vars': engine.vars,
+            'characters': engine.characters,
+            'scenes': engine.scenes,
+            'checkpoints': engine.checkpoints,
+            'condition_stack': engine.condition_stack,
+            'qm': engine.quick_menu_buttons,
+            'lexer_state': {
+                'commands': engine.lexer.commands,
+                'original_commands': engine.lexer.original_commands,
+                'current': engine.lexer.current-1 # adding -1 improve the save fidelity
+            },
+            'visual_state': {
+                'bg_filename': getattr(engine, 'current_bg_filename', None),
+                'sprites': sprite_states,
+            },
+            'audio_state': {
+                'bgm_filename': getattr(engine, 'current_bgm_filename', None)
+            }
+        }
+
+        try:
+            with open(save_path, 'wb') as f:
+                pickle.dump(save_data, f)
+            engine.Log(f"[save] Game state saved to slot '{slot_name}'.")
+        except Exception as e:
+            raise Exception(f"[save] Failed to save game to slot '{slot_name}': {e}")
     
     def handle_load_save(self, arg, engine):
-        pass
+        """
+        Loads the game state from a slot.
+        Syntax: @load("slot1") or @load() for quickload.
+        """
+        slot_name = arg.strip().strip('()').strip('"')
+        if not slot_name:
+            # If no slot name is provided, use the default quickload slot.
+            slot_name = QUICKSAVE_SLOT
+
+        save_path = os.path.join(engine.game_path, "saves", f"{slot_name}.sav")
+
+        if not os.path.exists(save_path):
+            raise Exception(f"[load] Save slot '{slot_name}' not found.")
+
+        try:
+            with open(save_path, 'rb') as f:
+                loaded_data = pickle.load(f)
+        except Exception as e:
+            raise Exception(f"[load] Failed to load game from slot '{slot_name}': {e}")
+
+        if loaded_data.get('version') != engine_version:
+            engine.Log(f"[load] Warning: Save file version '{loaded_data.get('version')}' differs from engine version '{engine_version}'.")
+
+        # --- Restore State ---
+        engine.screen_manager.hide_all()
+        engine.sprite_layers.clear()
+        engine.quick_menu_buttons.clear()
+      
+        engine.vars.update(loaded_data['vars'])
+        engine.characters.update(loaded_data['characters'])
+        engine.scenes.update(loaded_data['scenes'])
+        engine.checkpoints = loaded_data['checkpoints']
+        engine.condition_stack = loaded_data['condition_stack']
+
+        lexer_state = loaded_data['lexer_state']
+        engine.lexer.commands = lexer_state['commands']
+        engine.lexer.original_commands = lexer_state['original_commands']
+        engine.lexer.current = lexer_state['current']
+        
+        for qm in loaded_data['qm']:
+            engine.quick_menu_buttons.append(qm)
+
+        self.dispatch("qmEnd", arg, engine)
+
+        visual_state = loaded_data['visual_state']
+        if visual_state.get('bg_filename'):
+            self.handle_bg(visual_state['bg_filename'], engine)
+
+        for alias, state in visual_state.get('sprites', {}).items():
+            self.handle_sprite(f"{alias}", engine)
+
+        audio_state = loaded_data.get('audio_state', {})
+        if audio_state.get('bgm_filename'):
+            self.handle_bgm(audio_state['bgm_filename'], engine)
+
+        engine.Log(f"[load] Game state loaded from slot '{slot_name}'.")
     
     def handle_bgm(self, arg, engine):
         """
@@ -1129,6 +1387,7 @@ class EventManager:
         data/audio/bgm/<filename>.mp3.
         """
         filename = arg.strip()
+        engine.current_bgm_filename = filename
 
         bgm = Audio(filename, "bgm", engine)
 

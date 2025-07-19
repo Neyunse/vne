@@ -69,6 +69,11 @@ class VisualElement:
     def add_child(self, child):
         child.parent = self
         self.children.append(child)
+    
+    def remove_child(self, child):
+        if child in self.children:
+            self.children.remove(child)
+            child.parent = None
 
     def add_animation(self, animation):
         self.animations.append(animation)
@@ -94,7 +99,7 @@ class VisualElement:
             temp_surface = pygame.Surface((self.width, self.height), pygame.SRCALPHA)
             pygame.draw.rect(temp_surface, color, temp_surface.get_rect(), border_radius=self.radius or self.theme.radius)
             border_color = self.border_color or self.theme.border_color
-            border_width = self.border_width or self.theme.border_width
+            border_width = self.border_width if self.border_width is not None else self.theme.border_width
             if border_width > 0:
                 pygame.draw.rect(temp_surface, border_color, temp_surface.get_rect(), border_width, border_radius=self.radius or self.theme.radius)
             temp_surface.set_alpha(self.alpha)
@@ -136,6 +141,12 @@ class VisualElement:
     def set_blur(self, enabled=True):
         # Placeholder for blur effect (requires pygame/surface manipulation)
         self.blur = enabled
+
+class AutoSizedBackground(VisualElement):
+    def render(self, surface):
+        self.width = surface.get_width()
+        self.height = surface.get_height()
+        super().render(surface)
 
 class Button(VisualElement):
     def __init__(self, label, action, x=0, y=0, width=200, height=40, color=None, font=None, theme=None, image=None, text_color=None):
@@ -195,13 +206,17 @@ class MenuPanel(VisualElement):
                  layout=None, 
                  theme=None,
                  no_bg=False,
-                 no_border=False
+                 no_border=False,
+                 is_main_menu=False,
+                 is_modal=True
         ):
         super().__init__(x, y, width, height, theme=theme)
         self.layout = layout
         # Eliminar fondo y borde para el menú principal
         self.no_bg = no_bg
         self.no_border = no_border
+        self.is_modal = is_modal
+        self.is_main_menu = is_main_menu
     def render(self, surface):
         if not self.visible:
             return
@@ -464,3 +479,4 @@ class ScaleAnimation(Animation):
         element.height = int(element.height * scale)
         if t >= 1.0:
             self.finished = True
+ 
