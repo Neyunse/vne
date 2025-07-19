@@ -37,6 +37,10 @@ Showing a sprite
 
    If your image is located in a subdirectory you can define it as :file:`@sprite kuro/kuro_happy`.
 
+.. admonition:: Note
+   :class: Important
+
+   At the moment only 1 sprite can be displayed on the screen.
 
 Hide a sprite
 ++++++++++++++
