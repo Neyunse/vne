@@ -10,6 +10,6 @@
 - Some internal methods were removed.
 - Included text animation inside textbox.
 
-:gh_release:`1.0.0-alpha.10`
+:gh_release:`v1.0.0-alpha.10`
 
 ....

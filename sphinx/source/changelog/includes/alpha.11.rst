@@ -16,6 +16,6 @@
 - The CLI version was temporarily removed.
 
 
-:gh_release:`1.0.0-alpha.11`
+:gh_release:`v1.0.0-alpha.11`
 
 ....

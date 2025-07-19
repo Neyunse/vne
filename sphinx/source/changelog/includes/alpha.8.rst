@@ -9,6 +9,6 @@ Prevent dialoges on Log.txt
 
 Added @Log event
 
-:gh_release:`1.0.0-alpha.8`
+:gh_release:`v1.0.0-alpha.8`
 
 ....
