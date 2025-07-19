@@ -80,7 +80,7 @@ html_theme_options = {
 }
 
 sys.path.insert(0, '../..')
-from main import engine_version
+from vne._version import __version__ as engine_version
 version = release = engine_version
 substitutions = [
     ":tocdepth: 3",
