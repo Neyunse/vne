@@ -2,6 +2,7 @@ import io
 import os
 import pygame
 from vne.aes import AES
+from vne.aes import SCRIPT_AAD, SaveCorruptError
 from vne.config import key, aes_extension, init_file
 
 class ScriptLexer:
@@ -16,17 +17,30 @@ class ScriptLexer:
     
     def load_scripts(self):
         """
-        The function `load_scripts` loads and parses a script file after decoding it using AES
-        encryption.
+        Carga y descifra el script compilado usando AES-GCM.
         """
-        base_name = init_file 
+        base_name = init_file
         try:
             compiled_path = base_name + aes_extension
+            # 1. Leer datos cifrados desde resource_manager
             file_bytes = self.engine.resource_manager.get_bytes(compiled_path)
-            plain_bytes = AES(file_bytes, key).decrypt().decode("utf-8", errors="replace")
-            content = plain_bytes
+
+            # 2. Si guardaste en hex o base64, decodificar primero
+            #    Aquí asumo binario puro; si es texto, agrega decode según corresponda
+            #    Ej: file_bytes = file_bytes.decode("utf-8") si el archivo es hex/base64
+            #    y luego pasarlo a aes.decrypt(..., encoded='hex')
+
+            # 3. Desencriptar con AES-GCM y AAD
+            try:
+                plain_bytes = AES(key).decrypt(file_bytes, aad=SCRIPT_AAD)  # encoded='hex' si corresponde
+            except SaveCorruptError:
+                raise Exception(f"[Lexer] Script corrupto o clave inválida: {compiled_path}")
+
+            # 4. Convertir a texto y parsear
+            content = plain_bytes.decode("utf-8", errors="replace")
             self.commands = self.parse_script(content)
             self.original_commands = list(self.commands)
+
         except Exception as e:
             self.commands = []
             self.original_commands = []

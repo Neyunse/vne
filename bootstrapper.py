@@ -1,5 +1,5 @@
 from vne import Core
-from vne import aes
+from vne.aes import AES
 from vne import config as CONFIG
 from vne.config import key, engine_version
 import os

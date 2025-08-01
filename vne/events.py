@@ -5,7 +5,7 @@ import pygame
 from collections import ChainMap
 import re
 from vne.lexer import ScriptLexer
-from vne.aes import AES
+from vne.aes import AES, SCRIPT_AAD
 from vne.config import (key, file_extension, aes_extension, bundle_extension,
                         engine_version)
 import pickle
@@ -600,7 +600,7 @@ class EventManager:
                     compiled_arg = arg
                 
                 data = engine.resource_manager.get_bytes(compiled_arg)
-                data = AES(data, key).decrypt().decode("utf-8", errors="replace")
+                data = AES(key).decrypt(data, aad=SCRIPT_AAD).decode("utf-8", errors="replace")
                 engine.Log(f"[Load] Compiled file loaded: {compiled_arg}")
                 engine.loaded_files[compiled_arg] = data
                 content = data
@@ -678,7 +678,7 @@ class EventManager:
         try:
             compiled_path = base_name + aes_extension
             file_bytes = engine.resource_manager.get_bytes(compiled_path)
-            content = AES(file_bytes, key).decrypt().decode("utf-8", errors="replace")
+            content = AES(key).decrypt(file_bytes, aad=SCRIPT_AAD).decode("utf-8", errors="replace")
 
         except Exception as e:
             raise Exception(f"[ERROR] Compiled version of the script for '{base_name}' not found: {e}")
@@ -706,7 +706,7 @@ class EventManager:
         content = ""
         try:
             file_bytes = engine.resource_manager.get_bytes(compiled_path)
-            content = AES(file_bytes, key).decrypt().decode("utf-8", errors="replace")
+            content = AES(key).decrypt(file_bytes, aad=SCRIPT_AAD).decode("utf-8", errors="replace")
             engine.Log(f"[jump_scene] Compiled scene '{scene_alias}' loaded from: {compiled_path}")
         except Exception as e:
             non_compiled_path = os.path.join(engine.game_path, "data", "scenes", f"{scene_file_name}{aes_extension}")

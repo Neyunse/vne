@@ -9,7 +9,7 @@ from vne.events import EventManager
 from vne.config import CONFIG
 from vne.config import key, engine_version, file_extension, aes_extension, init_file
 from vne.rm import ResourceManager
-from vne.aes import AES
+from vne.aes import AES, SaveCorruptError, SCRIPT_AAD
 from vne.visual import VisualElement, MenuPanel, Button, VerticalLayout
 
 class ScreenManager:
@@ -197,16 +197,16 @@ VNE %(engineVersion)s
         
  
         for candidate in candidates:
-            try:
-                data_bytes = self.resource_manager.get_bytes(candidate)
-                if candidate.endswith(aes_extension):
-                    content = AES(data_bytes, key).decrypt().decode("utf-8", errors="replace")
-                else:
-                    content = data_bytes
-                self.Log(f"[VNEngine] Startup script loaded: {candidate}")
-                break
-            except FileNotFoundError:
-                continue
+            data_bytes = self.resource_manager.get_bytes(candidate)
+            
+            if candidate.endswith(aes_extension):
+                try:
+                    # Si usas hex/base64, pasa encoded='hex' o 'base64'
+                    content = AES(key).decrypt(data_bytes, aad=SCRIPT_AAD).decode("utf-8", errors="replace")
+                except SaveCorruptError:
+                    raise Exception(f"[VNEngine] Corrupted script or invalid key: {candidate}")
+            else:
+                content = data_bytes
 
         if content is None:
             self.Log("[VNEngine] Startup script not found. Exiting.")
