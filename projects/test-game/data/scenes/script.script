@@ -1,10 +1,10 @@
 @bg school
-@sprite kuro
 @bgm 70_Love
 
 @qm
 @qmBtn "Save" event Save()
 @qmEnd
+@sprite kuro
 
 K: Hello, welcome to this engine test!
 K: my name is {K} and I am here for the sole purpose of debugging this project....

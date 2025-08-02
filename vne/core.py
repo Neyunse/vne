@@ -72,7 +72,6 @@ class VNEngine:
         self.condition_stack = []
         self.current_menu_buttons = []
         self.quick_menu_buttons = []
-        self.typewriter_index = 0
         self.current_bgm = None
         self.current_bg_filename = None
         self.current_bgm_filename = None
@@ -222,7 +221,6 @@ VNE %(engineVersion)s
                     self.running = False
                 else:
                     self.screen_manager.handle_event(event)
-            self.typewriter_index += int(delta_time * 20)
             command = self.lexer.get_next_command()
             if command is None:
                 pygame.time.wait(2000)

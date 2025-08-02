@@ -43,6 +43,19 @@ class FadeAnimation(Animation):
         if t >= 1.0:
             self.finished = True
 
+class DissolveAnimation(Animation):
+    def __init__(self, duration=0.5):
+        super().__init__(duration)
+
+    def update(self, element):
+        if self.start_time is None:
+            self.start()
+        elapsed = time.time() - self.start_time
+        t = min(elapsed / self.duration, 1.0)
+        element.alpha = int(255 * t)
+        if t >= 1.0:
+            self.finished = True
+
 class VisualElement:
     def __init__(self, x=0, y=0, width=100, height=40, visible=True, theme=None, z_index=0):
         self.x = x
@@ -211,19 +224,18 @@ class MenuPanel(VisualElement):
                  is_modal=True
         ):
         super().__init__(x, y, width, height, theme=theme)
-        self.layout = layout
-        # Eliminar fondo y borde para el menú principal
+        self.layout = layout or VerticalLayout()  # Default to vertical layout
         self.no_bg = no_bg
         self.no_border = no_border
         self.is_modal = is_modal
         self.is_main_menu = is_main_menu
+
     def render(self, surface):
         if not self.visible:
             return
         abs_x, abs_y = self.get_absolute_position()
-        
         panel_rect = pygame.Rect(abs_x, abs_y, self.width, self.height)
-        # Renderizar fondo y borde solo si no_bg/no_border lo permiten
+
         if not self.no_bg or not self.no_border:
             temp_surface = pygame.Surface((self.width, self.height), pygame.SRCALPHA)
             if not self.no_bg:
@@ -236,9 +248,10 @@ class MenuPanel(VisualElement):
                     pygame.draw.rect(temp_surface, border_color, temp_surface.get_rect(), border_width, border_radius=self.radius or self.theme.radius)
             temp_surface.set_alpha(self.alpha)
             surface.blit(temp_surface, (abs_x, abs_y))
+
         if self.layout:
             self.layout.apply(self)
-        # Renderizar hijos siempre
+
         for child in self.children:
             child.render(surface)
 
@@ -329,93 +342,62 @@ class SpriteVisual(VisualElement):
         h = height or win_h
         self.position = position
         self.custom_xy = None
-        # Soporte para posición personalizada: "x=100,y=200"
+
+        # Validar y calcular posición personalizada
         if isinstance(position, str) and re.match(r"x=\d+,y=\d+", position):
             m = re.match(r"x=(\d+),y=(\d+)", position)
             self.custom_xy = (int(m.group(1)), int(m.group(2)))
             x, y = self.custom_xy
-        elif position == "center":
-            x = (win_w - w) // 2
-            y = (win_h - h) // 2
-        elif position == "left":
-            x = int(win_w * 0.1)
-            y = (win_h - h) // 2
-        elif position == "right":
-            x = int(win_w * 0.9 - w)
-            y = (win_h - h) // 2
-        elif position == "bottom":
-            x = (win_w - w) // 2
-            y = int(win_h * 0.9 - h)
-        elif position == "top":
-            x = (win_w - w) // 2
-            y = int(win_h * 0.1)
-        elif position == "topleft":
-            x = int(win_w * 0.1)
-            y = int(win_h * 0.1)
-        elif position == "topright":
-            x = int(win_w * 0.9 - w)
-            y = int(win_h * 0.1)
-        elif position == "bottomleft":
-            x = int(win_w * 0.1)
-            y = int(win_h * 0.9 - h)
-        elif position == "bottomright":
-            x = int(win_w * 0.9 - w)
-            y = int(win_h * 0.9 - h)
         else:
-            x = x if x is not None else (win_w - w) // 2
-            y = y if y is not None else (win_h - h) // 2
+            x, y = self.calculate_position(position, win_w, win_h, w, h)
+
         super().__init__(x, y, w, h, theme=theme)
         self.image = image
         self.alpha = 255
         self.animation = animation
         if animation:
             self.add_animation(animation)
-    def set_position(self, pos):
-        self.position = pos
+
+    def calculate_position(self, position, win_w, win_h, w, h):
+        positions = {
+            "center": ((win_w - w) // 2, (win_h - h) // 2),
+            "left": (int(win_w * 0.1), (win_h - h) // 2),
+            "right": (int(win_w * 0.9 - w), (win_h - h) // 2),
+            "bottom": ((win_w - w) // 2, int(win_h * 0.9 - h)),
+            "top": ((win_w - w) // 2, int(win_h * 0.1)),
+            "topleft": (int(win_w * 0.1), int(win_h * 0.1)),
+            "topright": (int(win_w * 0.9 - w), int(win_h * 0.1)),
+            "bottomleft": (int(win_w * 0.1), int(win_h * 0.9 - h)),
+            "bottomright": (int(win_w * 0.9 - w), int(win_h * 0.9 - h))
+        }
+        return positions.get(position, (0, 0))
+
+    def add_animation(self, animation):
+        """Agrega una animación al sprite."""
+        self.animation = animation
+
+    def update_animation(self):
+        """Actualiza el estado de la animación si está activa."""
+        if self.animation:
+            self.animation.update(self)  # Pasar el elemento actual como argumento
+            if self.animation.finished:
+                self.animation = None
+
     def render(self, surface):
         if not self.visible:
             return
+
+        # Actualizar animación antes de renderizar
+        self.update_animation()
+
         win_w, win_h = surface.get_width(), surface.get_height()
         target_w, target_h = self.width or win_w, self.height or win_h
         img_w, img_h = self.image.get_width(), self.image.get_height()
         scale = min(target_w / img_w, target_h / img_h)
         new_w, new_h = int(img_w * scale), int(img_h * scale)
-        # Recalcular posición en render si es string
-        if self.custom_xy:
-            abs_x, abs_y = self.custom_xy
-        elif isinstance(self.position, str):
-            if self.position == "center":
-                abs_x = (win_w - new_w) // 2
-                abs_y = (win_h - new_h) // 2
-            elif self.position == "left":
-                abs_x = int(win_w * 0.1)
-                abs_y = (win_h - new_h) // 2
-            elif self.position == "right":
-                abs_x = int(win_w * 0.9 - new_w)
-                abs_y = (win_h - new_h) // 2
-            elif self.position == "bottom":
-                abs_x = (win_w - new_w) // 2
-                abs_y = int(win_h * 0.9 - new_h)
-            elif self.position == "top":
-                abs_x = (win_w - new_w) // 2
-                abs_y = int(win_h * 0.1)
-            elif self.position == "topleft":
-                abs_x = int(win_w * 0.1)
-                abs_y = int(win_h * 0.1)
-            elif self.position == "topright":
-                abs_x = int(win_w * 0.9 - new_w)
-                abs_y = int(win_h * 0.1)
-            elif self.position == "bottomleft":
-                abs_x = int(win_w * 0.1)
-                abs_y = int(win_h * 0.9 - new_h)
-            elif self.position == "bottomright":
-                abs_x = int(win_w * 0.9 - new_w)
-                abs_y = int(win_h * 0.9 - new_h)
-            else:
-                abs_x = self.x
-                abs_y = self.y
-        else:
-            abs_x, abs_y = self.x, self.y
+
+        abs_x, abs_y = self.custom_xy or self.calculate_position(self.position, win_w, win_h, new_w, new_h)
+
         img = pygame.transform.smoothscale(self.image, (new_w, new_h))
         img.set_alpha(self.alpha)
         surface.blit(img, (abs_x, abs_y))
@@ -423,29 +405,63 @@ class SpriteVisual(VisualElement):
             child.render(surface)
 
 class HorizontalLayout:
-    def __init__(self, margin=10):
+    def __init__(self, margin=10, align="start", justify="start"):
         self.margin = margin
+        self.align = align  # "start", "center", "end"
+        self.justify = justify  # "start", "center", "end", "space-between", "space-around"
+
     def apply(self, panel):
         x = self.margin
+        total_width = sum(child.width for child in panel.children) + (len(panel.children) - 1) * self.margin
+        remaining_space = panel.width - total_width
+
+        if self.justify == "center":
+            x += remaining_space // 2
+        elif self.justify == "end":
+            x += remaining_space
+        elif self.justify == "space-between" and len(panel.children) > 1:
+            self.margin = remaining_space // (len(panel.children) - 1)
+        elif self.justify == "space-around" and len(panel.children) > 0:
+            self.margin = remaining_space // (len(panel.children) * 2)
+            x += self.margin
+
         for child in panel.children:
             child.x = x
             child.y = self.margin
-            child.height = panel.height - 2*self.margin
+            child.height = panel.height - 2 * self.margin
             x += child.width + self.margin
 
 class GridLayout:
-    def __init__(self, rows, cols, margin=10):
+    def __init__(self, rows, cols, margin=10, align="start", justify="start"):
         self.rows = rows
         self.cols = cols
         self.margin = margin
+        self.align = align  # "start", "center", "end"
+        self.justify = justify  # "start", "center", "end", "space-between", "space-around"
+
     def apply(self, panel):
-        cell_w = (panel.width - (self.cols+1)*self.margin) // self.cols
-        cell_h = (panel.height - (self.rows+1)*self.margin) // self.rows
+        cell_w = (panel.width - (self.cols + 1) * self.margin) // self.cols
+        cell_h = (panel.height - (self.rows + 1) * self.margin) // self.rows
+
         for idx, child in enumerate(panel.children):
             row = idx // self.cols
             col = idx % self.cols
-            child.x = self.margin + col*(cell_w+self.margin)
-            child.y = self.margin + row*(cell_h+self.margin)
+
+            x = self.margin + col * (cell_w + self.margin)
+            y = self.margin + row * (cell_h + self.margin)
+
+            if self.align == "center":
+                x += (cell_w - child.width) // 2
+            elif self.align == "end":
+                x += cell_w - child.width
+
+            if self.justify == "center":
+                y += (cell_h - child.height) // 2
+            elif self.justify == "end":
+                y += cell_h - child.height
+
+            child.x = x
+            child.y = y
             child.width = cell_w
             child.height = cell_h
 
@@ -479,4 +495,23 @@ class ScaleAnimation(Animation):
         element.height = int(element.height * scale)
         if t >= 1.0:
             self.finished = True
- 
+
+class FlexLayout:
+    def __init__(self, direction="row", align="start", justify="start", gap=10):
+        self.direction = direction  # "row" or "column"
+        self.align = align  # "start", "center", "end"
+        self.justify = justify  # "start", "center", "end", "space-between", "space-around"
+        self.gap = gap
+
+    def apply(self, panel):
+        x, y = 0, 0
+        if self.direction == "row":
+            for child in panel.children:
+                child.x = x
+                child.y = y
+                x += child.width + self.gap
+        elif self.direction == "column":
+            for child in panel.children:
+                child.x = x
+                child.y = y
+                y += child.height + self.gap
