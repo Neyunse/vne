@@ -1,6 +1,5 @@
 # -*- mode: python ; coding: utf-8 -*-
-import os
-env_hook = os.path.abspath("env.py")
+
 a = Analysis(
     ['main.py'],
     pathex=[],
@@ -9,7 +8,7 @@ a = Analysis(
     hiddenimports=["pyzipper", "cryptography"],
     hookspath=[],
     hooksconfig={},
-    runtime_hooks=[env_hook],
+    runtime_hooks=["./env.py"],
     excludes=[],
     noarchive=False,
     optimize=0,
