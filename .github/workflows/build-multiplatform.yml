@@ -6,18 +6,15 @@ on:
   pull_request:
     branches: [gh/neyunse/test]
 
+
 jobs:
-  generate-env:
-    runs-on: ubuntu-latest
+  build-windows:
+    runs-on: windows-2022
     steps:
       - name: Generar env.py con VNE_KEY
         run: |
           echo "import os" > env.py
           echo "os.environ['VNE_KEY'] = '${{ secrets.VNE_KEY }}'" >> env.py
-  
-  build-windows:
-    runs-on: windows-2022
-    steps:
       - uses: actions/checkout@v3
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -38,7 +35,12 @@ jobs:
 
   build-linux:
     runs-on: ubuntu-22.04
+    needs: build-windows
     steps:
+      - name: Generar env.py con VNE_KEY
+        run: |
+          echo "import os" > env.py
+          echo "os.environ['VNE_KEY'] = '${{ secrets.VNE_KEY }}'" >> env.py
       - uses: actions/checkout@v3
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -59,7 +61,12 @@ jobs:
 
   build-mac:
     runs-on: macos-14
+    needs: build-linux
     steps:
+      - name: Generar env.py con VNE_KEY
+        run: |
+          echo "import os" > env.py
+          echo "os.environ['VNE_KEY'] = '${{ secrets.VNE_KEY }}'" >> env.py
       - uses: actions/checkout@v3
       - name: Set up Python
         uses: actions/setup-python@v4
