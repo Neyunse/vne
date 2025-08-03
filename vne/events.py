@@ -453,14 +453,17 @@ class EventManager:
         sprite_alias = parts[0].strip() # get alias @sprite <alias>
         position = "center"
         animation = None
+        relative_path = None
 
         # Verificar si el argumento contiene position="value"
         match = re.search(r'position="(.*?)"', arg)
         if match:
             position = match.group(1)
             
-        # Manejar alias con formato base:variación y opciones adicionales
+        # Manejar alias con formato base:variación y opciones adicionales (normalizar a minúsculas)
         base_alias, _, variation = sprite_alias.partition(":")
+        base_alias = base_alias.lower()
+        variation = variation.lower()
         
         
         

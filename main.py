@@ -198,7 +198,8 @@ def distribute_game(game_path):
 
         shutil.copy2(pkg_path, os.path.join(dest_folder, f"data{CONFIG.bundle_extension}"))
         print(f"[distribute] data{CONFIG.bundle_extension} copied to {dest_folder}")
-    
+        
+
         os.unlink(pkg_path)
         
         exe_source = os.path.join(os.path.dirname(sys.executable),"lib", "win", "bootstrapper.exe")
@@ -207,6 +208,14 @@ def distribute_game(game_path):
         exe_dest = os.path.join(dest_folder, "game.exe")
         shutil.copy2(exe_source, exe_dest)
         print(f"[distribute] Binary copied: {exe_source} → {exe_dest}")
+
+        # Also copy credits and license if they exist
+        for fname in ("credits.txt", "engine-licence.txt"):
+            src_file = os.path.join(game_path, fname)
+            if os.path.exists(src_file):
+                dst_file = os.path.join(dest_folder, fname)
+                shutil.copy2(src_file, dst_file)
+                print(f"[distribute] {fname} copied to {dest_folder}")
 
         print(f"Distribution completed at: {dest_folder}")
     except Exception as e:
