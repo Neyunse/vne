@@ -118,7 +118,7 @@ def init_game(game_path, project_name):
 
     with open(main_menu_file, "w", encoding="utf-8") as f:
         f.write("# Main Menu\n")
-        f.write("@mainMenu\n")
+        f.write("@mainMenu position=\"leftBottom\"\n")
         f.write("  @button \"Start game\" event Scene(\"first\") \n")
         f.write("  @button \"Quit\" event Quit() \n")
         f.write("@endMainMenu\n")
