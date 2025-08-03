@@ -1,0 +1,10 @@
+# Game startup script
+
+# Load here somthing before that system files
+
+@LoadSystem()
+
+# Load here somthing after that system files
+
+# Load the main menu from system/
+@LoadMainMenu()

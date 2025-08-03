@@ -1,0 +1,8 @@
+# set the window size. eg: @Display(800,600)
+# the recomended max size is 1280x720 
+@Display(1280,720)
+# set the game title
+@GameTitle("Meeting you again")
+# set the gane icon. eg. @GameIconName("window_icon")
+# by default window_icon. 
+# @GameIconName()

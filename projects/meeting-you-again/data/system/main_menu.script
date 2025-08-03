@@ -1,0 +1,6 @@
+# Main Menu
+@bg Street_Autumn_Day
+@mainMenu layout="horizontal" position="leftBottom"
+  @button "Start game" event Scene("first") 
+  @button "Quit" event Quit() 
+@endMainMenu

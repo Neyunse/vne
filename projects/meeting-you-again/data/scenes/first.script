@@ -1,0 +1,29 @@
+I always walk around this neighborhood hoping to find her....
+A long time ago I lived near here and met a girl my age, I was fascinated. We lived many adventures, but my family moved to another city and I was never able to see her again.
+Last year I was able to come back here with the hope of seeing her again... But... So far I never found her.
+I feel a knot in my heart...
+
+however... before I gave up, a miracle happened...
+
+IT'S HER! Finally... I finally found her...
+
+Shin* Uhm... Hello... My name is Shin.
+@sprite kana:Smile animation="dissolve"
+m: Eh? Shin?
+Shin* Hi {m}
+
+She remembers me?
+@sprite kana:Frown
+m: How do you know my name?
+Shin* Don't remember? We always played together...
+@sprite kana:Smile
+m: Ah! now I remember! Shin!
+Shin* You know, there's something I never got to tell you... I loved you...
+@sprite kana:SmileBlush
+I was able to say it... I am happy... I was finally able to get this weight off my shoulders...
+
+
+m: Sorry... We can't be together... I'm sorry...
+
+after saying those words, {m} slowly walked away from me....
+@end
