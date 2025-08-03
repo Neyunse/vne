@@ -8,7 +8,7 @@ on:
 
 jobs:
   build-windows:
-    runs-on: windows-latest
+    runs-on: windows-2022
     steps:
       - uses: actions/checkout@v3
       - name: Set up Python
@@ -29,7 +29,7 @@ jobs:
           path: dist/win*.zip
 
   build-linux:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v3
       - name: Set up Python
@@ -50,7 +50,7 @@ jobs:
           path: dist/linux*.zip
 
   build-mac:
-    runs-on: macos-latest
+    runs-on: macos-14
     steps:
       - uses: actions/checkout@v3
       - name: Set up Python
