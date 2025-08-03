@@ -1,7 +1,6 @@
 # -*- mode: python ; coding: utf-8 -*-
 import os
-env_hook = os.path.abspath(os.path.join(os.path.dirname(__file__), "env.py"))
-
+env_hook = os.path.abspath("env.py")
 a = Analysis(
     ['main.py'],
     pathex=[],
