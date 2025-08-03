@@ -35,7 +35,11 @@ class ResourceManager:
             try:
                 return self.zipfile.read(zip_internal_path)
             except KeyError:
-                pass
+                # Try case-insensitive match in zip entries
+                for name in self.zipfile.namelist():
+                    if name.lower() == zip_internal_path.lower():
+                        return self.zipfile.read(name)
+                # no match, continue to local fallback
 
         local_path = os.path.join(self.data_folder, internal_path)
         if os.path.exists(local_path):
@@ -44,7 +48,7 @@ class ResourceManager:
 
         
         if internal_path.lower().endswith(file_extension):
-            alt_path = internal_path[:-4] + aes_extension
+            alt_path = os.path.splitext(internal_path)[0] + aes_extension
             zip_alt_path = alt_path.replace(os.sep, "/")
             self.Log(f"[ResourceManager] Retrying with '{zip_alt_path}'")
             if self.zipfile:

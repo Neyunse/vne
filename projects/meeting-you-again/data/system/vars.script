@@ -1,0 +1,2 @@
+# Include variables here
+@def speak = false

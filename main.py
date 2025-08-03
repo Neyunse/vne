@@ -6,7 +6,8 @@ import pyzipper
 from datetime import datetime
 import platform
 from vne import Core
-from vne import aes
+from vne.aes import AES
+from vne.aes import SCRIPT_AAD
 from vne import config as CONFIG
 from vne.config import key, engine_version
 import re  
@@ -19,30 +20,35 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtCore import Qt, QTimer, QRegularExpression, QSize, pyqtSignal, QProcess
 from PyQt6.QtGui import QCursor, QTextDocument ,QKeySequence, QShortcut, QSyntaxHighlighter, QTextCharFormat, QColor, QFont, QAction
 
-def compile_kag(source_file, target_file, key):
+
+
+def compile_kag(source_file: str, target_file: str, encode: str = None):
     """
-    Reads a source file, encodes its content using an AES operation with a given key,
-    and writes the result to a target file.
+    Encrypts a .script with AES-GCM and writes it to binary (or text if encode='hex'/'base64').
     
-    :param source_file: The path to the source file containing the plain text data.
-    :param target_file: The file path where the compiled data will be written in binary format.
-    :param key: The key used to perform AES encryption on the data.
+    :param source_file: path of the UTF-8 text script.
+    :param target_file: path where the encrypted blob will be saved.
+    :param encode: None|'hex'|'base64' to format the output (recommended 'hex' if you want to see it as text).
     """
+
     with open(source_file, "r", encoding="utf-8") as sf:
         plain_text = sf.read()
+
     plain_bytes = plain_text.encode("utf-8")
-    compiled_bytes = aes.AES(plain_bytes, key).encrypt()
-    with open(target_file, "wb") as tf:
-        tf.write(compiled_bytes)
-    
- 
-    print(f"[compile] {source_file} -> {target_file}")
+
+    compiled = AES(key).encrypt(plain_bytes, aad=SCRIPT_AAD)
+
+    mode = "w" if isinstance(compiled, str) else "wb"
+    with open(target_file, mode) as tf:
+        tf.write(compiled)
+
+    print(f"[compile] {source_file} -> {target_file} ({'text' if mode=='w' else 'binary'})")
  
 def compile_all_kag_in_folder(data_folder, key):
     """
-    Compiles all KAG files in the specified folder using the given key.
+    Compiles all scripts files in the specified folder using the given key.
     
-    :param data_folder: The directory path where the KAG files are located.
+    param data_folder: The path to the directory where the script files are located.
     :param key: The key used for encryption/decryption.
     """
     for root, dirs, files in os.walk(data_folder):
@@ -112,7 +118,7 @@ def init_game(game_path, project_name):
 
     with open(main_menu_file, "w", encoding="utf-8") as f:
         f.write("# Main Menu\n")
-        f.write("@mainMenu\n")
+        f.write("@mainMenu position=\"leftBottom\"\n")
         f.write("  @button \"Start game\" event Scene(\"first\") \n")
         f.write("  @button \"Quit\" event Quit() \n")
         f.write("@endMainMenu\n")
@@ -192,7 +198,8 @@ def distribute_game(game_path):
 
         shutil.copy2(pkg_path, os.path.join(dest_folder, f"data{CONFIG.bundle_extension}"))
         print(f"[distribute] data{CONFIG.bundle_extension} copied to {dest_folder}")
-    
+        
+
         os.unlink(pkg_path)
         
         exe_source = os.path.join(os.path.dirname(sys.executable),"lib", "win", "bootstrapper.exe")
@@ -201,6 +208,14 @@ def distribute_game(game_path):
         exe_dest = os.path.join(dest_folder, "game.exe")
         shutil.copy2(exe_source, exe_dest)
         print(f"[distribute] Binary copied: {exe_source} → {exe_dest}")
+
+        # Also copy credits and license if they exist
+        for fname in ("credits.txt", "engine-licence.txt"):
+            src_file = os.path.join(game_path, fname)
+            if os.path.exists(src_file):
+                dst_file = os.path.join(dest_folder, fname)
+                shutil.copy2(src_file, dst_file)
+                print(f"[distribute] {fname} copied to {dest_folder}")
 
         print(f"Distribution completed at: {dest_folder}")
     except Exception as e:
@@ -879,7 +894,7 @@ class MainWindow(QWidget):
 
         # Projects directory at same level as this script
         self.engineDir = engine_path()
-        print(self.engineDir)
+
         self.projects_dir = os.path.join(self.engineDir, PROJECT_FOLDER)
 
         self.projects = self.load_projects()

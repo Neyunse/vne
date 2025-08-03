@@ -1,12 +1,14 @@
 @bg school
-@sprite kuro
 @bgm 70_Love
 
 @qm
 @qmBtn "Save" event Save()
 @qmEnd
+@sprite kuro
 
 K: Hello, welcome to this engine test!
+
+@sprite kuro position="left" animation="dissolve"
 K: my name is {K} and I am here for the sole purpose of debugging this project....
 K: everything seems to be working properly...
 
@@ -17,10 +19,12 @@ K: everything seems to be working properly...
 
 @if chek
   @bgm escape-ofv
+  @sprite kuro position="right" animation="dissolve"
   K: Oh, you found a bug! Thank you very much for finding it!
   K: Be sure to report it on github!
 @else
   @bgm escape-ofv
+  @sprite kuro animation="dissolve"  
   K: Perfect! everything works correctly
 @endif
 

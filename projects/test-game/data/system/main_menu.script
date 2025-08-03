@@ -1,6 +1,6 @@
 # create a menu
 @bg school
-@mainMenu
+@mainMenu layout="horizontal" position="leftBottom"
   @button "Continue" event Continue()
   @button "Start game" event Scene("script") 
   @button "Quit" event Quit()

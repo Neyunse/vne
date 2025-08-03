@@ -1,18 +1,18 @@
 import io
 import os
 import pygame
+import re
  
 from collections import ChainMap
-import re
 from vne.lexer import ScriptLexer
-from vne.aes import AES
+from vne.aes import AES, SCRIPT_AAD
 from vne.config import (key, file_extension, aes_extension, bundle_extension,
                         engine_version)
 import pickle
 from vne.Audio import Audio
-from vne.visual import VisualElement, Button, MenuPanel, VerticalLayout, DialogPanel, SpriteVisual, AutoSizedBackground
+from vne.visual import VisualElement, Button, MenuPanel, VerticalLayout, DialogPanel, SpriteVisual, AutoSizedBackground, HorizontalLayout
 from vne.visual import SpriteVisual
-from vne.visual import FadeAnimation, SlideAnimation
+from vne.visual import FadeAnimation, SlideAnimation, DissolveAnimation
 
 QUICKSAVE_SLOT = "__quicksave__"
 
@@ -30,87 +30,87 @@ class EventManager:
 
     def register_default_events(self):
         """
-        The function `register_default_events` registers various event handlers for different actions in
-        a game engine.
+        La función `register_default_events` registra varios manejadores de eventos para diferentes acciones en
+        un motor de juego.
         """
   
-        # Primitive
+        # Primitivos
         self.register_event("say", self.handle_say)
         self.register_event("end", self.handle_end)
         self.register_event("process_scene", self.handle_process_scene)
 
-        # Importing/Loading & StartUp/init
+        # Importación/Carga y Inicio/Inicialización
         self.register_event("Load", self.handle_Load)
         self.register_event("LoadSystem", self.handle_load_system)
         self.register_event("LoadMainMenu", self.handle_load_main_menu)
         self.register_event("SplashScreen", self.handle_splash_screen)
         
-        # Scenes Flow
+        # Flujo de escenas
         self.register_event("jump_scene", self.handle_jump_scene)
         self.register_event("checkpoint", self.handle_checkpoint)
         self.register_event("goto", self.handle_goto)
         
-        # Variable definitions
+        # Definiciones de variables
         self.register_event("char", self.handle_char)
         self.register_event("scene", self.handle_scene)
         self.register_event("def", self.handle_define)
 
-        # Mutations
+        # Mutaciones
         self.register_event("set", self.handle_set)
         self.register_event("rename", self.handle_rename)
 
-        # Images
+        # Imágenes
         self.register_event("bg", self.handle_bg)
         self.register_event("sprite", self.handle_sprite)
-        self.register_event("hide", self.handle_hide_sprite)
+        #self.register_event("hide", self.handle_hide_sprite)
         
         # Audio
         self.register_event("bgm", self.handle_bgm)
         self.register_event("sfx", self.handle_sfx)
 
-        # Configurations
+        # Configuraciones
         self.register_event("Display", self.handle_display)
         self.register_event("GameTitle", self.handle_game_title)
         self.register_event("GameIconName", self.handle_game_window_icon)
         
-        # Conditional flags
+        # Banderas condicionales
         self.register_event("if", self.handle_if)
         self.register_event("else", self.handle_else)
         self.register_event("endif", self.handle_endif)
 
-        # Menu
+        # Menú
         self.register_event("mainMenu", self.handle_menu)
         self.register_event("button", self.handle_button)
         self.register_event("endMainMenu", self.handle_endmenu)
         
-        # quick menu
+        # Menú rápido
         self.register_event("qm", self.handle_qm)
         self.register_event("qmBtn", self.handle_qm_button)
         self.register_event("qmEnd", self.handle_qm_end)
 
-        # choices
+        # Opciones
         self.register_event("choice", self.handle_choice_menu)
         self.register_event("option", self.handle_option_button)
         self.register_event("end_choice", self.handle_end_choice)
 
-        # Events
+        # Eventos
         self.register_event("Scene", self.handle_process_scene)
         self.register_event("Set", self.handle_Set_event)
         self.register_event("Quit", self.handle_Quit)
         
-        #TOOLS
+        # Herramientas
         
         self.register_event("Log", self.handle_log)
         self.register_event("Save", self.handle_save)
         self.register_event("Continue", self.handle_load_save)
-    
+
     def handle_log(self, arg, engine):
         arg = arg.strip()
         mapping = ChainMap(engine.characters, engine.scenes, engine.vars)
         if arg.startswith("(") and arg.endswith(")"):
             arg = arg[1:-1].strip()
 
-            # String log
+            # Registro de cadenas
             if arg.startswith('"')  and arg.endswith('"'):
                 arg = arg.strip('"').strip("'")
                 vrs = self.substitute_variables(arg, engine)
@@ -445,46 +445,55 @@ class EventManager:
     def handle_sprite(self, arg, engine):
         """
         Loads and stores a sprite image with a specified alias, position y animación.
-        Sintaxis: @sprite personaje at left fadein
-        Sintaxis: @sprite personaje at x=100,y=200 slidein
+        Sintaxis: @sprite character position="left"
+        Sintaxis: @sprite character:variation
         """
+        parts = arg.split() # get arguments
         load_image = ScriptLexer(engine.game_path, engine).load_image
-        parts = arg.split(" at ")
-        sprite_alias = parts[0].strip()
+        sprite_alias = parts[0].strip() # get alias @sprite <alias>
         position = "center"
         animation = None
-        if len(parts) > 1:
-            # Permitir: at <pos> <anim>
-            pos_anim = parts[1].strip().split()
-            if len(pos_anim) == 2:
-                position, anim = pos_anim
-            elif len(pos_anim) == 1:
-                position, anim = pos_anim[0], None
-            else:
-                position, anim = "center", None
-            # Animaciones básicas
-            if anim == "fadein":
+        relative_path = None
+
+        # Verificar si el argumento contiene position="value"
+        match = re.search(r'position="(.*?)"', arg)
+        if match:
+            position = match.group(1)
+            
+        # Manejar alias con formato base:variación y opciones adicionales (normalizar a minúsculas)
+        base_alias, _, variation = sprite_alias.partition(":")
+        base_alias = base_alias.lower()
+        variation = variation.lower()
+        
+        
+        
+
+        if variation:
+            relative_path = os.path.join("images", "sprites", base_alias, f"{base_alias}_{variation}.png")
+        else:
+            relative_path = os.path.join("images", "sprites", base_alias, f"{base_alias}_default.png")
+
+        # Detectar animaciones en el argumento
+        anim_match = re.search(r'animation="(.*?)"', arg)
+        if anim_match:
+            anim_type = anim_match.group(1).lower()
+            if anim_type == "fadein":
                 animation = FadeAnimation(fade_in=True, duration=0.5)
-            elif anim == "fadeout":
+            elif anim_type == "fadeout":
                 animation = FadeAnimation(fade_in=False, duration=0.5)
-                
-            # elif anim == "slidein":
-          
-            #     animation = SlideAnimation(direction="left", duration=0.5)
-            # elif anim == "slideout":
-          
-            #     animation = SlideAnimation(direction="right", duration=0.5)
-        relative_path = os.path.join("images", "sprites", sprite_alias + ".png")
+            elif anim_type == "dissolve":
+                animation = DissolveAnimation(duration=0.5)
+
         try:
             sprite_image = load_image(relative_path)
-            
+
             sprite_visual = SpriteVisual(sprite_image, position=position, animation=animation)
             sprite_visual.z_index = 1
-  
-            # TODO: THIS DON'T WORK CORRECTLY WITH @HIDE  
-            # if sprite_alias in engine.sprite_layers:
-            #     engine.screen_manager.hide(engine.sprite_layers[sprite_alias])
-            
+
+            # TODO: THIS DON'T WORK CORRECTLY WITH @HIDE
+            if sprite_alias in engine.sprite_layers:
+                engine.screen_manager.hide(engine.sprite_layers[sprite_alias])
+
             engine.sprite_layers[sprite_alias] = sprite_visual
             engine.screen_manager.show(sprite_visual)
         except Exception as e:
@@ -600,7 +609,7 @@ class EventManager:
                     compiled_arg = arg
                 
                 data = engine.resource_manager.get_bytes(compiled_arg)
-                data = AES(data, key).decrypt().decode("utf-8", errors="replace")
+                data = AES(key).decrypt(data, aad=SCRIPT_AAD).decode("utf-8", errors="replace")
                 engine.Log(f"[Load] Compiled file loaded: {compiled_arg}")
                 engine.loaded_files[compiled_arg] = data
                 content = data
@@ -678,7 +687,7 @@ class EventManager:
         try:
             compiled_path = base_name + aes_extension
             file_bytes = engine.resource_manager.get_bytes(compiled_path)
-            content = AES(file_bytes, key).decrypt().decode("utf-8", errors="replace")
+            content = AES(key).decrypt(file_bytes, aad=SCRIPT_AAD).decode("utf-8", errors="replace")
 
         except Exception as e:
             raise Exception(f"[ERROR] Compiled version of the script for '{base_name}' not found: {e}")
@@ -706,7 +715,7 @@ class EventManager:
         content = ""
         try:
             file_bytes = engine.resource_manager.get_bytes(compiled_path)
-            content = AES(file_bytes, key).decrypt().decode("utf-8", errors="replace")
+            content = AES(key).decrypt(file_bytes, aad=SCRIPT_AAD).decode("utf-8", errors="replace")
             engine.Log(f"[jump_scene] Compiled scene '{scene_alias}' loaded from: {compiled_path}")
         except Exception as e:
             non_compiled_path = os.path.join(engine.game_path, "data", "scenes", f"{scene_file_name}{aes_extension}")
@@ -791,15 +800,15 @@ class EventManager:
     
     def handle_if(self, arg, engine):
         """
-        The function `handle_if` evaluates a condition based on a variable in the `engine` object and
-        logs the result.
+        La función `handle_if` evalúa una condición basada en una variable en el objeto `engine` y
+        registra el resultado.
         
-        :param arg: The `arg` parameter in the `handle_if` method is a string that represents a variable
-        name. It is stripped of any leading or trailing whitespace before being used in the method
-        :param engine: The `engine` parameter in the `handle_if` function seems to be an object that
-        contains some properties and methods related to handling conditions and logging. It appears to
-        have a `vars` property that stores variables, a `condition_stack` property to keep track of
-        conditions, and a `Log`
+        :param arg: El parámetro `arg` en el método `handle_if` es una cadena que representa un nombre de variable.
+        Se utiliza para eliminar cualquier espacio en blanco al principio o al final antes de ser usado en el método
+        :param engine: El parámetro `engine` en la función `handle_if` parece ser un objeto que
+        contiene algunas propiedades y métodos relacionados con el manejo de condiciones y registros. Tiene una
+        propiedad `vars` que almacena variables, una propiedad `condition_stack` para hacer seguimiento de
+        condiciones, y un método `Log`
         """
         var_name = arg.strip()
         if not hasattr(engine, "condition_stack"):
@@ -817,13 +826,13 @@ class EventManager:
         The function `handle_else` reverses the current condition in the engine's condition stack if
         there is an open if block.
         
-        :param arg: The `arg` parameter in the `handle_else` method is likely used to pass any
-        additional arguments or values that may be needed for processing the "else" condition. In this
-        context, it may be used to provide any specific data or instructions related to the "else" block
-        within the code logic
-        :param engine: The `engine` parameter in the `handle_else` function seems to be an object that
-        has a `condition_stack` attribute. This function is designed to handle an "else" statement in
-        some sort of conditional logic. The function checks if there is an open "if" block in the
+        :param arg: El parámetro `arg` en el método `handle_else` se utiliza probablemente para pasar cualquier
+        argumento o valor adicional que pueda ser necesario para procesar la condición "else". En este
+        contexto, puede ser usado para proporcionar datos o instrucciones específicas relacionadas con el bloque "else" 
+        dentro de la lógica del código
+        :param engine: El parámetro `engine` en la función `handle_else` parece ser un objeto que
+        tiene un atributo `condition_stack`. Esta función está diseñada para manejar una declaración "else" en
+        algún tipo de lógica condicional. La función verifica si hay un bloque "if" abierto en el
         `engine
         """
         if not hasattr(engine, "condition_stack") or not engine.condition_stack:
@@ -837,14 +846,14 @@ class EventManager:
         The function `handle_endif` checks for an open if block in the condition stack of the engine and
         pops it if found, logging the end of the if block.
         
-        :param arg: The `arg` parameter in the `handle_endif` method is typically used to pass any
-        arguments or values that are relevant to the operation being performed. In this context, `arg`
-        might contain information related to the `endif` statement or the if block that is being closed.
-        It could be
-        :param engine: The `engine` parameter is likely an object that contains information and methods
-        related to the execution of the code or script. In this specific function `handle_endif`, the
-        `engine` object is used to access a `condition_stack` attribute, which is assumed to be a stack
-        data structure used to
+        :param arg: El parámetro `arg` en el método `handle_endif` se utiliza típicamente para pasar cualquier
+        argumento o valor que sea relevante para la operación que se está realizando. En este contexto, `arg`
+        podría contener información relacionada con la declaración `endif` o el bloque if que se está cerrando.
+        Podría ser
+        :param engine: El parámetro `engine` es probablemente un objeto que contiene información y métodos
+        relacionados con la ejecución del código o script. En esta función específica `handle_endif`, el
+        objeto `engine` se utiliza para acceder a un atributo `condition_stack`, que se supone es una pila
+        estructura de datos utilizada para
         """
         if not hasattr(engine, "condition_stack") or not engine.condition_stack:
             raise Exception("[endif] No open if block.")
@@ -1072,7 +1081,7 @@ class EventManager:
         """
         engine.current_choice_buttons = []
         engine.Log("[choice] Menu block started.")
-    
+         
     def handle_option_button(self, arg, engine):
         """
         Parses a button command to extract a label and an event action, then adds them to the current menu.
@@ -1151,11 +1160,33 @@ class EventManager:
         engine.current_menu_buttons = []
         engine.current_menu_panel = None
         
-    # TODO: FIX MAIN MENU, PERSIST IF @BG NOT EXIST IN THE SCRIPT
     def handle_menu(self, arg, engine):
+        """
+        Initializes the main menu and parses optional position and layout parameters.
+        Syntax: @mainMenu position="leftTop" layout="vertical"
+        """
         engine.current_menu_buttons = []
         engine.Log("[menu] Menu block started.")
 
+        # Parse optional parameters
+        position = "center"  # Default position
+        layout = "vertical"  # Default layout
+
+        # Extract position and layout from arguments
+        match_position = re.search(r'position="(.*?)"', arg)
+        if match_position:
+            position = match_position.group(1).strip()
+
+        match_layout = re.search(r'layout="(.*?)"', arg)
+        if match_layout:
+            layout = match_layout.group(1).strip()
+
+        # Store the parsed values in the engine for later use in handle_endmenu
+        engine.menu_position = position
+        engine.menu_layout = layout
+
+        engine.Log(f"[menu] Position set to '{position}', Layout set to '{layout}'.")
+    
     def handle_button(self, arg, engine):
         arg = arg.strip()
         pattern = r'^"([^"]+)"\s+event\s+(.+)$'
@@ -1179,11 +1210,58 @@ class EventManager:
             engine.current_menu_buttons = []
         engine.current_menu_buttons.append(button_data)
         engine.Log(f"[button] Button added: '{raw_label}' -> '{action}' params: {visual_params if visual_params else '{}'}.")
-
+    
     def handle_endmenu(self, arg, engine):
+        """
+        Finalizes the main menu by creating and displaying the menu panel with buttons.
+        """
         if not hasattr(engine, "current_menu_buttons") or not engine.current_menu_buttons:
             raise Exception("[endmenu] There are no buttons defined in the menu.")
-        engine.current_menu_panel = MenuPanel(width=500, height=400, layout=VerticalLayout(), no_bg=True, no_border=True, is_main_menu=True)
+
+        # Use stored position and layout values
+        position = getattr(engine, "menu_position", "center")
+        layout = getattr(engine, "menu_layout", "vertical")
+
+        # Determine layout class
+        layout_class = VerticalLayout if layout == "vertical" else HorizontalLayout
+
+        # Determine panel position based on the position value
+        screen_width = engine.config.get("screen_width", 800)
+        screen_height = engine.config.get("screen_height", 600)
+        panel_width = 500
+        panel_height = 400
+        # Adjust panel dimensions for horizontal layout
+        if layout == "horizontal":
+            panel_width = len(engine.current_menu_buttons) * 220  # Adjust width based on button count
+            panel_height = 100  # Reduce height for horizontal layout
+
+        if position == "leftTop":
+            panel_x, panel_y = 10, 10
+        elif position == "rightTop":
+            panel_x, panel_y = screen_width - panel_width - 10, 10
+        elif position == "leftBottom":
+            panel_x, panel_y = 10, screen_height - panel_height - 10
+        elif position == "rightBottom":
+            panel_x, panel_y = screen_width - panel_width - 10, screen_height - panel_height - 10
+        elif position == "centerBottom":
+            panel_x = (screen_width - panel_width) // 2
+            panel_y = screen_height - panel_height - 10
+        else:  # Default to center
+            panel_x = (screen_width - panel_width) // 2
+            panel_y = (screen_height - panel_height) // 2
+
+
+        engine.current_menu_panel = MenuPanel(
+            width=panel_width,
+            height=panel_height,
+            layout=layout_class(),
+            x=panel_x,
+            y=panel_y,
+            no_bg=True,
+            no_border=True,
+            is_main_menu=True
+        )
+
         font = engine.renderer.font
         for btn in engine.current_menu_buttons:
             v = btn.get("visual_params", {})
@@ -1406,5 +1484,3 @@ class EventManager:
 
         sfx.play(loop=-1)
         engine.Log(f"[sfx] Playing sound effect '{filename}'.")
-
-### despues de aqui realiza la implementaciones.
