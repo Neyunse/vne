@@ -7,6 +7,14 @@ on:
     branches: [gh/neyunse/test]
 
 jobs:
+  generate-env:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Generar env.py con VNE_KEY
+        run: |
+          echo "import os" > env.py
+          echo "os.environ['VNE_KEY'] = '${{ secrets.VNE_KEY }}'" >> env.py
+  
   build-windows:
     runs-on: windows-2022
     steps:
