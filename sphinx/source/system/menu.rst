@@ -8,6 +8,10 @@ Menu & Button
    Starts a menu block.
    It is expected that, after this command, @button commands will be issued to define the options.
 
+   :param position: Optional, default is "leftTop". Other options are "leftTop", "rightTop", "leftBottom", "rightBottom" and "centerBottom"
+
+   :param layout: Optional, default is "vertical". Other options are "horizontal"
+
 .. py:function:: @button
 
    Create a button with a label

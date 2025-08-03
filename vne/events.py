@@ -10,7 +10,7 @@ from vne.config import (key, file_extension, aes_extension, bundle_extension,
                         engine_version)
 import pickle
 from vne.Audio import Audio
-from vne.visual import VisualElement, Button, MenuPanel, VerticalLayout, DialogPanel, SpriteVisual, AutoSizedBackground
+from vne.visual import VisualElement, Button, MenuPanel, VerticalLayout, DialogPanel, SpriteVisual, AutoSizedBackground, HorizontalLayout
 from vne.visual import SpriteVisual
 from vne.visual import FadeAnimation, SlideAnimation, DissolveAnimation
 
@@ -445,10 +445,8 @@ class EventManager:
     def handle_sprite(self, arg, engine):
         """
         Loads and stores a sprite image with a specified alias, position y animación.
-        Sintaxis: @sprite character at left fadein
-        Sintaxis: @sprite character at x=100,y=200 slidein
         Sintaxis: @sprite character position="left"
-        Sintaxis: @sprite character:variación
+        Sintaxis: @sprite character:variation
         """
         parts = arg.split() # get arguments
         load_image = ScriptLexer(engine.game_path, engine).load_image
@@ -463,14 +461,14 @@ class EventManager:
             
         # Manejar alias con formato base:variación y opciones adicionales
         base_alias, _, variation = sprite_alias.partition(":")
+        
+        
+        
 
         if variation:
             relative_path = os.path.join("images", "sprites", base_alias, f"{base_alias}_{variation}.png")
         else:
-            relative_path = os.path.join("images", "sprites", f"{base_alias}.png")
-
-        # Procesar opciones adicionales
-        extra_options = parts[1:] if len(parts) > 1 else []
+            relative_path = os.path.join("images", "sprites", base_alias, f"{base_alias}_default.png")
 
         # Detectar animaciones en el argumento
         anim_match = re.search(r'animation="(.*?)"', arg)
@@ -1080,7 +1078,7 @@ class EventManager:
         """
         engine.current_choice_buttons = []
         engine.Log("[choice] Menu block started.")
-    
+         
     def handle_option_button(self, arg, engine):
         """
         Parses a button command to extract a label and an event action, then adds them to the current menu.
@@ -1159,11 +1157,33 @@ class EventManager:
         engine.current_menu_buttons = []
         engine.current_menu_panel = None
         
-    # TODO: FIX MAIN MENU, PERSIST IF @BG NOT EXIST IN THE SCRIPT
     def handle_menu(self, arg, engine):
+        """
+        Initializes the main menu and parses optional position and layout parameters.
+        Syntax: @mainMenu position="leftTop" layout="vertical"
+        """
         engine.current_menu_buttons = []
         engine.Log("[menu] Menu block started.")
 
+        # Parse optional parameters
+        position = "center"  # Default position
+        layout = "vertical"  # Default layout
+
+        # Extract position and layout from arguments
+        match_position = re.search(r'position="(.*?)"', arg)
+        if match_position:
+            position = match_position.group(1).strip()
+
+        match_layout = re.search(r'layout="(.*?)"', arg)
+        if match_layout:
+            layout = match_layout.group(1).strip()
+
+        # Store the parsed values in the engine for later use in handle_endmenu
+        engine.menu_position = position
+        engine.menu_layout = layout
+
+        engine.Log(f"[menu] Position set to '{position}', Layout set to '{layout}'.")
+    
     def handle_button(self, arg, engine):
         arg = arg.strip()
         pattern = r'^"([^"]+)"\s+event\s+(.+)$'
@@ -1187,11 +1207,58 @@ class EventManager:
             engine.current_menu_buttons = []
         engine.current_menu_buttons.append(button_data)
         engine.Log(f"[button] Button added: '{raw_label}' -> '{action}' params: {visual_params if visual_params else '{}'}.")
-
+    
     def handle_endmenu(self, arg, engine):
+        """
+        Finalizes the main menu by creating and displaying the menu panel with buttons.
+        """
         if not hasattr(engine, "current_menu_buttons") or not engine.current_menu_buttons:
             raise Exception("[endmenu] There are no buttons defined in the menu.")
-        engine.current_menu_panel = MenuPanel(width=500, height=400, layout=VerticalLayout(), no_bg=True, no_border=True, is_main_menu=True)
+
+        # Use stored position and layout values
+        position = getattr(engine, "menu_position", "center")
+        layout = getattr(engine, "menu_layout", "vertical")
+
+        # Determine layout class
+        layout_class = VerticalLayout if layout == "vertical" else HorizontalLayout
+
+        # Determine panel position based on the position value
+        screen_width = engine.config.get("screen_width", 800)
+        screen_height = engine.config.get("screen_height", 600)
+        panel_width = 500
+        panel_height = 400
+        # Adjust panel dimensions for horizontal layout
+        if layout == "horizontal":
+            panel_width = len(engine.current_menu_buttons) * 220  # Adjust width based on button count
+            panel_height = 100  # Reduce height for horizontal layout
+
+        if position == "leftTop":
+            panel_x, panel_y = 10, 10
+        elif position == "rightTop":
+            panel_x, panel_y = screen_width - panel_width - 10, 10
+        elif position == "leftBottom":
+            panel_x, panel_y = 10, screen_height - panel_height - 10
+        elif position == "rightBottom":
+            panel_x, panel_y = screen_width - panel_width - 10, screen_height - panel_height - 10
+        elif position == "centerBottom":
+            panel_x = (screen_width - panel_width) // 2
+            panel_y = screen_height - panel_height - 10
+        else:  # Default to center
+            panel_x = (screen_width - panel_width) // 2
+            panel_y = (screen_height - panel_height) // 2
+
+
+        engine.current_menu_panel = MenuPanel(
+            width=panel_width,
+            height=panel_height,
+            layout=layout_class(),
+            x=panel_x,
+            y=panel_y,
+            no_bg=True,
+            no_border=True,
+            is_main_menu=True
+        )
+
         font = engine.renderer.font
         for btn in engine.current_menu_buttons:
             v = btn.get("visual_params", {})
@@ -1414,5 +1481,3 @@ class EventManager:
 
         sfx.play(loop=-1)
         engine.Log(f"[sfx] Playing sound effect '{filename}'.")
-
-### despues de aqui realiza la implementaciones.

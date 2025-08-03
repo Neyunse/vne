@@ -255,17 +255,6 @@ class MenuPanel(VisualElement):
         for child in self.children:
             child.render(surface)
 
-class VerticalLayout:
-    def __init__(self, margin=10):
-        self.margin = margin
-    def apply(self, panel):
-        y = self.margin
-        for child in panel.children:
-            child.x = self.margin
-            child.y = y
-            child.width = panel.width - 2*self.margin
-            y += child.height + self.margin
-
 class DialogPanel(VisualElement):
     def __init__(self, text, font=None, x=0, y=0, width=400, height=120, theme=None):
         super().__init__(x, y, width, height, theme=theme)
@@ -404,6 +393,19 @@ class SpriteVisual(VisualElement):
         for child in self.children:
             child.render(surface)
 
+class VerticalLayout:
+    def __init__(self, margin=10):
+        self.margin = margin
+
+    def apply(self, panel):
+        y = self.margin
+        for child in panel.children:
+            child.x = self.margin
+            child.y = y
+            child.width = panel.width - 2 * self.margin
+            y += child.height + self.margin
+            child.height = child.height  # Mantener altura original
+
 class HorizontalLayout:
     def __init__(self, margin=10, align="start", justify="start"):
         self.margin = margin
@@ -428,8 +430,11 @@ class HorizontalLayout:
         for child in panel.children:
             child.x = x
             child.y = self.margin
-            child.height = panel.height - 2 * self.margin
+            child.height = child.height  # Mantener altura original
+
             x += child.width + self.margin
+            
+            
 
 class GridLayout:
     def __init__(self, rows, cols, margin=10, align="start", justify="start"):

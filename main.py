@@ -885,7 +885,7 @@ class MainWindow(QWidget):
 
         # Projects directory at same level as this script
         self.engineDir = engine_path()
-        print(self.engineDir)
+
         self.projects_dir = os.path.join(self.engineDir, PROJECT_FOLDER)
 
         self.projects = self.load_projects()
