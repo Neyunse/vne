@@ -32,3 +32,4 @@ engine-error.txt
 env.py
 *.vsix
 node_modules
+dev-log.md
