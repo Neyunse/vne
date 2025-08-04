@@ -2,9 +2,9 @@ name: Build Multiplatform Engine
 
 on:
   push:
-    branches: [gh/neyunse/test]
+    branches: [dev]
   pull_request:
-    branches: [gh/neyunse/test]
+    branches: [dev]
 
 permissions:
   contents: write

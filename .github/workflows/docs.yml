@@ -10,6 +10,8 @@ on:
       - '_version.py'
 
   workflow_dispatch:
+  release:
+    types: [published]  # Triggered when a release is published (not draft)
 
 permissions:
   contents: read
