@@ -5,12 +5,16 @@ on:
     branches: [dev]
   pull_request:
     branches: [dev]
+    types: [closed]
 
 permissions:
   contents: write
   id-token: write
+
+
 jobs:
   build-windows:
+    if: github.event.pull_request.merged == true
     runs-on: windows-2022
     steps:
       - uses: actions/checkout@v3
@@ -20,7 +24,7 @@ jobs:
           python-version: "3.10"
       - name: Generate env.py with VNE_KEY
         run: |
-          echo "import os" > ./vne/env.py
+          echo "import os" >> ./vne/env.py
           echo "os.environ['VNE_KEY'] = '${{ secrets.VNE_KEY }}'" >> ./vne/env.py
       - name: Install dependencies
         run: |
@@ -46,7 +50,7 @@ jobs:
           python-version: "3.10"
       - name: Generate env.py with VNE_KEY
         run: |
-          echo "import os" > ./vne/env.py
+          echo "import os" >> ./vne/env.py
           echo "os.environ['VNE_KEY'] = '${{ secrets.VNE_KEY }}'" >> ./vne/env.py
       - name: Install dependencies
         run: |
@@ -72,7 +76,7 @@ jobs:
           python-version: "3.10"
       - name: Generate env.py with VNE_KEY
         run: |
-          echo "import os" > ./vne/env.py
+          echo "import os" >> ./vne/env.py
           echo "os.environ['VNE_KEY'] = '${{ secrets.VNE_KEY }}'" >> ./vne/env.py
       - name: Install dependencies
         run: |
