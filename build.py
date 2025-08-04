@@ -3,6 +3,7 @@ import os
 import sys
 import subprocess
 import zipfile
+import platform
 
 def zip_folders_and_files(folders, files, zip_path):
     with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
@@ -22,13 +23,13 @@ def zip_folders_and_files(folders, files, zip_path):
                 if file_path and os.path.isfile(file_path):
                     zipf.write(file_path, os.path.basename(file_path))
 
-def build(spec="engine"):
+def build(spec="engine", so="win"):
     if spec == "bootstrapper":
         return [
         "pyinstaller",
         "--clean",
         "--distpath",
-        "./dist/lib/win",
+        f"./dist/lib/{so}",
         "--workpath",
         "./build",
         f"{spec}.spec"
@@ -51,6 +52,17 @@ def buildDoc():
         "./dist/docs"
     ]
 
+def so_name():
+    if platform.system() == "Windows":
+        return "win"
+    elif platform.system() == "Linux":
+        return "linux"
+    elif platform.system() == "Darwin":
+        return "darwin"
+    else:
+        print(f"[build.py] Error: Unsupported platform '{platform.system()}'. Cannot determine shared object name.")
+        sys.exit(1)
+
 def build_engine():
     # Verify that main.py exists in the current directory.
     if not os.path.exists("main.py"):
@@ -59,7 +71,7 @@ def build_engine():
     
     try:
         engine = build()
-        bootstrapper = build("bootstrapper")
+        bootstrapper = build("bootstrapper", so=so_name())
         doc = buildDoc()
         
         
@@ -75,7 +87,18 @@ def build_engine():
         subprocess.check_call(doc)
         print("[build.py] The documentation was correctly constructed")
         
-        zip_folders_and_files(['./dist/lib', './dist/docs'], ['./dist/engine.exe'], './dist/vne.zip')
+        if platform.system() == "Windows":
+            print("[build.py] Zipping the engine and documentation...")
+            zip_folders_and_files(['./dist/lib', './dist/docs'], ['./dist/engine.exe'], f'./dist/vne-win.zip')
+        elif platform.system() == "Linux":
+            print("[build.py] Zipping the engine and documentation for Linux...")
+            zip_folders_and_files(['./dist/lib', './dist/docs'], ['./dist/engine'], f'./dist/vne-linux.zip')
+        elif platform.system() == "Darwin":
+            print("[build.py] Zipping the engine and documentation for macOS...")
+            zip_folders_and_files(['./dist/lib', './dist/docs'], ['./dist/engine'], f'./dist/vne-darwin.zip')
+        else:
+            print(f"[build.py] Error: Unsupported platform '{platform.system()}'. Cannot zip engine and documentation.")
+            sys.exit(1)
     except subprocess.CalledProcessError as e:
         print(f"[build.py] Error during compilation: {e}")
         sys.exit(1)

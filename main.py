@@ -202,10 +202,30 @@ def distribute_game(game_path):
 
         os.unlink(pkg_path)
         
-        exe_source = os.path.join(os.path.dirname(sys.executable),"lib", "win", "bootstrapper.exe")
+        exe_source = None
+        
+        if platform.system() == "Windows":
+            exe_source = os.path.join(os.path.dirname(sys.executable), "lib", "win", "bootstrapper.exe")
+        elif platform.system() == "Linux":
+            exe_source = os.path.join(os.path.dirname(sys.executable), "lib", "linux", "bootstrapper")
+        elif platform.system() == "Darwin":
+            exe_source = os.path.join(os.path.dirname(sys.executable), "lib", "darwin", "bootstrapper")
+        else:
+            raise Exception("Unsupported platform")
+        
         exe_source = os.path.abspath(exe_source)
    
         exe_dest = os.path.join(dest_folder, "game.exe")
+        
+        if platform.system() == "Windows":
+            exe_dest = os.path.join(dest_folder, "game.exe")
+        elif platform.system() == "Linux":
+            exe_dest = os.path.join(dest_folder, "game")
+        elif platform.system() == "Darwin":
+            exe_dest = os.path.join(dest_folder, "game.app", "Contents", "MacOS", "game")
+            os.makedirs(os.path.dirname(exe_dest), exist_ok=True)
+        
+        
         shutil.copy2(exe_source, exe_dest)
         print(f"[distribute] Binary copied: {exe_source} → {exe_dest}")
 

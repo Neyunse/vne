@@ -1,5 +1,6 @@
 # -*- mode: python ; coding: utf-8 -*-
-
+import os
+env_hook = os.path.abspath("env.py")
 
 a = Analysis(
     ['bootstrapper.py'],
@@ -27,7 +28,7 @@ exe = EXE(
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
-    upx=True,
+    upx=False,
     upx_exclude=[],
     runtime_tmpdir=None,
     console=False,
