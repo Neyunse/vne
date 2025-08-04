@@ -23,13 +23,13 @@ def zip_folders_and_files(folders, files, zip_path):
                 if file_path and os.path.isfile(file_path):
                     zipf.write(file_path, os.path.basename(file_path))
 
-def build(spec="engine"):
+def build(spec="engine", so="win"):
     if spec == "bootstrapper":
         return [
         "pyinstaller",
         "--clean",
         "--distpath",
-        "./dist/lib/win",
+        f"./dist/lib/{so}",
         "--workpath",
         "./build",
         f"{spec}.spec"
@@ -52,6 +52,17 @@ def buildDoc():
         "./dist/docs"
     ]
 
+def so_name():
+    if platform.system() == "Windows":
+        return "win"
+    elif platform.system() == "Linux":
+        return "linux"
+    elif platform.system() == "Darwin":
+        return "darwin"
+    else:
+        print(f"[build.py] Error: Unsupported platform '{platform.system()}'. Cannot determine shared object name.")
+        sys.exit(1)
+
 def build_engine():
     # Verify that main.py exists in the current directory.
     if not os.path.exists("main.py"):
@@ -60,7 +71,7 @@ def build_engine():
     
     try:
         engine = build()
-        bootstrapper = build("bootstrapper")
+        bootstrapper = build("bootstrapper", so=so_name())
         doc = buildDoc()
         
         
