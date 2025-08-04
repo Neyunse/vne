@@ -1,6 +1,15 @@
 name: Deploy docs to Pages
 
 on:
+  push:
+    branches:
+      - dev
+    paths:
+      - '**.rst'
+      - 'conf.py'
+      - '_version.py'
+
+  workflow_dispatch:
   release:
     types: [published]  # Triggered when a release is published (not draft)
 
