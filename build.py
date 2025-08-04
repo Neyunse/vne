@@ -86,7 +86,8 @@ def build_engine():
             print("[build.py] Zipping the engine and documentation for macOS...")
             zip_folders_and_files(['./dist/lib', './dist/docs'], ['./dist/engine'], f'./dist/vne-darwin.zip')
         else:
-            pass
+            print(f"[build.py] Error: Unsupported platform '{platform.system()}'. Cannot zip engine and documentation.")
+            sys.exit(1)
     except subprocess.CalledProcessError as e:
         print(f"[build.py] Error during compilation: {e}")
         sys.exit(1)
