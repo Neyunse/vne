@@ -3,6 +3,7 @@ import os
 import sys
 import subprocess
 import zipfile
+import platform
 
 def zip_folders_and_files(folders, files, zip_path):
     with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
@@ -75,7 +76,18 @@ def build_engine():
         subprocess.check_call(doc)
         print("[build.py] The documentation was correctly constructed")
         
-        zip_folders_and_files(['./dist/lib', './dist/docs'], ['./dist/engine.exe'], './dist/vne.zip')
+        if platform.system() == "Windows":
+            print("[build.py] Zipping the engine and documentation...")
+            zip_folders_and_files(['./dist/lib', './dist/docs'], ['./dist/engine.exe'], f'./dist/vne-win.zip')
+        elif platform.system() == "Linux":
+            print("[build.py] Zipping the engine and documentation for Linux...")
+            zip_folders_and_files(['./dist/lib', './dist/docs'], ['./dist/engine'], f'./dist/vne-linux.zip')
+        elif platform.system() == "Darwin":
+            print("[build.py] Zipping the engine and documentation for macOS...")
+            zip_folders_and_files(['./dist/lib', './dist/docs'], ['./dist/engine'], f'./dist/vne-darwin.zip')
+        else:
+            print(f"[build.py] Error: Unsupported platform '{platform.system()}'. Cannot zip engine and documentation.")
+            sys.exit(1)
     except subprocess.CalledProcessError as e:
         print(f"[build.py] Error during compilation: {e}")
         sys.exit(1)

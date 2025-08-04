@@ -202,7 +202,17 @@ def distribute_game(game_path):
 
         os.unlink(pkg_path)
         
-        exe_source = os.path.join(os.path.dirname(sys.executable),"lib", "win", "bootstrapper.exe")
+        exe_source = None
+        
+        if platform.system() == "Windows":
+            exe_source = os.path.join(os.path.dirname(sys.executable), "lib", "win", "bootstrapper.exe")
+        elif platform.system() == "Linux":
+            exe_source = os.path.join(os.path.dirname(sys.executable), "lib", "linux", "bootstrapper")
+        elif platform.system() == "Darwin":
+            exe_source = os.path.join(os.path.dirname(sys.executable), "lib", "mac", "bootstrapper")
+        else:
+            raise Exception("Unsupported platform")
+        
         exe_source = os.path.abspath(exe_source)
    
         exe_dest = os.path.join(dest_folder, "game.exe")
