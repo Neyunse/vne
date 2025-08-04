@@ -78,11 +78,15 @@ def build_engine():
         
         if platform.system() == "Windows":
             print("[build.py] Zipping the engine and documentation...")
-            zip_folders_and_files(['./dist/lib', './dist/docs'], ['./dist/engine.exe'], f'./dist/vne.zip')
+            zip_folders_and_files(['./dist/lib', './dist/docs'], ['./dist/engine.exe'], f'./dist/vne-win.zip')
+        elif platform.system() == "Linux":
+            print("[build.py] Zipping the engine and documentation for Linux...")
+            zip_folders_and_files(['./dist/lib', './dist/docs'], ['./dist/engine'], f'./dist/vne-linux.zip')
+        elif platform.system() == "Darwin":
+            print("[build.py] Zipping the engine and documentation for macOS...")
+            zip_folders_and_files(['./dist/lib', './dist/docs'], ['./dist/engine'], f'./dist/vne-darwin.zip')
         else:
-            print("[build.py] Zipping the engine and documentation for non-Windows platforms...")
-            zip_folders_and_files(['./dist/lib', './dist/docs'], ['./dist/engine'], f'./dist/vne.zip')
-        
+            pass
     except subprocess.CalledProcessError as e:
         print(f"[build.py] Error during compilation: {e}")
         sys.exit(1)
