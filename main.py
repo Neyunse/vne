@@ -215,7 +215,11 @@ def distribute_game(game_path):
         
         exe_source = os.path.abspath(exe_source)
    
-        exe_dest = os.path.join(dest_folder, "game.exe")
+        if platform.system() == "Windows":
+            exe_filename = "game.exe"
+        else:
+            exe_filename = "game"
+        exe_dest = os.path.join(dest_folder, exe_filename)
         shutil.copy2(exe_source, exe_dest)
         print(f"[distribute] Binary copied: {exe_source} → {exe_dest}")
 
