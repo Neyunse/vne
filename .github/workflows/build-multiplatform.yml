@@ -101,7 +101,7 @@ jobs:
         run: |
           VERSION=$(python -c "import re; f=open('vne/_version.py').read(); print(re.search(r'__version__\s*=\s*[\'\"]([^\'\"]+)[\'\"]', f).group(1))")
           echo "version=$VERSION" >> $GITHUB_OUTPUT
-      - name: Crear Release
+      - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
           tag_name: ${{ steps.get_version.outputs.version }}
@@ -110,7 +110,7 @@ jobs:
           draft: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - name: Adjuntar artefactos
+      - name: Download artifacts
         uses: actions/download-artifact@v4
         with:
           path: ./artifacts
