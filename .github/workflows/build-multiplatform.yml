@@ -46,7 +46,7 @@ jobs:
           python-version: "3.10"
       - name: Generate env.py with VNE_KEY
         run: |
-          echo "import os" > env.py
+          echo "import os" > ./vne/env.py
           echo "os.environ['VNE_KEY'] = '${{ secrets.VNE_KEY }}'" >> ./vne/env.py
       - name: Install dependencies
         run: |
