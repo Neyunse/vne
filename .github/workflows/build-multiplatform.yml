@@ -46,7 +46,7 @@ jobs:
           & "C:\Program Files (x86)\Windows Kits\10\bin\10.0.19041.0\x64\signtool.exe" sign /f cert.pfx /p "${{ secrets.VNE_KEY }}" /tr http://timestamp.digicert.com /td sha256 /fd sha256 dist/lib/win/bootstrapper.exe
         shell: pwsh
       
-      - name: Comprimir dist en ZIP (Windows)
+      - name: ZIP (Windows)
         run: |
           Compress-Archive -Path dist\\* -DestinationPath dist\\vne-win.zip
         shell: pwsh
