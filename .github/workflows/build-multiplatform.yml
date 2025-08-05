@@ -43,7 +43,7 @@ jobs:
       - name: Sign engine.exe y bootstrapper.exe
         run: |
           & "C:\Program Files (x86)\Windows Kits\10\bin\10.0.19041.0\x64\signtool.exe" sign /f cert.pfx /p "${{ secrets.VNE_KEY }}" /tr http://timestamp.digicert.com /td sha256 /fd sha256 dist/engine.exe
-          & "C:\Program Files (x86)\Windows Kits\10\bin\10.0.19041.0\x64\signtool.exe" sign /f cert.pfx /p "${{ secrets.VNE_KEY }}" /tr http://timestamp.digicert.com /td sha256 /fd sha256 dist/lib/bootstrapper.exe
+          & "C:\Program Files (x86)\Windows Kits\10\bin\10.0.19041.0\x64\signtool.exe" sign /f cert.pfx /p "${{ secrets.VNE_KEY }}" /tr http://timestamp.digicert.com /td sha256 /fd sha256 dist/lib/win/bootstrapper.exe
         shell: pwsh
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
