@@ -31,12 +31,27 @@ jobs:
           pip install -r requirements.txt
       - name: Build engine and bootstrapper
         run: |
-          python build.py
+          python build.py --no-zip
+      - name: Decode PFX certificate
+        run: |
+          echo "${{ secrets.CODESIGN_PFX }}" | Out-File -Encoding ascii -FilePath cert_base64.txt
+          certutil -decode cert_base64.txt cert.pfx
+        shell: pwsh
+      - name: Sign engine.exe y bootstrapper.exe
+        run: |
+          & "C:\Program Files (x86)\Windows Kits\10\bin\10.0.19041.0\x64\signtool.exe" sign /f cert.pfx /p "${{ secrets.VNE_KEY }}" /tr http://timestamp.digicert.com /td sha256 /fd sha256 dist/engine.exe
+          & "C:\Program Files (x86)\Windows Kits\10\bin\10.0.19041.0\x64\signtool.exe" sign /f cert.pfx /p "${{ secrets.VNE_KEY }}" /tr http://timestamp.digicert.com /td sha256 /fd sha256 dist/lib/bootstrapper.exe
+        shell: pwsh
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: dist-windows
-          path: dist/vne-win.zip
+          path: dist
+      - name: delete cert files
+        run: |
+          del cert.pfx
+          del cert_base64.txt
+        shell: pwsh
 
   build-linux:
     runs-on: ubuntu-22.04
@@ -59,11 +74,12 @@ jobs:
       - name: Build engine and bootstrapper
         run: |
           python build.py
+        # incluye el firmado aqui de engine.exe y /lib/bootstrapper.exe
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: dist-linux
-          path: dist/vne-linux.zip
+          path: dist
   
   # Temporarily disabled
   # build-mac:
