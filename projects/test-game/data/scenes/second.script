@@ -1,2 +1,8 @@
-K: sss
+K: This is the second scene.
+
+@choice
+  @option "Test Transitions" event Scene(transitions)
+  @option "End Game" event Quit()
+@end_choice
+
 @end

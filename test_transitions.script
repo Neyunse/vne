@@ -1,0 +1,25 @@
+# Test script for transition features
+
+# Test background transition
+@bg black
+Test: Starting with black background
+
+# Test background transition with dissolve
+@bg black transition dissolve  
+Test: Background transition with dissolve
+
+# Test sprite transition (both old animation and new transition syntax)
+@sprite kuro animation="dissolve"
+Test: Sprite with animation dissolve (old syntax)
+
+@sprite kuro transition="dissolve"
+Test: Sprite with transition dissolve (new syntax)
+
+@sprite kuro position="left" transition="fadein"
+Test: Sprite with position and transition
+
+# Test audio transitions (these might not work without actual audio files)
+# @bgm test-music transition dissolve
+# @sfx test-sound transition fadein
+
+@end

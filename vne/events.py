@@ -348,13 +348,31 @@ class EventManager:
     def handle_bg(self, arg, engine):
         """
         Loads and scales a background image to fit the window, manteniendo aspecto.
+        Sintaxis: @bg park transition dissolve
         """
-        engine.current_bg_filename = arg
+        # Parse the argument to extract background name and transition
+        parts = arg.strip().split()
+        bg_name = parts[0] if parts else arg.strip()
+        
+        # Parse transition from the argument
+        transition_match = re.search(r'transition\s+(\w+)', arg)
+        animation = None
+        
+        if transition_match:
+            transition_type = transition_match.group(1).lower()
+            if transition_type == "fadein":
+                animation = FadeAnimation(fade_in=True, duration=0.5)
+            elif transition_type == "fadeout":
+                animation = FadeAnimation(fade_in=False, duration=0.5)
+            elif transition_type == "dissolve":
+                animation = DissolveAnimation(duration=0.5)
+        
+        engine.current_bg_filename = bg_name
         win_w = engine.renderer.screen.get_width()
         win_h = engine.renderer.screen.get_height()
 
         try:
-            color = self.parse_color(arg)
+            color = self.parse_color(bg_name)
 
             if color:
                 # Color sólido
@@ -364,7 +382,7 @@ class EventManager:
             else:
                 # Imagen
                 load_image = ScriptLexer(engine.game_path, engine).load_image
-                relative_path = os.path.join("images", "bg", arg + ".jpg")
+                relative_path = os.path.join("images", "bg", bg_name + ".jpg")
                 bg_image = load_image(relative_path)
 
                 img_w, img_h = bg_image.get_width(), bg_image.get_height()
@@ -377,8 +395,13 @@ class EventManager:
                     x=(win_w - new_w) // 2,
                     y=(win_h - new_h) // 2,
                     width=new_w,
-                    height=new_h
+                    height=new_h,
+                    animation=animation
                 )
+
+            # Add animation to background if specified
+            if animation and hasattr(bg_visual, 'add_animation'):
+                bg_visual.add_animation(animation)
 
             engine.current_bg_visual = bg_visual
 
@@ -444,8 +467,10 @@ class EventManager:
      
     def handle_sprite(self, arg, engine):
         """
-        Loads and stores a sprite image with a specified alias, position y animación.
-        Sintaxis: @sprite character position="left"
+        Loads and stores a sprite image with a specified alias, position y animación/transición.
+        Sintaxis: @sprite character position="left" transition="dissolve"
+        Sintaxis: @sprite character position="left" transition dissolve
+        Sintaxis: @sprite character position="left" animation="dissolve"
         Sintaxis: @sprite character:variation
         """
         parts = arg.split() # get arguments
@@ -473,10 +498,23 @@ class EventManager:
         else:
             relative_path = os.path.join("images", "sprites", base_alias, f"{base_alias}_default.png")
 
-        # Detectar animaciones en el argumento
+        # Detectar animaciones/transiciones en el argumento
+        # Soportar tanto "transition dissolve" como transition="dissolve"
         anim_match = re.search(r'animation="(.*?)"', arg)
-        if anim_match:
+        transition_match_quoted = re.search(r'transition="(.*?)"', arg)
+        transition_match_unquoted = re.search(r'transition\s+(\w+)', arg)
+        
+        # Priorizar transition sobre animation si ambos están presentes
+        if transition_match_quoted:
+            anim_type = transition_match_quoted.group(1).lower()
+        elif transition_match_unquoted:
+            anim_type = transition_match_unquoted.group(1).lower()
+        elif anim_match:
             anim_type = anim_match.group(1).lower()
+        else:
+            anim_type = None
+            
+        if anim_type:
             if anim_type == "fadein":
                 animation = FadeAnimation(fade_in=True, duration=0.5)
             elif anim_type == "fadeout":
@@ -1463,24 +1501,55 @@ class EventManager:
         """
         Plays looping background music using a file located at:
         data/audio/bgm/<filename>.mp3.
+        Sintaxis: @bgm filename transition dissolve
         """
-        filename = arg.strip()
+        # Parse the argument to extract filename and transition
+        parts = arg.strip().split()
+        filename = parts[0] if parts else arg.strip()
+        
+        # Parse transition from the argument
+        transition_match = re.search(r'transition\s+(\w+)', arg)
+        fade_ms = 1000  # Default fade duration
+        
+        if transition_match:
+            transition_type = transition_match.group(1).lower()
+            if transition_type == "dissolve":
+                fade_ms = 1000  # Smooth fade transition
+            elif transition_type == "fadein":
+                fade_ms = 1500  # Longer fade in
+            elif transition_type == "fadeout":
+                fade_ms = 500   # Quick fade out
+        
         engine.current_bgm_filename = filename
 
         bgm = Audio(filename, "bgm", engine)
-
-        bgm.play(loop=-1)
+        bgm.play(loop=-1, fade_ms=fade_ms)
       
-        engine.Log(f"[bgm] Playing background music '{filename}'.")
+        engine.Log(f"[bgm] Playing background music '{filename}' with transition.")
     
     def handle_sfx(self, arg, engine):
         """
         Plays a sound effect using a file located at:
         data/audio/sfx/<filename>.mp3.
+        Sintaxis: @sfx filename transition dissolve
         """
-        filename = arg.strip()
+        # Parse the argument to extract filename and transition
+        parts = arg.strip().split()
+        filename = parts[0] if parts else arg.strip()
+        
+        # Parse transition from the argument
+        transition_match = re.search(r'transition\s+(\w+)', arg)
+        fade_ms = 0  # Default no fade for SFX
+        
+        if transition_match:
+            transition_type = transition_match.group(1).lower()
+            if transition_type == "dissolve":
+                fade_ms = 500   # Shorter fade for SFX
+            elif transition_type == "fadein":
+                fade_ms = 800   
+            elif transition_type == "fadeout":
+                fade_ms = 300   
         
         sfx = Audio(filename, "sfx", engine)
-
-        sfx.play(loop=-1)
-        engine.Log(f"[sfx] Playing sound effect '{filename}'.")
+        sfx.play(loop=0, fade_ms=fade_ms)  # SFX typically don't loop
+        engine.Log(f"[sfx] Playing sound effect '{filename}' with transition.")

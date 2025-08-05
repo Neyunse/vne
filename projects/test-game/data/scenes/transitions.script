@@ -1,0 +1,40 @@
+# Test scene for new transition features
+
+# Test background with transition
+@bg school transition dissolve
+K: Testing background transition with dissolve effect.
+
+# Test sprite with new transition syntax (quoted)
+@sprite kuro transition="fadein"
+K: Testing sprite transition with quoted fadein effect.
+
+# Test sprite with new transition syntax (unquoted)
+@sprite kuro transition dissolve
+K: Testing sprite transition with unquoted dissolve effect.
+
+# Test sprite with position and transition
+@sprite kuro position="left" transition="dissolve"
+K: Testing sprite with position and quoted dissolve transition.
+
+# Test sprite with position and unquoted transition
+@sprite kuro position="right" transition fadein
+K: Testing sprite with position and unquoted fadein transition.
+
+# Test that old animation syntax still works
+@sprite kuro position="center" animation="fadeout"
+K: Testing that old animation syntax still works.
+
+# Test background transition to different background
+@bg black transition dissolve
+K: Changed to black background with dissolve transition.
+
+# Test audio transitions (if audio files exist)
+# @bgm 70_Love transition dissolve
+# K: Testing background music with dissolve transition.
+
+# @sfx test transition fadein
+# K: Testing sound effect with fadein transition.
+
+K: All transition tests completed successfully!
+
+@end
