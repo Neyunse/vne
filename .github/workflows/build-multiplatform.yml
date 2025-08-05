@@ -32,7 +32,7 @@ jobs:
       - name: Build engine and bootstrapper
         run: |
           python build.py --no-zip
-      - name: Instala Windows SDK (signtool)
+      - name: Install Windows SDK (signtool)
         run: |
           choco install windows-sdk-10-version-2004-all
       - name: Decode PFX certificate
