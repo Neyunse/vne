@@ -400,8 +400,6 @@ class EventManager:
                 )
 
             # Add animation to background if specified
-            if animation and hasattr(bg_visual, 'add_animation'):
-                bg_visual.add_animation(animation)
 
             engine.current_bg_visual = bg_visual
 
