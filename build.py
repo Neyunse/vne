@@ -64,6 +64,12 @@ def so_name():
         sys.exit(1)
 
 def build_engine():
+    no_zip = False
+    for arg in sys.argv[1:]:
+        if arg == "--no-zip":
+            no_zip = True
+            break
+    
     # Verify that main.py exists in the current directory.
     if not os.path.exists("main.py"):
         print("[build.py] Error: main.py was not found in the current directory.")
@@ -87,18 +93,21 @@ def build_engine():
         subprocess.check_call(doc)
         print("[build.py] The documentation was correctly constructed")
         
-        if platform.system() == "Windows":
-            print("[build.py] Zipping the engine and documentation...")
-            zip_folders_and_files(['./dist/lib', './dist/docs'], ['./dist/engine.exe'], f'./dist/vne-win.zip')
-        elif platform.system() == "Linux":
-            print("[build.py] Zipping the engine and documentation for Linux...")
-            zip_folders_and_files(['./dist/lib', './dist/docs'], ['./dist/engine'], f'./dist/vne-linux.zip')
-        elif platform.system() == "Darwin":
-            print("[build.py] Zipping the engine and documentation for macOS...")
-            zip_folders_and_files(['./dist/lib', './dist/docs'], ['./dist/engine'], f'./dist/vne-darwin.zip')
+        if not no_zip:
+            if platform.system() == "Windows":
+                print("[build.py] Zipping the engine and documentation...")
+                zip_folders_and_files(['./dist/lib', './dist/docs'], ['./dist/engine.exe'], f'./dist/vne-win.zip')
+            elif platform.system() == "Linux":
+                print("[build.py] Zipping the engine and documentation for Linux...")
+                zip_folders_and_files(['./dist/lib', './dist/docs'], ['./dist/engine'], f'./dist/vne-linux.zip')
+            elif platform.system() == "Darwin":
+                print("[build.py] Zipping the engine and documentation for macOS...")
+                zip_folders_and_files(['./dist/lib', './dist/docs'], ['./dist/engine'], f'./dist/vne-darwin.zip')
+            else:
+                print(f"[build.py] Error: Unsupported platform '{platform.system()}'. Cannot zip engine and documentation.")
+                sys.exit(1)
         else:
-            print(f"[build.py] Error: Unsupported platform '{platform.system()}'. Cannot zip engine and documentation.")
-            sys.exit(1)
+            print("[build.py] Skipping zipping of engine and documentation as per --no-zip flag.")
     except subprocess.CalledProcessError as e:
         print(f"[build.py] Error during compilation: {e}")
         sys.exit(1)
