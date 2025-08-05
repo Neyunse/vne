@@ -47,6 +47,11 @@ jobs:
         with:
           name: dist-windows
           path: dist
+      - name: delete cert files
+        run: |
+          del cert.pfx
+          del cert_base64.txt
+        shell: pwsh
 
   build-linux:
     runs-on: ubuntu-22.04
