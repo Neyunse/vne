@@ -45,11 +45,17 @@ jobs:
           & "C:\Program Files (x86)\Windows Kits\10\bin\10.0.19041.0\x64\signtool.exe" sign /f cert.pfx /p "${{ secrets.VNE_KEY }}" /tr http://timestamp.digicert.com /td sha256 /fd sha256 dist/engine.exe
           & "C:\Program Files (x86)\Windows Kits\10\bin\10.0.19041.0\x64\signtool.exe" sign /f cert.pfx /p "${{ secrets.VNE_KEY }}" /tr http://timestamp.digicert.com /td sha256 /fd sha256 dist/lib/win/bootstrapper.exe
         shell: pwsh
+      
+      - name: ZIP (Windows)
+        run: |
+          Compress-Archive -Path dist\\* -DestinationPath dist\\vne-win.zip
+        shell: pwsh
+
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: dist-windows
-          path: dist
+          path: dist/vne-win.zip
       - name: delete cert files
         run: |
           del cert.pfx
@@ -77,12 +83,11 @@ jobs:
       - name: Build engine and bootstrapper
         run: |
           python build.py
-        # incluye el firmado aqui de engine.exe y /lib/bootstrapper.exe
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: dist-linux
-          path: dist
+          path: dist/vne-linux.zip
   
   # Temporarily disabled
   # build-mac:
