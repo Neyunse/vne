@@ -4,11 +4,12 @@ on:
   pull_request:
     branches: [dev]
     types: [closed]
+    paths:
+      - "vne/**"
 
 permissions:
   contents: write
   id-token: write
-
 
 jobs:
   build-windows:
@@ -45,7 +46,7 @@ jobs:
           & "C:\Program Files (x86)\Windows Kits\10\bin\10.0.19041.0\x64\signtool.exe" sign /f cert.pfx /p "${{ secrets.VNE_KEY }}" /tr http://timestamp.digicert.com /td sha256 /fd sha256 dist/engine.exe
           & "C:\Program Files (x86)\Windows Kits\10\bin\10.0.19041.0\x64\signtool.exe" sign /f cert.pfx /p "${{ secrets.VNE_KEY }}" /tr http://timestamp.digicert.com /td sha256 /fd sha256 dist/lib/win/bootstrapper.exe
         shell: pwsh
-      
+
       - name: ZIP (Windows)
         run: |
           Compress-Archive -Path dist\\* -DestinationPath dist\\vne-win.zip
@@ -88,7 +89,7 @@ jobs:
         with:
           name: dist-linux
           path: dist/vne-linux.zip
-  
+
   # Temporarily disabled
   # build-mac:
   #   runs-on: macos-14
@@ -116,6 +117,30 @@ jobs:
   #         name: dist-mac
   #         path: dist/vne-darwin.zip
 
+  build-extension:
+    runs-on: ubuntu-22.04
+    needs: create-release
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+      - name: Install vsce
+        run: |
+          cd extension
+          npm install
+          npm install -g vsce
+      - name: Build VSCode Extension
+        run: |
+          cd extension
+          vsce package
+      - name: Upload VSIX
+        uses: actions/upload-artifact@v4
+        with:
+          name: vscode-extension
+          path: extension/*.vsix
+
   create-release:
     runs-on: ubuntu-22.04
     needs: [build-windows, build-linux]
@@ -124,7 +149,7 @@ jobs:
       - name: Extract engine version
         id: get_version
         run: |
-          VERSION=$(python -c "import re; f=open('vne/_version.py').read(); print(re.search(r'__version__\s*=\s*[\'\"]([^\'\"]+)[\'\"]', f).group(1))")
+          VERSION=$(python -c "import re; f=open('vne/_version.py').read(); print(re.search(r'__version__\s*=\s*[\'\"]([^\'\"]+)[\'\"], f).group(1))")
           echo "version=$VERSION" >> $GITHUB_OUTPUT
       - name: Create Release
         uses: softprops/action-gh-release@v1

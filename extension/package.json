@@ -2,7 +2,7 @@
   "name": "vne",
   "displayName": "Visual Novel Engine Syntax", 
   "description": "A custom visual novel engine",
-  "version": "0.0.3",
+  "version": "1.0.0",
   "engines": {
     "vscode": "^1.96.0"
   },
@@ -30,6 +30,12 @@
         "language": "script",
         "scopeName": "source.script",
         "path": "./syntaxes/script.tmLanguage.json"
+      }
+    ],
+    "snippets": [
+      {
+        "language": "script",
+        "path": "./snippets/script.code-snippets"
       }
     ]
   },

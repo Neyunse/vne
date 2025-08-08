@@ -1,40 +1,101 @@
 {
-    "name": "My Language Theme",
-    "type": "dark",
-    "colors": {
-        "editor.background": "#1e1e1e",
-        "editor.foreground": "#d4d4d4"
+  "name": "Visual Novel Engine Theme",
+  "type": "dark",
+  "colors": {
+    "editor.background": "#181A20",
+    "editor.foreground": "#E0E0E0",
+    "editorLineNumber.foreground": "#5A5A5A",
+    "editorCursor.foreground": "#FFCC00",
+    "editor.selectionBackground": "#2D2F3A",
+    "editor.inactiveSelectionBackground": "#23242A",
+    "editorIndentGuide.background": "#2A2A2A",
+    "editorIndentGuide.activeBackground": "#444444"
+  },
+  "tokenColors": [
+    // Comments
+    {
+      "scope": ["comment.line.number-sign.script", "comment"],
+      "settings": { "foreground": "#6A9955", "fontStyle": "italic" }
     },
-    "tokenColors": [
-        {
-            "scope": "comment.line.number-sign.mylanguage",
-            "settings": {
-                "foreground": "#6A9955"
-            }
-        },
-        {
-            "scope": "variable.language.mylanguage",
-            "settings": {
-                "foreground": "#9CDCFE"
-            }
-        },
-        {
-            "scope": "constant.character.mylanguage",
-            "settings": {
-                "foreground": "#B5CEA8"
-            }
-        },
-        {
-            "scope": "entity.name.function.mylanguage",
-            "settings": {
-                "foreground": "#C586C0"
-            }
-        },
-        {
-            "scope": "string.quoted.double.mylanguage",
-            "settings": {
-                "foreground": "#CE9178"
-            }
-        }
-    ]
+    // Keywords and commands
+    {
+      "scope": [
+        "keyword.definition.block.script",
+        "keyword.definition.char.script",
+        "keyword.definition.scene.script",
+        "keyword.definition.def.script",
+        "keyword.definition.set.script",
+        "keyword.definition.rename.script",
+        "keyword.definition.bg.script",
+        "keyword.definition.sprite.script",
+        "keyword.definition.bgm.script",
+        "keyword.definition.sfx.script",
+        "keyword.control.block.script",
+        "keyword.control.endmenu.script",
+        "keyword.configuration.display.script",
+        "keyword.configuration.gametitle.script"
+      ],
+      "settings": { "foreground": "#569CD6", "fontStyle": "bold" }
+    },
+    // Variables and parameters
+    {
+      "scope": [
+        "variable.embedded.script",
+        "constant.parameter.definition.char.script",
+        "constant.parameter.scene.tag.script",
+        "constant.parameter.def.variable.script",
+        "constant.parameter.set.variable.script",
+        "constant.parameter.rename.old.script",
+        "constant.parameter.rename.new.script",
+        "constant.parameter.bg.image.script",
+        "constant.parameter.sprite.name.script",
+        "constant.parameter.sprite.image.script",
+        "constant.parameter.bgm.file.script",
+        "constant.parameter.sfx.file.script"
+      ],
+      "settings": { "foreground": "#9CDCFE" }
+    },
+    // Strings
+    {
+      "scope": [
+        "string.quoted.definition.char.script",
+        "string.quoted.scene.script",
+        "string.quoted.def.value.script",
+        "string.quoted.set.value.script",
+        "string.quoted.button.label.script",
+        "string.quoted.event.parameter.script",
+        "string.quoted.gametitle.script",
+        "string.quoted.dialogue.script",
+        "string.unquoted.dialogue.script"
+      ],
+      "settings": { "foreground": "#CE9178" }
+    },
+    // Functions and events
+    {
+      "scope": [
+        "entity.name.function.event.script",
+        "meta.function.event.script"
+      ],
+      "settings": { "foreground": "#C586C0" }
+    },
+    // Numbers
+    {
+      "scope": [
+        "constant.numeric.width.display.script",
+        "constant.numeric.height.display.script"
+      ],
+      "settings": { "foreground": "#B5CEA8" }
+    },
+    // Punctuation
+    {
+      "scope": [
+        "punctuation.separator.assignment.scene.script",
+        "punctuation.separator.assignment.def.script",
+        "punctuation.separator.assignment.set.script",
+        "punctuation.definition.parentheses.script",
+        "punctuation.separator.parameters.display.script"
+      ],
+      "settings": { "foreground": "#D4D4D4" }
+    }
+  ]
 }

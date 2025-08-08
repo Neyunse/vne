@@ -4,6 +4,6 @@ All notable changes to the "CE" extension will be documented in this file.
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
-## [Unreleased]
-
-- Initial release
+## [1.0.0] - 2025-08-08
+- Synchronized with the engine version v1.0.0
+- Improvements and compatibility with the latest engine changes

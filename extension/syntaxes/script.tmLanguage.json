@@ -9,10 +9,28 @@
       "include": "#charCommand"
     },
     {
-      "include": "#menuCommands"
+      "include": "#sceneCommand"
     },
     {
-      "include": "#sceneCommand"
+      "include": "#defCommand"
+    },
+    {
+      "include": "#setCommand"
+    },
+    {
+      "include": "#renameCommand"
+    },
+    {
+      "include": "#bgCommand"
+    },
+    {
+      "include": "#spriteCommand"
+    },
+    {
+      "include": "#bgmCommand"
+    },
+    {
+      "include": "#sfxCommand"
     },
     {
       "include": "#displayCommand"
@@ -21,7 +39,7 @@
       "include": "#gametitleCommand"
     },
     {
-      "include": "#defCommand"
+      "include": "#mainMenuCommands"
     },
     {
       "include": "#choiceCommands"
@@ -82,7 +100,7 @@
         }
       ]
     },
-    "menuCommands": {
+    "mainMenuCommands": {
       "patterns": [
         {
           "name": "keyword.control.block.script",
@@ -100,45 +118,149 @@
           "patterns": [
             {
               "name": "string.quoted.button.label.script",
-              "match": "\"(?:\\\\.|[^\"\\\\])*\""
-            },
-            {
-              "name": "keyword.modifier.button.event.script",
-              "match": "\\bevent\\b"
-            },
-            {
-              "name": "meta.event.button.action.script",
-              "begin": "(?<=event\\s)",
-              "end": "(?=$)",
-              "patterns": [
-                {
-                  "name": "meta.function.event.script",
-                  "match": "(\\w+)\\(",
-                  "captures": {
-                    "1": {
-                      "name": "entity.name.function.event.script"
-                    }
-                  }
-                },
-                {
-                  "name": "string.quoted.event.parameter.script",
-                  "match": "\"(?:\\\\.|[^\"\\\\])*\""
-                },
-                {
-                  "name": "punctuation.definition.parentheses.script",
-                  "match": "[()]"
-                },
-                {
-                  "name": "constant.language.event.script",
-                  "match": "\\b\\w+\\b"
-                }
-              ]
+              "match": "\"(?:\\.|[^\"\\])*\""
             }
           ]
         },
         {
           "name": "keyword.control.endmenu.script",
-          "match": "^\\s*@endMenu\\b"
+          "match": "^\\s*@endMainMenu\\b"
+        }
+      ]
+    },
+    "setCommand": {
+      "patterns": [
+        {
+          "name": "meta.definition.set.script",
+          "begin": "^\\s*@set\\b",
+          "beginCaptures": {
+            "0": {
+              "name": "keyword.definition.set.script"
+            }
+          },
+          "end": "$",
+          "patterns": [
+            {
+              "name": "constant.parameter.set.variable.script",
+              "match": "(?<=@set\\s)\\S+"
+            },
+            {
+              "name": "punctuation.separator.assignment.set.script",
+              "match": "\\s*=\\s*"
+            },
+            {
+              "name": "string.quoted.set.value.script",
+              "match": "\"(?:\\\\.|[^\"\\\\])*\""
+            }
+          ]
+        }
+      ]
+    },
+    "renameCommand": {
+      "patterns": [
+        {
+          "name": "meta.definition.rename.script",
+          "begin": "^\\s*@rename\\b",
+          "beginCaptures": {
+            "0": {
+              "name": "keyword.definition.rename.script"
+            }
+          },
+          "end": "$",
+          "patterns": [
+            {
+              "name": "constant.parameter.rename.old.script",
+              "match": "(?<=@rename\\s)\\S+"
+            },
+            {
+              "name": "constant.parameter.rename.new.script",
+              "match": "(?<=@rename\\s\\S+\\s)\\S+"
+            }
+          ]
+        }
+      ]
+    },
+    "bgCommand": {
+      "patterns": [
+        {
+          "name": "meta.definition.bg.script",
+          "begin": "^\\s*@bg\\b",
+          "beginCaptures": {
+            "0": {
+              "name": "keyword.definition.bg.script"
+            }
+          },
+          "end": "$",
+          "patterns": [
+            {
+              "name": "constant.parameter.bg.image.script",
+              "match": "(?<=@bg\\s)\\S+"
+            }
+          ]
+        }
+      ]
+    },
+    "spriteCommand": {
+      "patterns": [
+        {
+          "name": "meta.definition.sprite.script",
+          "begin": "^\\s*@sprite\\b",
+          "beginCaptures": {
+            "0": {
+              "name": "keyword.definition.sprite.script"
+            }
+          },
+          "end": "$",
+          "patterns": [
+            {
+              "name": "constant.parameter.sprite.name.script",
+              "match": "(?<=@sprite\\s)\\S+"
+            },
+            {
+              "name": "constant.parameter.sprite.image.script",
+              "match": "(?<=@sprite\\s\\S+\\s)\\S+"
+            }
+          ]
+        }
+      ]
+    },
+    "bgmCommand": {
+      "patterns": [
+        {
+          "name": "meta.definition.bgm.script",
+          "begin": "^\\s*@bgm\\b",
+          "beginCaptures": {
+            "0": {
+              "name": "keyword.definition.bgm.script"
+            }
+          },
+          "end": "$",
+          "patterns": [
+            {
+              "name": "constant.parameter.bgm.file.script",
+              "match": "(?<=@bgm\\s)\\S+"
+            }
+          ]
+        }
+      ]
+    },
+    "sfxCommand": {
+      "patterns": [
+        {
+          "name": "meta.definition.sfx.script",
+          "begin": "^\\s*@sfx\\b",
+          "beginCaptures": {
+            "0": {
+              "name": "keyword.definition.sfx.script"
+            }
+          },
+          "end": "$",
+          "patterns": [
+            {
+              "name": "constant.parameter.sfx.file.script",
+              "match": "(?<=@sfx\\s)\\S+"
+            }
+          ]
         }
       ]
     },
