@@ -118,7 +118,7 @@ jobs:
 
   build-extension:
     runs-on: ubuntu-22.04
-    needs: create-release
+    needs: build-linux
     steps:
       - uses: actions/checkout@v3
       - name: Install Node.js
@@ -142,7 +142,7 @@ jobs:
 
   create-release:
     runs-on: ubuntu-22.04
-    needs: [build-windows, build-linux]
+    needs: [build-windows, build-linux, build-extension]
     steps:
       - uses: actions/checkout@v3
       - name: Extract engine version
