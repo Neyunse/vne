@@ -4,7 +4,7 @@
   "description": "A custom visual novel engine",
   "version": "1.0.0",
   "engines": {
-    "vscode": "1.96.0"
+    "vscode": "^1.96.0"
   },
   "categories": [
     "Programming Languages"
