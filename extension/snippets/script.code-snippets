@@ -1,0 +1,158 @@
+{
+  // Snippets para Visual Novel Engine Script
+  "Say Dialogue": {
+    "prefix": "say",
+    "body": ["@say ${1:character}: ${2:dialogue}"],
+    "description": "Displays a dialogue line for a character."
+  },
+  "End Scene": {
+    "prefix": "end",
+    "body": ["@end"],
+    "description": "Ends the current scene."
+  },
+  "Process Scene": {
+    "prefix": "process_scene",
+    "body": ["@process_scene ${1:scene_name}"],
+    "description": "Processes and loads a scene by name."
+  },
+  "Define Character": {
+    "prefix": "char",
+    "body": ["@char ${1:name} ${2:image}"],
+    "description": "Defines a character and its image."
+  },
+  "Define Scene": {
+    "prefix": "scene",
+    "body": ["@scene ${1:scene_name}"],
+    "description": "Defines a new scene."
+  },
+  "Define Variable": {
+    "prefix": "def",
+    "body": ["@def ${1:variable} = ${2:value}"],
+    "description": "Defines a variable in the script."
+  },
+  "Set Variable": {
+    "prefix": "set",
+    "body": ["@set ${1:variable} = ${2:value}"],
+    "description": "Sets the value of a variable."
+  },
+  "Rename Variable": {
+    "prefix": "rename",
+    "body": ["@rename ${1:old_name} ${2:new_name}"],
+    "description": "Renames a variable."
+  },
+  "Background Image": {
+    "prefix": "bg",
+    "body": ["@bg ${1:image}"],
+    "description": "Sets the background image."
+  },
+  "Sprite": {
+    "prefix": "sprite",
+    "body": ["@sprite ${1:name} ${2:image}"],
+    "description": "Displays a sprite on screen."
+  },
+  "Background Music": {
+    "prefix": "bgm",
+    "body": ["@bgm ${1:music_file}"],
+    "description": "Plays background music."
+  },
+  "Sound Effect": {
+    "prefix": "sfx",
+    "body": ["@sfx ${1:sound_file}"],
+    "description": "Plays a sound effect."
+  },
+  "Display Config": {
+    "prefix": "Display",
+    "body": ["@Display ${1:config}"],
+    "description": "Sets display configuration."
+  },
+  "Game Title": {
+    "prefix": "GameTitle",
+    "body": ["@GameTitle ${1:title}"],
+    "description": "Sets the game window title."
+  },
+  "Game Icon": {
+    "prefix": "GameIconName",
+    "body": ["@GameIconName ${1:icon_file}"],
+    "description": "Sets the game window icon."
+  },
+  "Conditional If": {
+    "prefix": "if",
+    "body": ["@if ${1:condition}"],
+    "description": "Starts a conditional block."
+  },
+  "Conditional Else": {
+    "prefix": "else",
+    "body": ["@else"],
+    "description": "Else block for conditionals."
+  },
+  "Conditional Endif": {
+    "prefix": "endif",
+    "body": ["@endif"],
+    "description": "Ends a conditional block."
+  },
+  "Menu": {
+    "prefix": "mainMenu",
+    "body": ["@mainMenu"],
+    "description": "Shows the main menu."
+  },
+  "Menu Button": {
+    "prefix": "button",
+    "body": ["@button ${1:label}"],
+    "description": "Adds a button to the menu."
+  },
+  "End Menu": {
+    "prefix": "endMainMenu",
+    "body": ["@endMainMenu"],
+    "description": "Ends the main menu block."
+  },
+  "Quick Menu": {
+    "prefix": "qm",
+    "body": ["@qm"],
+    "description": "Shows the quick menu."
+  },
+  "Quick Menu Button": {
+    "prefix": "qmBtn",
+    "body": ["@qmBtn ${1:label}"],
+    "description": "Adds a button to the quick menu."
+  },
+  "End Quick Menu": {
+    "prefix": "qmEnd",
+    "body": ["@qmEnd"],
+    "description": "Ends the quick menu block."
+  },
+  "Choice Menu": {
+    "prefix": "choice",
+    "body": ["@choice ${1:option}"],
+    "description": "Adds a choice option for the player."
+  },
+  "Option Button": {
+    "prefix": "option",
+    "body": ["@option ${1:option}"],
+    "description": "Defines an option in a choice menu."
+  },
+  "End Choice": {
+    "prefix": "end_choice",
+    "body": ["@end_choice"],
+    "description": "Ends the choice menu block."
+  },
+  "Log": {
+    "prefix": "log",
+    "body": ["@Log (${1:message})"],
+    "description": "Logs a message to the engine log."
+  },
+  "Save": {
+    "prefix": "save",
+    "body": ["@Save"],
+    "description": "Saves the current game state."
+  },
+  "Continue": {
+    "prefix": "continue",
+    "body": ["@Continue"],
+    "description": "Continues from a saved game state."
+  },
+  "Comment": {
+    "prefix": "#",
+    "body": ["# ${1:Comment}"],
+    "description": "Adds a comment in the script."
+  }
+}

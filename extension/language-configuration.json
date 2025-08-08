@@ -1,29 +1,28 @@
 {
-    "comments": {
-      "lineComment": "#"
-    },
-    "brackets": [
-      ["{", "}"],
-      ["[", "]"],
-      ["(", ")"]
-    ],
-    "autoClosingPairs": [
-      { "open": "{", "close": "}" },
-      { "open": "[", "close": "]" },
-      { "open": "(", "close": ")" },
-      { "open": "\"", "close": "\"", "notIn": ["string", "comment"] }
-    ],
-    "surroundingPairs": [
-      { "open": "{", "close": "}" },
-      { "open": "[", "close": "]" },
-      { "open": "(", "close": ")" },
-      { "open": "\"", "close": "\"" }
-    ],
-    "folding": {
-      "markers": {
-        "start": "^\\s*#region\\b",
-        "end": "^\\s*#endregion\\b"
-      }
+  "comments": {
+    "lineComment": "#"
+  },
+  "brackets": [
+    ["{", "}"],
+    ["[", "]"],
+    ["(", ")"]
+  ],
+  "autoClosingPairs": [
+    { "open": "{", "close": "}" },
+    { "open": "[", "close": "]" },
+    { "open": "(", "close": ")" },
+    { "open": "\"", "close": "\"", "notIn": ["string", "comment"] }
+  ],
+  "surroundingPairs": [
+    { "open": "{", "close": "}" },
+    { "open": "[", "close": "]" },
+    { "open": "(", "close": ")" },
+    { "open": "\"", "close": "\"" }
+  ],
+  "folding": {
+    "markers": {
+      "start": "^ #region\\b",
+      "end": "^ #endregion\\b"
     }
   }
-  
+}
