@@ -144,7 +144,7 @@ jobs:
       - name: Extract engine version
         id: get_version
         run: |
-          VERSION=$(python -c "import re; f=open('vne/_version.py').read(); print(re.search(r'__version__\s*=\s*[\'\"]([^\'\"]+)[\'\"], f).group(1))")
+          VERSION=$(python -c "import re; f=open('vne/_version.py').read(); print(re.search(r'__version__\s*=\s*[\'\"]([^\'\"]+)[\'\"]', f).group(1))")
           echo "version=$VERSION" >> $GITHUB_OUTPUT
       - name: Create Release
         uses: softprops/action-gh-release@v1
