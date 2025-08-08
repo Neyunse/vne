@@ -150,7 +150,7 @@
             },
             {
               "name": "string.quoted.set.value.script",
-              "match": "\"(?:\\.|[^\"\\])*\""
+              "match": "\"(?:\\\\.|[^\"\\\\])*\""
             }
           ]
         }
