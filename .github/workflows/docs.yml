@@ -8,6 +8,7 @@ on:
       - '**.rst'
       - 'conf.py'
       - '_version.py'
+      - 'vne/**'
 
   workflow_dispatch:
   release:
