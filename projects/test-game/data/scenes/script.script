@@ -8,6 +8,9 @@
 
 K: Hello, welcome to this engine test!
 
+# Run python function. 
+@hello("hello")
+
 @sprite kuro position="left" animation="dissolve"
 K: my name is {K} and I am here for the sole purpose of debugging this project....
 K: everything seems to be working properly...

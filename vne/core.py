@@ -155,7 +155,33 @@ class VNEngine:
             return None
         except Exception as e:
             pass
+    def generate_traceback(self, e):
+        self.running = False # Crash the game 
+        traceback_template = '''Exception error:
+  %(message)s\n
+  
+  created %(createdAt)s
+  %(plataform)s
+  VNE %(engineVersion)s
+  '''
+        self.Log(f"[Exception] Script was failed. Check the traceback.txt file for more information.")
         
+        traceback_details = {
+            'plataform': f"{platform.system()}-{platform.version()}",
+            'engineVersion': engine_version,
+            'createdAt': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+            
+            'message' : e,
+        }
+        
+        print(traceback_template % traceback_details)
+
+        trace_path = os.path.join(self.game_path, 'traceback.txt')
+
+
+        with open(trace_path, 'w') as f:
+            f.write(traceback_template % traceback_details)
+            f.close()
     def run(self):
         """
         This Python function runs a game by loading a script, handling events, and updating the display
@@ -229,32 +255,8 @@ VNE %(engineVersion)s
                 try:
                     self.event_manager.handle(command, self)
                 except Exception as e:
-                    self.running = False
-                    traceback_template = '''Exception error:
-  %(message)s\n
-  
-  created %(createdAt)s
-  %(plataform)s
-  VNE %(engineVersion)s
-  '''
-                    self.Log(f"[Exception] Script was failed. Check the traceback.txt file for more information.")
                     
-                    traceback_details = {
-                        'plataform': f"{platform.system()}-{platform.version()}",
-                        'engineVersion': engine_version,
-                        'createdAt': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-                        
-                        'message' : e,
-                    }
-                    
-                    print(traceback_template % traceback_details)
-
-                    trace_path = os.path.join(self.game_path, 'traceback.txt')
-
-
-                    with open(trace_path, 'w') as f:
-                        f.write(traceback_template % traceback_details)
-                        f.close()
+                    self.generate_traceback(e)
   
           
             # Render overlays and stacking

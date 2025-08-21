@@ -26,6 +26,8 @@ class EventManager:
             f"ui{file_extension}",
             f"scenes{file_extension}"
         ]
+        
+        self.exposed_api = {}
  
 
     def register_default_events(self):
@@ -103,6 +105,9 @@ class EventManager:
         self.register_event("Log", self.handle_log)
         self.register_event("Save", self.handle_save)
         self.register_event("Continue", self.handle_load_save)
+        
+        # Modules
+        self.register_event("Python", self.handle_python)
 
     def handle_log(self, arg, engine):
         arg = arg.strip()
@@ -1484,3 +1489,142 @@ class EventManager:
 
         sfx.play(loop=-1)
         engine.Log(f"[sfx] Playing sound effect '{filename}'.")
+        
+ 
+ 
+
+    def handle_python(self, arg, engine):
+            """
+            Execute an in-process Python script.
+            Usage: @Python("path/to/script.py")
+            If the file is inside the package (data.pkg) use engine.resource_manager.get_bytes.
+            The script will receive the `engine` variable and a small `api` dict in its namespace.
+            """
+            a = arg.strip()
+            if a.startswith("(") and a.endswith(")"):
+                a = a[1:-1].strip()
+        
+            a = a.strip().strip('"').strip("'")
+            if not a:
+                engine.Log("[python] No script path provided.")
+                return False
+
+            disk_path = a if os.path.isabs(a) else os.path.join(engine.game_path, "data", a)
+            rel_path = a.replace("\\", "/")  
+
+            engine.Log(f"[python] resolved disk_path={disk_path} rel_path={rel_path}")
+
+            try:
+                if os.path.exists(disk_path):
+                    with open(disk_path, "r", encoding="utf-8") as f:
+                        code = f.read()
+                    engine.Log(f"[python] Loaded script from disk: {disk_path}")
+                    compile_path = disk_path
+                else:
+                    if not hasattr(engine, "resource_manager"):
+                        engine.Log(f"[python] File not found on disk and there is no resource_manager: {disk_path}")
+                        return False
+                    try:
+                        file_bytes = engine.resource_manager.get_bytes(rel_path)
+                    except Exception as e:
+                        engine.Log(f"[python] resource_manager.get_bytes failed for {rel_path}: {e}")
+                        return False
+
+                    if rel_path.lower().endswith(aes_extension):
+                        try:
+                            code = AES(key).decrypt(file_bytes, aad=SCRIPT_AAD).decode("utf-8", errors="replace")
+                        except Exception as e:
+                            engine.Log(f"[python] Failed to decrypt {rel_path}: {e}")
+                            return False
+                    else:
+                        try:
+                            code = file_bytes.decode("utf-8")
+                        except Exception:
+                            code = file_bytes.decode("utf-8", errors="replace")
+                    engine.Log(f"[python] Loaded script from package: {rel_path}")
+                    compile_path = rel_path
+
+                import io, sys, traceback
+                old_stdout, old_stderr = sys.stdout, sys.stderr
+                sys.stdout = io.StringIO()
+                sys.stderr = io.StringIO()
+                
+                def _register_func(name, func):
+                    import inspect
+                    def handler(arg, _engine):
+                        """
+                        El motor llamará handler(arg, engine) — aquí adaptamos para que
+                        la función del script reciba *solo* arg (o nada si no espera).
+                        """
+                        arg = arg.strip()
+                        if arg.startswith("(") and arg.endswith(")"):
+                            arg = arg[1:-1].strip()
+
+                        arg = arg.strip().strip('"').strip("'")
+                        try:
+                            params = list(inspect.signature(func).parameters.values())
+                            pos_params = [p for p in params if p.kind in (p.POSITIONAL_ONLY, p.POSITIONAL_OR_KEYWORD)]
+                            n = len(pos_params)
+                        except Exception:
+                            n = None
+
+                        # Función sin parámetros -> llamar sin argumentos
+                        if n == 0:
+                            return func()
+
+                        # Función con al menos 1 parámetro -> intentar pasar solo `arg`
+                        # Si `arg` está vacío/None y la función acepta 1 parámetro, intentar llamar sin args.
+                        try:
+                            if arg is None or (isinstance(arg, str) and arg == ""):
+                                # preferir llamar sin args si eso funciona
+                                try:
+                                    return func()
+                                except TypeError:
+                                    return func(arg)
+                            return func(arg)
+                        except TypeError:
+                            # fallback: intentar sin argumentos
+                            return func()
+
+                    self.register_event(name, handler)
+                
+                # expose some API's
+                api = {
+                    "Log": lambda msg: engine.Log(msg),
+                    "version": engine_version,
+                    "func": lambda name, func: _register_func(name, func)
+                }
+                
+                from types import SimpleNamespace
+                
+                vne_obj = SimpleNamespace(**api)
+                g = {"__name__": "__main__", "vne": vne_obj, "__file__": compile_path}
+
+                try:
+                    exec(compile(code, compile_path, "exec"), g)
+                except Exception as e:
+                    tb = traceback.format_exc()
+                    out = sys.stdout.getvalue()
+                    err = sys.stderr.getvalue()
+                    sys.stdout, sys.stderr = old_stdout, old_stderr
+                    engine.generate_traceback(e)
+                    #engine.Log(f"[python] Error executing {rel_path if not os.path.exists(disk_path) else disk_path}: {e}\n{tb}")
+                    if out:
+                        engine.Log(f"[python] stdout:\n{out}")
+                    if err:
+                        engine.Log(f"[python] stderr:\n{err}")
+                    return False
+                else:
+                    out = sys.stdout.getvalue()
+                    err = sys.stderr.getvalue()
+                    sys.stdout, sys.stderr = old_stdout, old_stderr
+                    if out:
+                        engine.Log(f"[python] stdout:\n{out}")
+                    if err:
+                        engine.Log(f"[python] stderr:\n{err}")
+                    engine.Log(f"[python] Script executed: {rel_path}")
+                    return True
+
+            except Exception as e:
+                engine.Log(f"[python] Unexpected error: {e}")
+                return False

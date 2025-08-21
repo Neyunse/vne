@@ -2,6 +2,9 @@
 
 # Load here somthing before that system files
 
+# Initializing Python script and execute it.
+@Python("test.py")
+
 # Load initial configurations
 @LoadSystem()
 
