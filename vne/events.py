@@ -1497,8 +1497,8 @@ class EventManager:
             """
             Execute an in-process Python script.
             Usage: @Python("path/to/script.py")
-            If the file is inside the package (data.pkg) use engine.resource_manager.get_bytes.
-            The script will receive the `engine` variable and a small `api` dict in its namespace.
+            
+            unsecure event!
             """
             a = arg.strip()
             if a.startswith("(") and a.endswith(")"):
