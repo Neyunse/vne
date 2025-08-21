@@ -1496,7 +1496,10 @@ class EventManager:
     def handle_python(self, arg, engine):
             """
             Execute an in-process Python script.
-            Usage: @Python("path/to/script.py")
+            
+            - Usage: 
+                @Python("path/to/script.py")
+                @Python("script.py")
             
             unsecure event!
             """
