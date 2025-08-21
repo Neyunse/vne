@@ -1593,15 +1593,22 @@ class EventManager:
                 
                 # expose some API's
                 api = {
-                    "Log": lambda msg: engine.Log(msg),
                     "version": engine_version,
-                    "func": lambda name, func: _register_func(name, func)
+                    "vars": engine.vars,
+                    "Log": lambda msg: engine.Log(msg),
+                    "Func": lambda name, func: _register_func(name, func),
+                    "SetVar": lambda arg: self.handle_Set_event(arg, engine),
+                   
                 }
                 
                 from types import SimpleNamespace
                 
                 vne_obj = SimpleNamespace(**api)
-                g = {"__name__": "__main__", "vne": vne_obj, "__file__": compile_path}
+                g = {
+                    "__name__": "__main__", 
+                    "vne": vne_obj, 
+                    "__file__": compile_path
+                }
 
                 try:
                     exec(compile(code, compile_path, "exec"), g)

@@ -1,7 +1,6 @@
+import os
 def test_vne_log(arg): # optional arg
-  print(arg)
-  vne.Log("Hello, World from Python!")
-
+    print(os.path.basename(__file__), "test_vne_log called with:", arg)
 
 # Register a function to use in game.
-vne.func("hello", test_vne_log)
+vne.Func("hello", test_vne_log)
