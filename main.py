@@ -4,6 +4,7 @@ import sys
 import argparse
 import pyzipper
 from datetime import datetime
+import time
 import platform
 from vne import Core
 from vne.aes import AES
@@ -623,7 +624,12 @@ class EditorView(QWidget):
         build_action.setToolTip("Build project")
         build_action.triggered.connect( self.build_project)
         self.toolbar.addAction(build_action)
-        
+
+        # Reload action (IDE -> escribe sentinel para engine devMode)
+        reload_action = QAction("🔁", self)
+        reload_action.setToolTip("Reload game (devMode) — compile & notify running engine")
+        reload_action.triggered.connect(self.request_reload)
+        self.toolbar.addAction(reload_action)
 
         # Add more actions here if you want
 
@@ -644,9 +650,16 @@ class EditorView(QWidget):
         
         shortcut_save = QShortcut(QKeySequence("Ctrl+S"), self)
         shortcut_run = QShortcut(QKeySequence("Ctrl+R"), self)
-        
+        shortcut_reload = QShortcut(QKeySequence("Ctrl+Shift+R"), self)
+
         shortcut_save.activated.connect(self.save_current_file)
         shortcut_run.activated.connect(lambda: self.run_project(""))
+        # Make reload work even when an editor widget has focus
+        try:
+            shortcut_reload.setContext(Qt.ApplicationShortcut)
+        except Exception:
+            pass
+        shortcut_reload.activated.connect(self.request_reload)
         
         
     
@@ -769,6 +782,7 @@ class EditorView(QWidget):
             if new_name in ref:
                 QMessageBox.warning(self, "VNEngine", "⚠️ A script with that name already exists.")
                 return
+            ref[new_name] = ""
 
             ref[new_name] = ""
 
@@ -784,6 +798,38 @@ class EditorView(QWidget):
 
             self.load_files(self.mock_fs)
             self.open_file(base_path + '/' + new_name, "")
+
+    def request_reload(self):
+        """
+        Guardar archivos abiertos, compilar scripts en data/ usando compile_all_kag_in_folder (main.py)
+        y escribir un sentinel .vne_reload en la raíz del proyecto para que la instancia en devMode lo detecte.
+        """
+        try:
+            if not self.mock_fs_base_path:
+                QMessageBox.warning(self, "VNEngine", "No project open to reload.")
+                return
+
+            # guardar cambios abiertos
+            self.save_current_file()
+
+            data_folder = os.path.join(self.mock_fs_base_path, "data")
+            try:
+                compile_all_kag_in_folder(data_folder, key)
+                print(f"[IDE] Compilación completada en {data_folder}")
+            except Exception as e:
+                print(f"[IDE] Error compilando: {e}")
+
+            # escribir sentinel
+            sentinel = os.path.join(self.mock_fs_base_path, "cache", ".vne_reload")
+            try:
+                with open(sentinel, "w", encoding="utf-8") as f:
+                    f.write(str(time.time()))
+                print(f"[IDE] Señal de recarga escrita: {sentinel}")
+            except Exception as e:
+                print(f"[IDE] No se pudo escribir .vne_reload: {e}")
+
+        except Exception as e:
+            print(f"[IDE] request_reload error: {e}")
 
     def open_file(self, path, _ignored_content=""):
         ext = path.lower().split(".")[-1]

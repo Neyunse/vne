@@ -7,7 +7,7 @@ from collections import ChainMap
 from vne.lexer import ScriptLexer
 from vne.aes import AES, SCRIPT_AAD
 from vne.config import (key, file_extension, aes_extension, bundle_extension,
-                        engine_version)
+                        engine_version, init_file)
 import pickle
 from vne.Audio import Audio
 from vne.visual import VisualElement, Button, MenuPanel, VerticalLayout, DialogPanel, SpriteVisual, AutoSizedBackground, HorizontalLayout
@@ -105,7 +105,9 @@ class EventManager:
         self.register_event("Log", self.handle_log)
         self.register_event("Save", self.handle_save)
         self.register_event("Continue", self.handle_load_save)
-        
+        # Hot-reload (dev only)
+        self.register_event("reload", self.handle_reload)
+
         # Modules
         self.register_event("Python", self.handle_python)
 
@@ -302,8 +304,19 @@ class EventManager:
                         mostrar_todo = True
                     else:
                         waiting = False
+                elif event.type == pygame.KEYDOWN:
+                    # Verifica si se presionó Ctrl + R
+                    keys = pygame.key.get_mods()
+                    if event.key == pygame.K_r and (keys & pygame.KMOD_CTRL):
+                        # Diferir el hot-reload para ejecutarlo en el loop principal evitando bloqueos
+                        setattr(engine, 'pending_reload', True)
+                        waiting = False
+                        break
+                
                 else:
                     engine.screen_manager.handle_event(event)
+                
+                 
             now = pygame.time.get_ticks()
             if typewriter_index < len(full_text):
                 if mostrar_todo:
@@ -319,8 +332,10 @@ class EventManager:
             engine.screen_manager.render(engine.renderer.screen)
             pygame.display.update()
         engine.seen_dialogue.add(key_seen)
-        engine.current_dialogue = ""
-        engine.current_character_name = ""
+        # Si hay un reload pendiente, preservamos el contexto para restaurar correctamente tras recarga
+        if not getattr(engine, 'pending_reload', False):
+            engine.current_dialogue = ""
+            engine.current_character_name = ""
         
     def parse_color(self, arg):
         """
@@ -443,9 +458,7 @@ class EventManager:
                 if event.type == pygame.QUIT:
                     engine.running = False
                     return
-             
-                if event.type == pygame.KEYDOWN or event.type == pygame.MOUSEBUTTONDOWN:
-                    return
+        
      
     def handle_sprite(self, arg, engine):
         """
@@ -702,6 +715,8 @@ class EventManager:
         new_lexer.original_commands = list(new_lexer.commands)
         new_lexer.current = 0
         engine.lexer = new_lexer
+        # Guardar identificador del script actual para re-sincronización tras hot-reload
+        engine.current_script_id = filename
         engine.Log(f"[process_scene] New scene loaded with {len(engine.lexer.commands)} commands.")
         
     def handle_jump_scene(self, arg, engine):
@@ -735,6 +750,7 @@ class EventManager:
         new_lexer.original_commands = list(new_lexer.commands)
         new_lexer.current = 0
         engine.lexer = new_lexer
+        engine.current_script_id = scene_file_name
         engine.Log(f"[jump_scene] New scene loaded with {len(engine.lexer.commands)} commands.")
         engine.Log(f"[jump_scene] Jumping to scene '{scene_alias}'.")
     
@@ -1388,7 +1404,15 @@ class EventManager:
             'lexer_state': {
                 'commands': engine.lexer.commands,
                 'original_commands': engine.lexer.original_commands,
-                'current': engine.lexer.current-1 # adding -1 improve the save fidelity
+                # Guardamos current tal cual (apunta a la siguiente a ejecutar)
+                'current': engine.lexer.current
+            },
+            # Información adicional para re-sincronizar después de hot-reload
+            'script_meta': {
+                'current_script_guess': getattr(engine, 'current_script_id', None) or engine.vars.get('scene') or '__init__',
+                'last_command_text': (engine.lexer.commands[engine.lexer.current-1] if getattr(engine.lexer, 'current', 0) > 0 and engine.lexer.current-1 < len(engine.lexer.commands) else ""),
+                # previous_index = línea ejecutada más recientemente que queremos repetir tras reload
+                'previous_index': (engine.lexer.current - 1) if engine.lexer.current > 0 else 0
             },
             'visual_state': {
                 'bg_filename': getattr(engine, 'current_bg_filename', None),
@@ -1445,6 +1469,7 @@ class EventManager:
         engine.lexer.commands = lexer_state['commands']
         engine.lexer.original_commands = lexer_state['original_commands']
         engine.lexer.current = lexer_state['current']
+        script_meta = loaded_data.get('script_meta', {})
         
         for qm in loaded_data['qm']:
             engine.quick_menu_buttons.append(qm)
@@ -1461,8 +1486,44 @@ class EventManager:
         audio_state = loaded_data.get('audio_state', {})
         if audio_state.get('bgm_filename'):
             self.handle_bgm(audio_state['bgm_filename'], engine)
-
         engine.Log(f"[load] Game state loaded from slot '{slot_name}'.")
+        # Re-sincronizar script si es un hot-reload temporal y tenemos compilación nueva
+        if slot_name == "__reload_tmp__":
+            try:
+                current_script_guess = script_meta.get('current_script_guess')
+                last_command_text = script_meta.get('last_command_text')
+                previous_index = script_meta.get('previous_index')
+                if current_script_guess:
+                    # Determinar ruta compilada
+                    if current_script_guess == '__init__':
+                        base_name = f"{init_file}"
+                    else:
+                        base_name = os.path.join('scenes', current_script_guess)
+                    compiled_path = base_name + aes_extension
+                    try:
+                        file_bytes = engine.resource_manager.get_bytes(compiled_path)
+                        new_content = AES(key).decrypt(file_bytes, aad=SCRIPT_AAD).decode('utf-8', errors='replace')
+                        new_lexer = ScriptLexer(engine.game_path, engine)
+                        new_lexer.commands = new_lexer.parse_script(new_content)
+                        new_lexer.original_commands = list(new_lexer.commands)
+                        # Queremos repetir la misma línea ejecutada antes del reload.
+                        resume_index = 0
+                        if isinstance(previous_index, int) and 0 <= previous_index < len(new_lexer.original_commands):
+                            resume_index = previous_index
+                        else:
+                            # Fallback: localizar por texto exacto y quedarse en esa misma línea
+                            if last_command_text:
+                                for idx, cmd in enumerate(new_lexer.original_commands):
+                                    if cmd.strip() == last_command_text.strip():
+                                        resume_index = idx
+                                        break
+                        new_lexer.current = resume_index
+                        engine.lexer = new_lexer
+                        engine.Log(f"[reload-sync] Script '{base_name}' recargado. Reanudando en índice {resume_index}.")
+                    except Exception as e:
+                        engine.Log(f"[reload-sync] No se pudo recargar script actualizado: {e}")
+            except Exception as e:
+                engine.Log(f"[reload-sync] Error general al re-sincronizar: {e}")
     
     def handle_bgm(self, arg, engine):
         """
@@ -1638,3 +1699,110 @@ class EventManager:
             except Exception as e:
                 engine.Log(f"[python] Unexpected error: {e}")
                 return False
+
+    def handle_reload(self, arg, engine):
+        """
+        Hot-reload en caliente (solo devMode).
+        - Guarda estado temporal (si existe handler save)
+        - Llama a main.compile_all_kag_in_folder(...) para recompilar scripts
+        - Reinicia ResourceManager
+        - Restaura desde el save temporal si es posible
+        """
+        import importlib, traceback
+
+        try:
+            if not getattr(engine, "devMode", False):
+                engine.Log("[reload] Ignorado: no está en modo devMode.")
+                return False
+
+            engine.Log("[reload] Iniciando hot-reload (devMode)...")
+            # Mostrar notificación visual si el motor tiene screen_manager y Toast está disponible
+            toast = None
+            try:
+                from vne.visual import Toast
+                toast = Toast("Hot-reload: iniciando...", font=getattr(engine.renderer, 'font', None), duration=2.0)
+                # Only attach the toast if the renderer surface is usable
+                try:
+                    scr = getattr(engine, 'renderer', None)
+                    if scr is not None and getattr(scr, 'screen', None) is not None:
+                        # try to access width to ensure surface initialized
+                        try:
+                            _ = scr.screen.get_width()
+                            engine.screen_manager.show(toast, force_top=True)
+                        except Exception:
+                            # surface not ready; skip visual toast
+                            toast = None
+                    else:
+                        toast = None
+                except Exception:
+                    toast = None
+            except Exception:
+                toast = None
+
+            tmp_slot = "__reload_tmp__"
+            # 1) guardar estado temporal si está disponible
+            try:
+                if hasattr(self, "handle_save"):
+                    engine.Log("[reload] Guardando estado temporal...")
+                    self.handle_save(f'("{tmp_slot}")', engine)
+            except Exception as e:
+                engine.Log(f"[reload] Warning: no se pudo crear save temporal: {e}")
+
+            # 2) compilar scripts usando main.compile_all_kag_in_folder (import dinámico)
+            try:
+                engine.Log("[reload] Llamando a compile_all_kag_in_folder...")
+                main_mod = importlib.import_module("main")
+                data_folder = os.path.join(engine.game_path, "data")
+                main_mod.compile_all_kag_in_folder(data_folder, key)
+                engine.Log("[reload] Compilación completada.")
+            except Exception as e:
+                engine.Log(f"[reload] Error compilando scripts: {e}")
+                engine.Log(traceback.format_exc())
+                try:
+                    if toast:
+                        toast.text = f"Hot-reload: error: {str(e)[:50]}"
+                except Exception:
+                    pass
+                return False
+
+            # 3) reinicializar ResourceManager para que refleje nuevos assets
+            try:
+                engine.Log("[reload] Reiniciando ResourceManager...")
+                from vne.rm import ResourceManager
+                engine.resource_manager = ResourceManager(engine.game_path, engine.Log)
+                engine.Log("[reload] ResourceManager reiniciado.")
+            except Exception as e:
+                engine.Log(f"[reload] Warning al reiniciar ResourceManager: {e}")
+
+            # 4) intentar restaurar estado desde el save temporal (si existe handler load)
+            try:
+                if hasattr(self, "handle_load_save"):
+                    engine.Log("[reload] Restaurando estado desde save temporal...")
+                    self.handle_load_save(f'("{tmp_slot}")', engine)
+                    engine.Log("[reload] Estado restaurado desde save temporal.")
+                else:
+                    engine.Log("[reload] No hay handler de load disponible; continuar.")
+            except Exception as e:
+                engine.Log(f"[reload] No se pudo restaurar desde temp: {e}")
+
+            # 5) limpieza tentativa del save temporal en disco
+            try:
+                saves_dir = os.path.join(engine.game_path, "saves")
+                tmp_path = os.path.join(saves_dir, f"{tmp_slot}.sav")
+                if os.path.exists(tmp_path):
+                    os.unlink(tmp_path)
+            except Exception:
+                pass
+
+            engine.Log("[reload] Hot-reload completado correctamente.")
+            try:
+                if toast:
+                    toast.text = "Hot-reload: completado"
+            except Exception:
+                pass
+            return True
+
+        except Exception as e:
+            engine.Log(f"[reload] Excepción inesperada: {e}")
+            engine.Log(traceback.format_exc())
+            return False

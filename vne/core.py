@@ -36,8 +36,34 @@ class ScreenManager:
             self.hide(screen)
             
     def render(self, surface):
+        # If surface is not a valid pygame Surface, skip rendering
+        try:
+            if surface is None:
+                return
+            # quick duck-typing check
+            if not hasattr(surface, 'get_width'):
+                return
+        except Exception:
+            return
+
         for screen in sorted(self.screens, key=lambda e: getattr(e, 'z_index', 0)):
-            screen.render(surface)
+            try:
+                screen.render(surface)
+            except Exception as e:
+                # Prevent a single screen from breaking the whole render loop.
+                try:
+                    import pygame as _pg
+                    if isinstance(e, _pg.error):
+                        # Common case: Surface not initialized or video system down
+                        continue
+                except Exception:
+                    pass
+                # For other exceptions, log to engine log if possible
+                try:
+                    if hasattr(self, 'modal'):
+                        pass
+                except Exception:
+                    pass
     def handle_event(self, event):
         for screen in reversed(self.screens):
             handled = screen.handle_event(event)
@@ -89,14 +115,17 @@ class VNEngine:
         self.current_dialogue = ""
         self.current_character_name = ""
         self.sprite_layers = {}
-
+        # Identificador del script actualmente cargado para soporte de hot-reload avanzado
+        self.current_script_id = None
         self.Log(f"Starting the game from {self.game_path}...")
-    
+
         self.screen_manager = ScreenManager()
         self.theme = None
         self.audio_volume = 1.0
         self.audio_muted = False
         self.force_clear_sprites = False
+        # Flag para solicitar un hot-reload seguro fuera de loops bloqueantes (ej: typewriter)
+        self.pending_reload = False
     
     def should_execute_line(self):
         """
@@ -245,8 +274,17 @@ VNE %(engineVersion)s
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     self.running = False
-                else:
-                    self.screen_manager.handle_event(event)
+            # Ejecutar hot-reload diferido si fue solicitado dentro de un handler interactivo
+            if getattr(self, 'pending_reload', False):
+                try:
+                    # Usar directamente el handler para evitar parsing adicional
+                    self.event_manager.handle("@reload", self)
+                except Exception as e:
+                    self.generate_traceback(e)
+                finally:
+                    self.pending_reload = False
+                # Después de recargar saltar a siguiente iteración para no consumir comando viejo
+                continue
             command = self.lexer.get_next_command()
             if command is None:
                 pygame.time.wait(2000)

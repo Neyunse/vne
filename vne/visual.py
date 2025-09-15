@@ -393,6 +393,70 @@ class SpriteVisual(VisualElement):
         for child in self.children:
             child.render(surface)
 
+
+class Toast(VisualElement):
+    """Pequeña notificación temporal para dev-mode (texto centrado, aparece arriba)."""
+    def __init__(self, text, font=None, duration=2.0, x=None, y=20, width=360, height=48, theme=None, z_index=1000):
+        super().__init__(x or 0, y, width, height, theme=theme, z_index=z_index)
+        self.text = text
+        self.font = font or self.theme.font
+        self.start_time = None
+        self.duration = duration
+        self.alpha = 0
+        # small padding and colors
+        self.bg_color = (0, 0, 0, 180)
+        self.text_color = (255, 255, 255)
+        self.radius = 6
+        self.fade_in_duration = 0.15
+        self.fade_out_duration = 0.25
+        self.finished = False
+
+    def start(self):
+        self.start_time = time.time()
+        self.visible = True
+
+    def render(self, surface):
+        if self.start_time is None:
+            self.start()
+        elapsed = time.time() - self.start_time
+        if elapsed >= self.duration + self.fade_out_duration:
+            # mark finished and hide
+            self.visible = False
+            self.finished = True
+            return
+
+        # handle fade in/out alpha
+        if elapsed < self.fade_in_duration:
+            t = elapsed / max(self.fade_in_duration, 1e-6)
+            self.alpha = int(255 * t)
+        elif elapsed > self.duration:
+            t = min((elapsed - self.duration) / max(self.fade_out_duration, 1e-6), 1.0)
+            self.alpha = int(255 * (1.0 - t))
+        else:
+            self.alpha = 255
+
+        # position centered horizontally if x == 0
+        screen_w = surface.get_width()
+        if self.x == 0:
+            self.x = max(10, (screen_w - self.width) // 2)
+
+        # draw background rect with alpha
+        temp_surface = pygame.Surface((self.width, self.height), pygame.SRCALPHA)
+        bg = self.bg_color
+        if len(bg) == 4:
+            bg_color = (bg[0], bg[1], bg[2], int(bg[3] * (self.alpha / 255)))
+        else:
+            bg_color = bg
+        pygame.draw.rect(temp_surface, bg_color, temp_surface.get_rect(), border_radius=self.radius)
+        temp_surface.set_alpha(self.alpha)
+        surface.blit(temp_surface, (self.x, self.y))
+
+        # render text
+        if self.font:
+            text_surface = self.font.render(self.text, True, self.text_color)
+            text_rect = text_surface.get_rect(center=(self.x + self.width // 2, self.y + self.height // 2))
+            surface.blit(text_surface, text_rect)
+
 class VerticalLayout:
     def __init__(self, margin=10):
         self.margin = margin
