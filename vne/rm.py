@@ -22,8 +22,18 @@ class ResourceManager:
                 self.zipfile = None
         else:
             self.Log(f"[ResourceManager] '{self.pkg_path}' not found. Using loose data folder.")
+        
+        self.cache = {}
 
     def get_bytes(self, internal_path):
+        if internal_path in self.cache:
+            return self.cache[internal_path]
+        
+        data = self._load_bytes(internal_path)
+        self.cache[internal_path] = data
+        return data
+
+    def _load_bytes(self, internal_path):
         """
         Reads and returns the content of a file specified by the internal path from either a
         password-protected zipfile or from the loose data folder, with fallback for alternative file names.

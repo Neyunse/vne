@@ -64,7 +64,7 @@ class EventManager:
         # Imágenes
         self.register_event("bg", self.handle_bg)
         self.register_event("sprite", self.handle_sprite)
-        #self.register_event("hide", self.handle_hide_sprite)
+        self.register_event("hide", self.handle_hide_sprite)
         
         # Audio
         self.register_event("bgm", self.handle_bgm)
@@ -110,6 +110,17 @@ class EventManager:
 
         # Modules
         self.register_event("Python", self.handle_python)
+
+        # UI & Screen Language
+        self.register_event("ui_style", self.handle_ui_style)
+        self.register_event("screen", self.handle_screen)
+        self.register_event("add_button", self.handle_add_button)
+        self.register_event("add_text", self.handle_add_text)
+        self.register_event("add_image", self.handle_add_image)
+        self.register_event("end_screen", self.handle_end_screen)
+        self.register_event("show_screen", self.handle_show_screen)
+        self.register_event("hide_screen", self.handle_hide_screen)
+        self.register_event("ui_config", self.handle_ui_config)
 
     def handle_log(self, arg, engine):
         arg = arg.strip()
@@ -187,17 +198,26 @@ class EventManager:
             handler(arg, engine)
 
     def substitute_variables(self, text, engine):
-        mapping = ChainMap(engine.characters, engine.scenes, engine.vars)
+        # Unify all mappings. Order of ChainMap determines priority.
+        mapping = ChainMap(engine.vars, engine.characters, engine.scenes)
+        
         def replacer(match):
             key = match.group(1).strip()
-            return str(mapping.get(key, match.group(0)))
+            if key in mapping:
+                return str(mapping[key])
+            else:
+                # If not found, keep the {key} or raise if strictly required
+                # For now, let's keep the engine's original behavior of raising if missing in some handlers
+                # but making it more robust here.
+                return mapping.get(key, match.group(0))
+        
         return re.sub(r'\{([^}]+)\}', replacer, text)
     
     def handle_say(self, arg, engine):
         """
-        Processes dialogue for characters, replacing variables with their corresponding values before waiting for user input.
+        Processes dialogue for characters, replacing variables with their corresponding values.
+        Sets the engine to wait for input.
         """
-        # Instead of setting engine.current_dialogue, show a DialogPanel overlay
         if ':' in arg:
             speaker, dialogue = arg.split(":", 1)
             speaker = speaker.strip()
@@ -205,138 +225,52 @@ class EventManager:
             if speaker not in engine.characters:
                 raise Exception(f"[ERROR] The character '{speaker}' is not defined.")
             engine.current_character_name = engine.characters[speaker]
-            def replacer(match):
-                key = match.group(1).strip()
-                if key in engine.characters:
-                    return engine.characters[key]
-                elif key in engine.scenes:
-                    return engine.scenes[key]
-                elif key in engine.vars:
-                    return engine.vars[key]
-                else:
-                    raise Exception(f"[ERROR] The variable for '{key}' is not defined.")
-            dialogue = re.sub(r"\{([^}]+)\}", replacer, dialogue)
-            engine.current_dialogue = dialogue
         elif '*' in arg:
             speaker, dialogue = arg.split("*", 1)
             speaker = speaker.strip()
             dialogue = dialogue.strip()
             engine.current_character_name = speaker
-            def replacer(match):
-                key = match.group(1).strip()
-                if key in speaker:
-                    return speaker
-                elif key in engine.characters:
-                    return engine.characters[key]
-                elif key in engine.scenes:
-                    return engine.scenes[key]
-                elif key in engine.vars:
-                    return engine.vars[key]
-                else:
-                    raise Exception(f"[ERROR] The variable for '{key}' is not defined.")
-            dialogue = re.sub(r"\{([^}]+)\}", replacer, dialogue)
-            engine.current_dialogue = dialogue
         else:
-            engine.current_dialogue = arg.strip()
+            dialogue = arg.strip()
             engine.current_character_name = ""
-            def replacer(match):
-                key = match.group(1).strip()
-                if key in engine.characters:
-                    return engine.characters[key]
-                elif key in engine.scenes:
-                    return engine.scenes[key]
-                elif key in engine.vars:
-                    return engine.vars[key]
-                else:
-                    raise Exception(f"[ERROR] The variable for '{key}' is not defined.")
-            engine.current_dialogue = re.sub(r"\{([^}]+)\}", replacer, engine.current_dialogue)
-        # Usar un único DialogPanel persistente y mantenerlo siempre visible
+
+        dialogue = self.substitute_variables(dialogue, engine)
+        engine.current_dialogue = dialogue
+
+        # Setup DialogPanel
         font = engine.renderer.font
         name_font = getattr(engine.renderer, 'name_font', font)
-        screen_w = engine.config.get("screen_width", 800)
-        screen_h = engine.config.get("screen_height", 600)
-        padding = 35
-        panel_x = padding
-        panel_y = screen_h - 120 - padding
-        panel_width = screen_w - 2 * padding
-        panel_height = 120
-        if not hasattr(engine, "current_dialog_panel") or engine.current_dialog_panel is None:
+        
+        if not engine.current_dialog_panel:
+            cfg = engine.config.get("dialogue_rect", {})
+            panel_x = cfg.get("x", 0)
+            panel_y = cfg.get("y", 480)
+            panel_width = cfg.get("width", engine.config.get("screen_width", 800))
+            panel_height = cfg.get("height", 120)
+            
             engine.current_dialog_panel = DialogPanel("", font=font, x=panel_x, y=panel_y, width=panel_width, height=panel_height)
             engine.current_dialog_panel.name_font = name_font
+            if "dialogue_box" in engine.style_manager.styles:
+                engine.style_manager.apply(engine.current_dialog_panel, "dialogue_box")
             engine.screen_manager.show(engine.current_dialog_panel, force_top=True)
+        
         panel = engine.current_dialog_panel
         panel.z_index = 10
-        panel.text = ""
-        # Mostrar nombre del personaje si existe
-        if engine.current_character_name:
-            panel.character_name = engine.current_character_name
-            panel.name_font = name_font
-        else:
-            panel.character_name = None
+        panel.character_name = engine.current_character_name if engine.current_character_name else None
+        panel.set_text(dialogue)
+        
         if panel not in engine.screen_manager.screens:
             engine.screen_manager.show(panel, force_top=True)
-        # Efecto máquina de escribir
-        full_text = engine.current_dialogue
-        text_cps = 30
-        typewriter_index = 0
-        last_update = pygame.time.get_ticks()
-        mostrar_todo = False
-        waiting = True
-        # Control de texto visto (estricto: incluye nombre, texto, y snapshot de variables)
+
+        engine.awaiting_input = True
+        
+        # Track seen dialogue (optional but kept for compatibility)
         if not hasattr(engine, "seen_dialogue"):
             engine.seen_dialogue = set()
         scene_id = getattr(engine, "current_scene", None) or engine.vars.get("scene", "")
         context_vars = tuple(sorted((k, str(v)) for k, v in engine.vars.items()))
-        key_seen = (scene_id, engine.current_character_name, engine.current_dialogue, context_vars)
-        while waiting and engine.running:
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    engine.running = False
-                    waiting = False
-                elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-                    # Primero dejar que los paneles manejen el evento
-                    handled = engine.screen_manager.handle_event(event)
-                    if handled:
-                        # El evento fue consumido por un panel, no avanzar el diálogo
-                        continue
-                    # Si no fue manejado, entonces avanzamos el diálogo
-                    if typewriter_index < len(full_text):
-                        mostrar_todo = True
-                    else:
-                        waiting = False
-                elif event.type == pygame.KEYDOWN:
-                    # Verifica si se presionó Ctrl + R
-                    keys = pygame.key.get_mods()
-                    if event.key == pygame.K_r and (keys & pygame.KMOD_CTRL):
-                        # Diferir el hot-reload para ejecutarlo en el loop principal evitando bloqueos
-                        setattr(engine, 'pending_reload', True)
-                        waiting = False
-                        break
-                
-                else:
-                    engine.screen_manager.handle_event(event)
-                
-                 
-            now = pygame.time.get_ticks()
-            if typewriter_index < len(full_text):
-                if mostrar_todo:
-                    typewriter_index = len(full_text)
-                    panel.text = full_text
-                else:
-                    chars_to_add = int((now - last_update) * text_cps / 1000)
-                    if chars_to_add > 0:
-                        typewriter_index = min(typewriter_index + chars_to_add, len(full_text))
-                        panel.text = full_text[:typewriter_index]
-                        last_update = now
-            engine.clock.tick(30)
-            engine.screen_manager.render(engine.renderer.screen)
-            pygame.display.update()
-        engine.seen_dialogue.add(key_seen)
-        # Si hay un reload pendiente, preservamos el contexto para restaurar correctamente tras recarga
-        if not getattr(engine, 'pending_reload', False):
-            engine.current_dialogue = ""
-            engine.current_character_name = ""
-        
+        engine.seen_dialogue.add((scene_id, engine.current_character_name, dialogue, context_vars))
+
     def parse_color(self, arg):
         """
         Converts a color name or hexadecimal code to an RGB color.
@@ -372,6 +306,7 @@ class EventManager:
         engine.current_bg_filename = arg
         win_w = engine.renderer.screen.get_width()
         win_h = engine.renderer.screen.get_height()
+        engine.Log(f"[bg] Attempting to set background: '{arg}' (win: {win_w}x{win_h})")
 
         try:
             color = self.parse_color(arg)
@@ -381,32 +316,31 @@ class EventManager:
                 bg_visual = AutoSizedBackground(0, 0, win_w, win_h)
                 bg_visual.bg_color = color
                 bg_visual.border_width = 0
+                bg_visual.z_index = -100
             else:
                 # Imagen
                 load_image = ScriptLexer(engine.game_path, engine).load_image
-                relative_path = os.path.join("images", "bg", arg + ".jpg")
-                bg_image = load_image(relative_path)
+                bg_image = load_image(arg)
 
                 img_w, img_h = bg_image.get_width(), bg_image.get_height()
                 scale = min(win_w / img_w, win_h / img_h)
                 new_w, new_h = int(img_w * scale), int(img_h * scale)
-                scaled_bg = pygame.transform.smoothscale(bg_image, (new_w, new_h))
 
                 bg_visual = SpriteVisual(
-                    scaled_bg,
-                    x=(win_w - new_w) // 2,
-                    y=(win_h - new_h) // 2,
+                    bg_image,
                     width=new_w,
-                    height=new_h
+                    height=new_h,
+                    z_index=-100
                 )
 
             engine.current_bg_visual = bg_visual
 
             # Fondo en capa más baja
-            if hasattr(engine, "bg_layer"):
+            if hasattr(engine, "bg_layer") and engine.bg_layer:
                 engine.screen_manager.hide(engine.bg_layer)
             engine.bg_layer = bg_visual
-            engine.screen_manager.screens.insert(0, bg_visual)
+            engine.screen_manager.show(bg_visual, force_top=False)
+            engine.Log(f"[bg] Background set: {arg}")
 
         except Exception as e:
             raise Exception(f"[bg] Error loading background: {e}")
@@ -520,32 +454,43 @@ class EventManager:
     def handle_hide_sprite(self, arg, engine):
         """
         Hides a sprite from the screen and removes it from the sprite_layers dictionary.
+        Supports:
+        - @hide Kuro          (hides all 'Kuro:*' sprites)
+        - @hide Kuro:Happy    (hides exactly 'Kuro:Happy')
+        - @hide all           (hides all sprites)
         """
-        sprite_alias = arg.strip()
+        sprite_alias = arg.strip().lower()
 
         if not sprite_alias:
             engine.Log("[hide] Error: No sprite alias provided.")
             return
 
         if not hasattr(engine, "sprite_layers"):
-            engine.Log("[hide] Error: Engine has no 'sprite_layers' attribute.")
             return
 
-        sprite = engine.sprite_layers.get(sprite_alias)
-        if not sprite:
-            engine.Log(f"[hide] Warning: Sprite '{sprite_alias}' not found.")
+        to_remove = []
+        if sprite_alias == "all":
+            to_remove = list(engine.sprite_layers.keys())
+        else:
+            # Direct match
+            if sprite_alias in engine.sprite_layers:
+                to_remove.append(sprite_alias)
+            else:
+                # Base name match (e.g. "@hide Kuro" should hide "Kuro:Happy")
+                for key in engine.sprite_layers.keys():
+                    base, _, _ = key.partition(":")
+                    if base.lower() == sprite_alias:
+                        to_remove.append(key)
+
+        if not to_remove:
+            engine.Log(f"[hide] Warning: No sprite matching '{sprite_alias}' found.")
             return
 
-        try:
-            # Hide the sprite visually
+        for alias in to_remove:
+            sprite = engine.sprite_layers[alias]
             engine.screen_manager.hide(sprite)
-
-            # Remove the sprite from the dictionary
-            del engine.sprite_layers[sprite_alias]
-
-            engine.Log(f"[hide] Sprite '{sprite_alias}' hidden and removed from sprite_layers.")
-        except Exception as e:
-            engine.Log(f"[hide] Error while hiding sprite '{sprite_alias}': {e}")
+            del engine.sprite_layers[alias]
+            engine.Log(f"[hide] Sprite '{alias}' hidden.")
 
     def handle_Quit(self, arg, engine):
         """
@@ -686,6 +631,8 @@ class EventManager:
         """
         Processes a scene by loading and parsing a script file based on the scene alias.
         """
+        engine.screen_manager.hide_all()
+        engine.awaiting_input = False
   
         
         if engine.current_bg_visual is None and engine.bg_layer is None and engine.current_bg_filename is None:
@@ -723,6 +670,8 @@ class EventManager:
         """
         Processes the scene jump command.
         """
+        engine.screen_manager.hide_all()
+        engine.awaiting_input = False
         parts = [p.strip() for p in arg.split("|") if p.strip()]
         if len(parts) != 1:
             raise Exception("[ERROR] Extended format in @jump_scene not implemented.")
@@ -1157,6 +1106,8 @@ class EventManager:
                 def action():
                     engine.Log(f"[menu] Selected action: @{event_str}")
                     engine.screen_manager.hide(engine.current_menu_panel)
+                    engine.current_menu_panel = None
+                    engine.awaiting_input = False
                     engine.event_manager.handle(f"@{event_str}", engine)
                 return action
             button = Button(
@@ -1164,22 +1115,15 @@ class EventManager:
                 action=make_action(),
                 width=panel_width - 2*margin,
                 height=button_height,
-                font=font
+                theme=engine.theme
             )
+            button.font = font
+            if "choice_button" in engine.style_manager.styles:
+                engine.style_manager.apply(button, "choice_button")
             engine.current_menu_panel.add_child(button)
         engine.screen_manager.show(engine.current_menu_panel, force_top=True)
-        # Esperar a que se cierre el menú, procesando eventos para evitar freeze
-        while engine.current_menu_panel in engine.screen_manager.screens and engine.running:
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    engine.running = False
-                else:
-                    engine.screen_manager.handle_event(event)
-            engine.clock.tick(30)
-            engine.screen_manager.render(engine.renderer.screen)
-            pygame.display.update()
-        engine.current_menu_buttons = []
-        engine.current_menu_panel = None
+        engine.awaiting_input = True
+        engine.current_choice_buttons = []
         
     def handle_menu(self, arg, engine):
         """
@@ -1308,6 +1252,8 @@ class EventManager:
                 def action():
                     engine.Log(f"[menu] Selected action: @{event_str}")
                     engine.screen_manager.hide(engine.current_menu_panel)
+                    engine.current_menu_panel = None
+                    engine.awaiting_input = False
                     engine.event_manager.handle(f"@{event_str}", engine)
                 return action
             button = Button(
@@ -1320,18 +1266,8 @@ class EventManager:
             )
             engine.current_menu_panel.add_child(button)
         engine.screen_manager.show(engine.current_menu_panel)
-        # Wait for menu to close, process events to avoid freeze
-        while engine.current_menu_panel in engine.screen_manager.screens and engine.running:
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    engine.running = False
-                else:
-                    engine.screen_manager.handle_event(event)
-            engine.clock.tick(30)
-            engine.screen_manager.render(engine.renderer.screen)
-            pygame.display.update()
+        engine.awaiting_input = True
         engine.current_menu_buttons = []
-        engine.current_menu_panel = None
 
     def handle_Set_event(self, arg, engine):
         """
@@ -1806,3 +1742,167 @@ class EventManager:
             engine.Log(f"[reload] Excepción inesperada: {e}")
             engine.Log(traceback.format_exc())
             return False
+
+    def _parse_kwargs(self, arg):
+        import re
+        kwargs = {}
+        # This regex handles:
+        # 1. key="quoted value"
+        # 2. key=(tuple, values)
+        # 3. key={nested=dict}
+        # 4. key=simple_value
+        pattern = r'(\w+)=(?:"([^"]*)"|\'([^\']*)\'|(\{[^}]+\})|(\([^)]+\))|([^ \t,={}]+))'
+        matches = re.findall(pattern, arg)
+        
+        for m in matches:
+            k = m[0]
+            # Find which group matched (index 1 is double quote, 2 is single, 3 is dict, 4 is tuple, 5 is simple)
+            v = m[1] or m[2] or m[3] or m[4] or m[5]
+            
+            if v.startswith('(') and v.endswith(')'):
+                try: 
+                    parts = v[1:-1].split(',')
+                    kwargs[k] = tuple(int(x.strip()) for x in parts)
+                except: kwargs[k] = v
+            elif v.startswith('{') and v.endswith('}'):
+                kwargs[k] = self._parse_kwargs(v[1:-1])
+            elif v.isdigit(): kwargs[k] = int(v)
+            elif v.replace('.', '', 1).isdigit(): kwargs[k] = float(v)
+            elif v.lower() == 'true': kwargs[k] = True
+            elif v.lower() == 'false': kwargs[k] = False
+            else: kwargs[k] = v
+        return kwargs
+
+    def handle_ui_style(self, arg, engine):
+        import re
+        name_match = re.search(r'"?(\w+)"?', arg)
+        if not name_match: return
+        name = name_match.group(1)
+        kwargs = self._parse_kwargs(arg)
+        # Load background image if specified in style
+        if 'bg_image' in kwargs:
+            kwargs['bg_image'] = engine.lexer.load_image(kwargs['bg_image'])
+        engine.style_manager.define(name, **kwargs)
+        engine.Log(f"[ui] Style defined: {name}")
+
+    def handle_screen(self, arg, engine):
+        import re
+        name_match = re.search(r'"?(\w+)"?', arg)
+        name = name_match.group(1) if name_match else "unnamed_screen"
+        kwargs = self._parse_kwargs(arg)
+        engine.current_screen_def = {"name": name, "elements": [], "kwargs": kwargs}
+        engine.Log(f"[ui] Defining screen: {name}")
+
+    def handle_add_button(self, arg, engine):
+        kwargs = self._parse_kwargs(arg)
+        label = kwargs.pop('label', 'Button')
+        action_str = kwargs.pop('action', '')
+        if hasattr(engine, 'current_screen_def'):
+            engine.current_screen_def['elements'].append({
+                'type': 'button', 'label': label, 'action': action_str, 'kwargs': kwargs
+            })
+
+    def handle_add_text(self, arg, engine):
+        kwargs = self._parse_kwargs(arg)
+        text = kwargs.pop('text', '')
+        if hasattr(engine, 'current_screen_def'):
+            engine.current_screen_def['elements'].append({
+                'type': 'text', 'text': text, 'kwargs': kwargs
+            })
+
+    def handle_add_image(self, arg, engine):
+        kwargs = self._parse_kwargs(arg)
+        src = kwargs.pop('src', '')
+        if hasattr(engine, 'current_screen_def'):
+            engine.current_screen_def['elements'].append({
+                'type': 'image', 'src': src, 'kwargs': kwargs
+            })
+
+    def handle_end_screen(self, arg, engine):
+        sdef = getattr(engine, 'current_screen_def', None)
+        if sdef:
+            engine.screen_definitions[sdef['name']] = sdef
+            engine.current_screen_def = None
+            engine.Log(f"[ui] Screen finalized: {sdef['name']}")
+
+    def handle_show_screen(self, arg, engine):
+        name = arg.strip().strip('\"').strip("'")
+        sdef = engine.screen_definitions.get(name)
+        if not sdef:
+            engine.Log(f"[ui] Error: Screen {name} not found.")
+            return
+
+        from vne.visual import MenuPanel, Button, TextElement, ImageElement, VerticalLayout, HorizontalLayout, FlexLayout, GridLayout
+        
+        screen_kwargs = sdef.get('kwargs', {})
+        layout_type = screen_kwargs.get('layout', 'none').lower()
+        margin = screen_kwargs.get('margin', 10)
+        
+        layout = None
+        if layout_type == 'horizontal':
+            layout = HorizontalLayout(margin=margin)
+        elif layout_type == 'grid':
+            rows = screen_kwargs.get('rows', 2)
+            cols = screen_kwargs.get('cols', 2)
+            layout = GridLayout(rows=rows, cols=cols, margin=margin)
+        elif layout_type == 'flex':
+            layout = FlexLayout(gap=margin)
+        elif layout_type == 'none':
+            layout = None
+        else:
+            layout = None
+
+        panel = MenuPanel(width=engine.config['screen_width'], height=engine.config['screen_height'], no_bg=True, no_border=True, layout=layout)
+        panel.screen_name = name
+
+        for el in sdef['elements']:
+            kwargs = el['kwargs']
+            style_name = kwargs.pop('style', None)
+            
+            if el['type'] == 'button':
+                def make_action(cmd):
+                    return lambda: engine.event_manager.handle('@' + cmd, engine)
+                obj = Button(el['label'], make_action(el['action']))
+                obj.font = engine.renderer.font
+            elif el['type'] == 'text':
+                obj = TextElement(el['text'])
+                obj.font = engine.renderer.font
+            elif el['type'] == 'image':
+                img = engine.lexer.load_image(el['src'])
+                w = kwargs.pop('width', None)
+                h = kwargs.pop('height', None)
+                obj = ImageElement(img, width=w, height=h)
+            
+            if style_name:
+                engine.style_manager.apply(obj, style_name)
+            obj.apply_style(kwargs)
+            
+            # Manual positioning fallback (only if no layout or specifically centered)
+            if obj.x == 'center':
+                obj.x = (panel.width - obj.width) // 2
+            if obj.y == 'center':
+                obj.y = (panel.height - obj.height) // 2
+            
+            panel.add_child(obj)
+
+        engine.screen_manager.show(panel)
+        engine.Log(f"[ui] Showing screen: {name}")
+
+    def handle_hide_screen(self, arg, engine):
+        name = arg.strip().strip('\"').strip("'")
+        for s in engine.screen_manager.screens[:]:
+            if getattr(s, 'screen_name', None) == name:
+                engine.screen_manager.hide(s)
+        engine.Log(f"[ui] Hiding screen: {name}")
+
+    def handle_ui_config(self, arg, engine):
+        kwargs = self._parse_kwargs(arg)
+        for k, v in kwargs.items():
+            if k in engine.config:
+                if isinstance(engine.config[k], dict) and isinstance(v, dict):
+                    engine.config[k].update(v)
+                else:
+                    engine.config[k] = v
+                engine.Log(f"[ui] Config updated: {k}")
+            else:
+                engine.Log(f"[ui] Warning: '{k}' not found in engine configuration.")

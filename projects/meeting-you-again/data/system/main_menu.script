@@ -1,6 +1,10 @@
-# Main Menu
-@bg Street_Autumn_Day
-@mainMenu layout="horizontal" position="leftBottom"
-  @button "Start game" event Scene("first") 
-  @button "Quit" event Quit() 
-@endMainMenu
+@ui_style "btn_main" width=250 height=45 radius=10 bg_color=(30,30,50) hover_bg_color=(50,50,90) border_color=(255,255,255) border_width=1
+
+@screen "MainMenu"
+  @add_image src="Street_Autumn_Day" x=0 y=0 width=1280 height=720
+  @add_text text="MEETING YOU AGAIN" x=center y=180 color=(255,255,255)
+  @add_button label="Iniciar Historia" action="Scene('first')" x=center y=380 style="btn_main"
+  @add_button label="Salir" action="Quit()" x=center y=450 style="btn_main"
+@end_screen
+
+@show_screen "MainMenu"

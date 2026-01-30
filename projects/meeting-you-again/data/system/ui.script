@@ -1,8 +1,10 @@
-# set the window size. eg: @Display(800,600)
-# the recomended max size is 1280x720 
 @Display(1280,720)
-# set the game title
-@GameTitle("Meeting you again")
-# set the gane icon. eg. @GameIconName("window_icon")
-# by default window_icon. 
-# @GameIconName()
+@GameTitle("Meeting you again - Enhanced UI")
+
+# Estilos Premium
+@ui_style "dialogue_box" bg_color=(20,20,30,220) border_color=(150,150,200) radius=20 border_width=2
+@ui_style "choice_button" bg_color=(40,40,60) hover_bg_color=(70,70,120) radius=12 border_color=(200,200,255) text_color=(255,255,255)
+
+# Configuración de cuadro de diálogo
+@ui_config dialogue_rect={x=100,y=520,width=1080,height=160}
+@ui_config namebox_rect={bg_color=(40,40,80),border_color=(200,200,255),radius=10}

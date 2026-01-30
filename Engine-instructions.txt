@@ -1,0 +1,38 @@
+El motor necesita seguir lo siguiente:
+
+Core Engine
+
+- Script Execution and Interface
+- Screen Language 
+- Animation And Transformation
+
+Rendering System
+- OpenGL Rendering
+- Texture Rendering
+- Display Core and Render pipeline
+- Image Composition and Displayables
+- Video PlayBack
+
+Audio
+- Channel Management and Playback
+
+User Interface
+
+- GUI Configuration and Styles
+- Input Handling
+- Preferences and Persistent Data
+- Character and Dialogue System
+- Screen Definitions and Actions
+
+Data Management
+- Save and Load System
+- Asset Loading and Archives
+- Translation System
+
+Development Tools
+- Launcher and Project Management
+- Build and distribution system
+- Error handling and debugging
+
+
+Debe usar OpenGL, SDL3 y soportar Vulkan. 

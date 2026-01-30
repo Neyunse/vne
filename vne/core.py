@@ -9,6 +9,7 @@ from vne.events import EventManager
 from vne.config import CONFIG
 from vne.config import key, engine_version, file_extension, aes_extension, init_file
 from vne.rm import ResourceManager
+from vne.style_manager import StyleManager
 from vne.aes import AES, SaveCorruptError, SCRIPT_AAD
 from vne.visual import VisualElement, MenuPanel, Button, VerticalLayout
 
@@ -107,6 +108,7 @@ class VNEngine:
         self.resource_manager = ResourceManager(self.game_path, self.Log)
         self.lexer = ScriptLexer(self.game_path, self)
         self.event_manager = EventManager()
+        self.style_manager = StyleManager()
         self.renderer = Renderer(self)
         self.clock = pygame.time.Clock()
  
@@ -126,6 +128,9 @@ class VNEngine:
         self.force_clear_sprites = False
         # Flag para solicitar un hot-reload seguro fuera de loops bloqueantes (ej: typewriter)
         self.pending_reload = False
+        self.awaiting_input = False
+        self.current_dialog_panel = None
+        self.screen_definitions = {}
     
     def should_execute_line(self):
         """
@@ -138,18 +143,21 @@ class VNEngine:
          
     def Log(self, log, _=None):
         """
-        The function `Log` appends a log message to a file named 'log.txt'.
-        
-        :param log: The `Log` function takes a parameter `log`, which is a string representing the log
-        message that you want to write to a file named `log.txt`. The function appends the log message to
-        the file
+        The function `Log` appends a log message to the log file and prints to console.
         """
-        log_path = os.path.join(self.game_path, 'log.txt')
+        timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        log_message = f"[{timestamp}] {log}\n"
         
-        with open(log_path, 'a+') as f:
-            f.write("\n")
-            f.write(log)
-            f.close()
+        # In devMode we prioritize visibility
+        if self.devMode:
+            print(log_message, end='')
+
+        log_path = os.path.join(self.game_path, 'log.txt')
+        try:
+            with open(log_path, 'a', encoding='utf-8') as f:
+                f.write(log_message)
+        except Exception:
+            pass # Avoid crashing due to log errors
     
     def set_theme(self, theme):
         self.theme = theme
@@ -271,34 +279,82 @@ VNE %(engineVersion)s
  
         while self.running:
             delta_time = self.clock.tick(30) / 1000.0
+            
+            # 1. Event Handling
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     self.running = False
-            # Ejecutar hot-reload diferido si fue solicitado dentro de un handler interactivo
+                
+                # Dialogue input handling
+                handled = False
+                if self.awaiting_input and self.running:
+                    # Dialogue/Input specific handling
+                    if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                        handled = self.screen_manager.handle_event(event)
+                        if not handled:
+                            # If no UI screen handled it, check for dialogue advance
+                            menu_active = (getattr(self, 'current_menu_panel', None) in self.screen_manager.screens or 
+                                           getattr(self, 'quick_menu_panel', None) in self.screen_manager.screens)
+                            if not menu_active:
+                                if self.current_dialog_panel:
+                                    if not self.current_dialog_panel.finished_typewriter:
+                                        self.current_dialog_panel.finish_typewriter()
+                                        handled = True
+                                    else:
+                                        self.awaiting_input = False
+                                        handled = True
+                    elif event.type == pygame.KEYDOWN:
+                        if event.key in (pygame.K_SPACE, pygame.K_RETURN, pygame.K_z): # Z is common in VN
+                            # Check if a menu is blocking dialogue advance
+                            menu_active = (getattr(self, 'current_menu_panel', None) in self.screen_manager.screens or 
+                                           getattr(self, 'quick_menu_panel', None) in self.screen_manager.screens)
+                            if not menu_active:
+                                if self.current_dialog_panel:
+                                    if not self.current_dialog_panel.finished_typewriter:
+                                        self.current_dialog_panel.finish_typewriter()
+                                        handled = True
+                                    else:
+                                        self.awaiting_input = False
+                                        handled = True
+                
+                # General UI event handling (if not already handled by dialogue logic)
+                if not handled and self.running:
+                    self.screen_manager.handle_event(event)
+
+            # 2. Hot-reload handling
             if getattr(self, 'pending_reload', False):
                 try:
-                    # Usar directamente el handler para evitar parsing adicional
                     self.event_manager.handle("@reload", self)
                 except Exception as e:
                     self.generate_traceback(e)
                 finally:
                     self.pending_reload = False
-                # Después de recargar saltar a siguiente iteración para no consumir comando viejo
                 continue
-            command = self.lexer.get_next_command()
-            if command is None:
-                pygame.time.wait(2000)
-                self.running = False
-            else:
-                try:
-                    self.event_manager.handle(command, self)
-                except Exception as e:
-                    
-                    self.generate_traceback(e)
+
+            # 3. Command Execution (only if not waiting for input/reload)
+            if not self.awaiting_input and self.running:
+                command = self.lexer.get_next_command()
+                if command is None:
+                    # End of script. 
+                    # If we have screens active (like a menu), we just wait.
+                    # If no screens are active, then we can exit.
+                    if not self.screen_manager.screens:
+                        pygame.time.wait(1000)
+                        self.running = False
+                    else:
+                        # Stay idle, waiting for UI events
+                        self.awaiting_input = True
+                else:
+                    try:
+                        self.event_manager.handle(command, self)
+                    except Exception as e:
+                        self.generate_traceback(e)
   
           
-            # Render overlays and stacking
-            self.screen_manager.render(self.renderer.screen)
-            pygame.display.update()
+            # 4. Rendering
+            if self.running:
+                self.renderer.screen.fill((0,0,0)) # Clear screen
+                self.screen_manager.render(self.renderer.screen)
+                pygame.display.update()
         pygame.quit()
         self.Log("Game finished.")

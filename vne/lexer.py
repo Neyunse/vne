@@ -82,31 +82,36 @@ class ScriptLexer:
     
     def load_image(self, relative_path):
         """
-        The function `load_image` loads an image from a relative path using Pygame, handling exceptions
-        and ensuring full opacity.
-        
-        :param relative_path: The `load_image` method you provided seems to be a part of a class that
-        loads images for a game engine. The `relative_path` parameter is used to specify the path to the
-        image file relative to the game's data directory
-        :return: The `load_image` method returns the loaded image after processing it with full opacity.
+        Loads an image. If the path is not found directly, it tries to search in
+        common directories (images/bg, images/sprites) and tries common extensions.
         """
-        try:
-            image_bytes = self.engine.resource_manager.get_bytes(relative_path)
-            image_stream = io.BytesIO(image_bytes)
-            image = pygame.image.load(image_stream).convert_alpha()
- 
-            return image
-        except Exception as e:
-            full_path = os.path.join(self.engine.game_path, "data", relative_path)
-            if os.path.exists(full_path):
-                try:
-                    image = pygame.image.load(full_path).convert_alpha()
- 
-                    return image
-                except Exception as e2:
-                    raise Exception(f"Error loading image from '{full_path}': {e2}")
-            else:
-                raise Exception(f"Error loading image at '{relative_path}': {e}")
+        search_paths = [
+            relative_path,
+            os.path.join("images", "bg", relative_path),
+            os.path.join("images", "sprites", relative_path)
+        ]
+        
+        # Add variations with common extensions if no extension is present
+        exts = [".png", ".jpg", ".jpeg", ".webp"]
+        final_to_try = []
+        for p in search_paths:
+            final_to_try.append(p)
+            # If path doesn't have an extension, add common ones
+            if not os.path.splitext(p)[1]:
+                for ext in exts:
+                    final_to_try.append(p + ext)
+
+        last_err = None
+        for path in final_to_try:
+            try:
+                image_bytes = self.engine.resource_manager.get_bytes(path)
+                image_stream = io.BytesIO(image_bytes)
+                return pygame.image.load(image_stream).convert_alpha()
+            except Exception as e:
+                last_err = e
+                continue
+        
+        raise Exception(f"Error loading image at '{relative_path}': {last_err}")
     
     def force_full_opacity(self, surface):
         """

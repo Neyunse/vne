@@ -1,6 +1,7 @@
 import pygame
 import io
 import os
+
 class Audio(object):
     instances = []
     def __init__(self, filename, type_file="bgm", engine=None):
@@ -21,24 +22,25 @@ class Audio(object):
             self.bytes_io.seek(0)
             return pygame.mixer.Sound(self.bytes_io)
         except Exception as e:
-                raise Exception(f"[bgm] Error loading background music from '{rel_path}': {e}")
+                raise Exception(f"[Audio] Error loading audio from '{rel_path}': {e}")
     
     def get_channel(self):
-
         if self.type_file == "bgm":
             return pygame.mixer.Channel(0)
+        
+        # Search for a free channel, or steal one if none are free (except channel 0)
+        channel = pygame.mixer.find_channel(True)
+        return channel if (channel and channel.get_id() != 0) else pygame.mixer.Channel(1)
 
-        return pygame.mixer.Channel(1)
-
-    def play(self, channel_id=0, loop=0, fade_ms=1000):
-        """
-        The function `play` plays the audio on the specified channel.
-        :param channel: The `play` method takes an integer `channel` as input, which specifies the audio channel to play the sound on.
-        """
+    def play(self, loop=0, fade_ms=500):
         channel = self.get_channel()
         
-        if channel.get_busy():
-            channel.fadeout(500)
-            pygame.time.delay(700)
-
+        if self.type_file == "bgm" and channel.get_busy():
+            channel.fadeout(fade_ms)
+        
         channel.play(self.sound, loops=loop, fade_ms=fade_ms)
+        
+        if self.engine and hasattr(self.engine, 'config'):
+            key = "bgm_volume" if self.type_file == "bgm" else "sfx_volume"
+            vol = self.engine.config.get(key, 1.0)
+            channel.set_volume(vol)

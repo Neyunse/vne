@@ -1,4 +1,12 @@
 # set the window size. eg: @Display(800,600)
 # the recomended size is 1280x720 
 @Display(1280,720)
-@GameTitle("Debug Game")
+@GameTitle("Debug Game - UI Update")
+
+# Definir estilos para la UI
+@ui_style "dialogue_box" bg_color=(40,40,60,200) border_color=(200,200,255) radius=15 border_width=3
+@ui_style "choice_button" bg_color=(60,60,80) hover_bg_color=(100,100,150) border_color=(255,255,255) radius=8 text_color=(255,255,255)
+
+# Configurar posiciones de la UI
+@ui_config dialogue_rect={x=140,y=500,width=1000,height=180}
+@ui_config namebox_rect={bg_color=(60,60,100),border_color=(255,255,255)}

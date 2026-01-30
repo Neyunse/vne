@@ -1,6 +1,13 @@
 @bg school
 @bgm 70_Love
 
+# Definir una pequeña pantalla de notificación
+@ui_style "notify_style" bg_color=(200,200,0) radius=5
+@screen "Notify"
+  @add_text text="¡Carga completada!" x=10 y=10 color=(0,0,0) style="notify_style"
+@end_screen
+@show_screen "Notify"
+
 @qm
 @qmBtn "Save" event Save()
 @qmEnd

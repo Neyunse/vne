@@ -1,7 +1,14 @@
-# create a menu
-@bg school
-@mainMenu layout="horizontal" position="leftBottom"
-  @button "Continue" event Continue()
-  @button "Start game" event Scene("script") 
-  @button "Quit" event Quit()
-@endMainMenu
+# Definir el estilo para los botones del menú
+@ui_style "menu_btn" width=300 height=50 radius=25 bg_color=(40,40,40) hover_bg_color=(80,80,100) border_color=(255,255,255) border_width=2
+
+# Definir la pantalla del Menú Principal
+@screen "MainMenu"
+  @add_image src="school" x=0 y=0 width=1280 height=720
+  @add_text text="VNE DEBUG GAME" x=center y=150 color=(255,255,255)
+  @add_button label="Nueva Partida" action="Scene('script')" x=center y=350 style="menu_btn"
+  @add_button label="Continuar" action="Continue()" x=center y=420 style="menu_btn"
+  @add_button label="Salir" action="Quit()" x=center y=490 style="menu_btn"
+@end_screen
+
+# Mostrar la pantalla
+@show_screen "MainMenu"
