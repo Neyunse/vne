@@ -1,9 +1,14 @@
 @ui_style "btn_main" width=250 height=45 radius=10 bg_color=(30,30,50) hover_bg_color=(50,50,90) border_color=(255,255,255) border_width=1
 
 @screen "MainMenu"
-  @add_image src="Street_Autumn_Day" x=0 y=0 width=1280 height=720
-  @add_text text="MEETING YOU AGAIN" x=center y=180 color=(255,255,255)
-  @add_box "MenuContainer" x=center y=350 width=350 height=300 layout="vertical" no_bg=true
+  @background "Street_Autumn_Day"
+  
+  # Semi-transparent overlay for better text contrast
+  # Using a box as an overlay if engine supports it, otherwise just text
+  @text text="MEETING YOU AGAIN" x=center y=150 color=(255,255,255)
+  
+  # Menu Container with Glass Style
+  @box "MenuContainer" x=center y=280 width=300 height=350 layout="vertical" style="menu_panel" margin=20
     @button "Iniciar Historia" event Scene('first') style="btn_main"
     @button "Cargar Partida" event LoadScreen() style="btn_main"
     @button "Ajustes" event Prefs() style="btn_main"

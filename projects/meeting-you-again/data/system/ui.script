@@ -1,14 +1,15 @@
 @Display(1280,720)
 @GameTitle("Meeting you again - Enhanced UI")
 
-# Estilos Premium
-@ui_style "dialogue_box" bg_color=(20,20,30,220) border_color=(150,150,200) radius=20 border_width=2
-@ui_style "choice_button" bg_color=(40,40,60) hover_bg_color=(70,70,120) radius=12 border_color=(200,200,255) text_color=(255,255,255)
+# Estilos Premium (Glassmorphism)
+@ui_style "dialogue_box" bg_color=(20, 20, 30, 240) border_color=(255, 255, 255, 50) radius=20 border_width=1
+@ui_style "choice_button" bg_color=(0, 0, 0, 150) hover_bg_color=(50, 50, 50, 180) radius=15 border_color=(255, 255, 255, 100) border_width=1 text_color=(255, 255, 255)
 
 # Configuración de cuadro de diálogo
-@ui_config dialogue_rect={x=100,y=520,width=1080,height=160}
-@ui_config namebox_rect={bg_color=(40,40,80),border_color=(200,200,255),radius=10}
+@ui_config dialogue_rect={x=150,y=540,width=980,height=150}
+@ui_config namebox_rect={bg_color=(30, 30, 50, 255),border_color=(255,255,255,50),radius=5}
 
-@ui_style "btn_main" width=250 height=45 radius=10 bg_color=(30,30,50) hover_bg_color=(50,50,90) border_color=(255,255,255) border_width=1
+@ui_style "btn_main" width=280 height=50 radius=25 bg_color=(0, 0, 0, 160) hover_bg_color=(255, 255, 255, 40) border_color=(255, 255, 255, 80) border_width=1 text_color=(240, 240, 240)
+@ui_style "menu_panel" bg_color=(0, 0, 0, 100) radius=30 border_color=(255, 255, 255, 30) border_width=1
 
  

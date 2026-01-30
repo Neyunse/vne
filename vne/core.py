@@ -349,6 +349,11 @@ VNE %(engineVersion)s
                     if event.key == pygame.K_F12:
                         self.debug_ui = not self.debug_ui
                         self.Log(f"[dev] Debug UI {'Enabled' if self.debug_ui else 'Disabled'}")
+                    
+                    # Hot-reload shortcut (Ctrl+R)
+                    if event.key == pygame.K_r and (pygame.key.get_mods() & pygame.KMOD_CTRL):
+                         self.Log("[dev] Hot-reload requested via Ctrl+R")
+                         self.pending_reload = True
 
                 handled_by_ui = self.screen_manager.handle_event(event)
                 handled = False

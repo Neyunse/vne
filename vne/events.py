@@ -85,10 +85,7 @@ class EventManager:
         self.register_event("button", self.handle_button)
         self.register_event("endMainMenu", self.handle_endmenu)
         
-        # Menú rápido
-        self.register_event("qm", self.handle_qm)
-        self.register_event("qmBtn", self.handle_qm_button)
-        self.register_event("qmEnd", self.handle_qm_end)
+        # Menú rápido - Legacy removed
         self.register_event("quick_menu", self.handle_quick_menu)
         self.register_event("history", self.handle_history)
 
@@ -126,10 +123,11 @@ class EventManager:
         # UI & Screen Language
         self.register_event("ui_style", self.handle_ui_style)
         self.register_event("screen", self.handle_screen)
-        self.register_event("add_button", self.handle_add_button)
-        self.register_event("add_text", self.handle_add_text)
-        self.register_event("add_image", self.handle_add_image)
-        self.register_event("add_box", self.handle_add_box)
+        #self.register_event("add_button", self.handle_add_button)
+        self.register_event("text", self.handle_add_text)
+        self.register_event("text", self.handle_add_text)
+        self.register_event("background", self.handle_background)
+        self.register_event("box", self.handle_add_box)
         self.register_event("end_box", self.handle_end_box)
         self.register_event("end_screen", self.handle_end_screen)
         self.register_event("show_screen", self.handle_show_screen)
@@ -299,7 +297,11 @@ class EventManager:
                 
                 btn = Button(label, make_qm_action(label), x=x_start + i*spacing, y=qm_y, width=70, height=25)
                 btn.is_qm = True
-                btn.font = pygame.font.SysFont("Arial", 12)
+                # Apply style if available
+                if "quick_menu_item" in engine.style_manager.styles:
+                    engine.style_manager.apply(btn, "quick_menu_item")
+                else:
+                     btn.font = pygame.font.SysFont("Arial", 12)
                 panel.add_child(btn)
         
         # UI Overhaul: Add to history
@@ -1110,75 +1112,7 @@ class EventManager:
         
         engine.Log(f"[Display] Window set to {width}x{height}.")
     
-    # TODO: add quick menu 
-    def handle_qm(self, arg, engine):
-        """
-        Inicia un nuevo menú rápido (resetea botones actuales).
-        Este menú NO bloquea el flujo del juego.
-        """
-        engine.quick_menu_buttons = []
-        engine.Log("[quickmenu] Preparando Quick Menu.")
 
-    def handle_qm_button(self, arg, engine):
-        """
-        Agrega un botón al Quick Menu.
-        """
-        import re
-        pattern = r'^"([^"]+)"\s+event\s+(.+)$'
-        match = re.match(pattern, arg.strip())
-        if not match:
-            raise Exception('[quickmenu-button] Formato inválido. Usa: @qm-button "Texto" event Acción')
-        
-        label = match.group(1)
-        event = match.group(2).strip()
-        engine.quick_menu_buttons.append({"label": label, "event": event})
-        engine.Log(f"[quickmenu] Botón agregado: '{label}' -> @{event}")
-
-    def handle_qm_end(self, arg, engine):
-        """
-        Crea y muestra el panel del Quick Menu en pantalla.
-        Se mantiene visible durante el juego.
-        """
-        from vne.visual import MenuPanel, Button, VerticalLayout
-        screen_width = engine.config.get("screen_width", 800)
-        width = 140
-        height = len(engine.quick_menu_buttons) * 50 + 20
-        x = screen_width - width - 10
-        y = 10
-
-        panel = MenuPanel(
-            width=width,
-            height=height,
-            layout=VerticalLayout(),
-            x=x,
-            y=y
-        )
-        panel.z_index = 50  # z-index alto para estar siempre visible
-        font = engine.renderer.font
-
-        for btn in engine.quick_menu_buttons:
-            label_text = self.substitute_variables(btn["label"], engine)
-            def make_action(event_str=btn["event"]):
-                def action():
-                    engine.Log(f"[quickmenu] Acción: @{event_str}")
-                    engine.event_manager.handle(f"@{event_str}", engine)
-                return action
-            button = Button(
-                label=label_text,
-                action=make_action(),
-                width=width - 20,
-                height=40,
-                font=font
-            )
-            panel.add_child(button)
-
-        # Si ya había uno, reemplazarlo
-        if engine.quick_menu_panel:
-            engine.screen_manager.hide(engine.quick_menu_panel)
-
-        engine.quick_menu_panel = panel
-        engine.screen_manager.show(panel, force_top=True)
-        engine.Log("[quickmenu] Quick Menu activo.")
 
     # example
     def handle_choice_menu(self, arg, engine):
@@ -1518,6 +1452,10 @@ class EventManager:
             'visual_state': {
                 'bg_filename': getattr(engine, 'current_bg_filename', None),
                 'sprites': sprite_states,
+                'active_screens': [
+                    s.screen_name for s in engine.screen_manager.screens 
+                    if getattr(s, 'screen_name', None)
+                ]
             },
             'audio_state': {
                 'bgm_filename': getattr(engine, 'current_bgm_filename', None)
@@ -1575,7 +1513,7 @@ class EventManager:
         for qm in loaded_data['qm']:
             engine.quick_menu_buttons.append(qm)
 
-        self.dispatch("qmEnd", arg, engine)
+
 
         visual_state = loaded_data['visual_state']
         if visual_state.get('bg_filename'):
@@ -1584,9 +1522,14 @@ class EventManager:
         for alias, state in visual_state.get('sprites', {}).items():
             self.handle_sprite(f"{alias}", engine)
 
+        # Restore active screens
+        active_screens = visual_state.get('active_screens', [])
+        for screen_name in active_screens:
+            self.handle_show_screen(f'"{screen_name}"', engine)
+
         audio_state = loaded_data.get('audio_state', {})
         if audio_state.get('bgm_filename'):
-            self.handle_bgm(audio_state['bgm_filename'], engine)
+                    self.handle_bgm(audio_state['bgm_filename'], engine)
         engine.Log(f"[load] Game state loaded from slot '{slot_name}'.")
         # Re-sincronizar script si es un hot-reload temporal y tenemos compilación nueva
         if slot_name == "__reload_tmp__":
@@ -1594,13 +1537,23 @@ class EventManager:
                 current_script_guess = script_meta.get('current_script_guess')
                 last_command_text = script_meta.get('last_command_text')
                 previous_index = script_meta.get('previous_index')
+                
+                engine.Log(f"[reload-debug] Attempting sync. Script guess: '{current_script_guess}'")
+                
                 if current_script_guess:
                     # Determinar ruta compilada
                     if current_script_guess == '__init__':
                         base_name = f"{init_file}"
                     else:
-                        base_name = os.path.join('scenes', current_script_guess)
+                        # Check if it already has a path-like structure
+                        if "/" in current_script_guess or "\\" in current_script_guess:
+                            base_name = current_script_guess
+                        else:
+                            base_name = os.path.join('scenes', current_script_guess)
+                    
                     compiled_path = base_name + aes_extension
+                    engine.Log(f"[reload-debug] Computed compiled path: '{compiled_path}'")
+                    
                     try:
                         file_bytes = engine.resource_manager.get_bytes(compiled_path)
                         new_content = AES(key).decrypt(file_bytes, aad=SCRIPT_AAD).decode('utf-8', errors='replace')
@@ -1621,6 +1574,9 @@ class EventManager:
                         new_lexer.current = resume_index
                         engine.lexer = new_lexer
                         engine.Log(f"[reload-sync] Script '{base_name}' recargado. Reanudando en índice {resume_index}.")
+                        
+                        # FORCE RE-EXECUTE current command (textbox)
+                        engine.awaiting_input = False
                     except Exception as e:
                         engine.Log(f"[reload-sync] No se pudo recargar script actualizado: {e}")
             except Exception as e:
@@ -1817,28 +1773,27 @@ class EventManager:
                 return False
 
             engine.Log("[reload] Iniciando hot-reload (devMode)...")
-            # Mostrar notificación visual si el motor tiene screen_manager y Toast está disponible
-            toast = None
-            try:
-                from vne.visual import Toast
-                toast = Toast("Hot-reload: iniciando...", font=getattr(engine.renderer, 'font', None), duration=2.0)
-                # Only attach the toast if the renderer surface is usable
-                try:
-                    scr = getattr(engine, 'renderer', None)
-                    if scr is not None and getattr(scr, 'screen', None) is not None:
-                        # try to access width to ensure surface initialized
-                        try:
-                            _ = scr.screen.get_width()
-                            engine.screen_manager.show(toast, force_top=True)
-                        except Exception:
-                            # surface not ready; skip visual toast
-                            toast = None
-                    else:
-                        toast = None
-                except Exception:
-                    toast = None
-            except Exception:
-                toast = None
+            
+            # UI Feedback: Black screen + Toast
+            # Force render immediately so user sees it while we compile
+            from vne.visual import Toast
+            
+            # 1. Fill screen with black
+            screen = engine.renderer.screen
+            w, h = screen.get_size()
+            black_surface = pygame.Surface((w, h))
+            black_surface.fill((0, 0, 0))
+            screen.blit(black_surface, (0, 0))
+            
+            # 2. Render Toast
+            toast = Toast("Hot-reload: recargando...", duration=5.0, z_index=2000)
+            toast.start()
+            # Manually render toast (since we are bypassing the main loop)
+            # Toast usually centers itself if x=0
+            toast.render(screen)
+            
+            # 3. Update display
+            pygame.display.flip()
 
             tmp_slot = "__reload_tmp__"
             # 1) guardar estado temporal si está disponible
@@ -1848,7 +1803,10 @@ class EventManager:
                     self.handle_save(f'("{tmp_slot}")', engine)
             except Exception as e:
                 engine.Log(f"[reload] Warning: no se pudo crear save temporal: {e}")
-
+                if toast:
+                     toast.text = f"Hot-reload: error save: {str(e)[:20]}"
+                     # Re-render to show error? mostly it will happen fast
+            
             # 2) compilar scripts usando main.compile_all_kag_in_folder (import dinámico)
             try:
                 engine.Log("[reload] Llamando a compile_all_kag_in_folder...")
@@ -1862,6 +1820,12 @@ class EventManager:
                 try:
                     if toast:
                         toast.text = f"Hot-reload: error: {str(e)[:50]}"
+                        # Force render error state
+                        screen.blit(black_surface, (0, 0))
+                        toast.render(screen)
+                        pygame.display.flip()
+                        # Wait a bit so user sees the error?
+                        pygame.time.wait(2000)
                 except Exception:
                     pass
                 return False
@@ -1899,6 +1863,9 @@ class EventManager:
             try:
                 if toast:
                     toast.text = "Hot-reload: completado"
+                    # We usually don't need to force render success because the main loop will take over
+                    # But we can add it to the screen manager to fade out normally
+                    engine.screen_manager.show(toast, force_top=True)
             except Exception:
                 pass
             return True
@@ -2023,6 +1990,26 @@ class EventManager:
         
         element = {
             'type': 'image', 'src': src, 'kwargs': kwargs
+        }
+        
+        if hasattr(engine, 'screen_container_stack') and engine.screen_container_stack:
+            engine.screen_container_stack[-1].append(element)
+        elif hasattr(engine, 'current_screen_def'):
+            engine.current_screen_def['elements'].append(element)
+
+    def handle_background(self, arg, engine):
+        src = arg.strip().strip('"').strip("'")
+        
+        # Default to full screen size
+        element = {
+            'type': 'image', 
+            'src': src, 
+            'kwargs': {
+                'x': 0, 
+                'y': 0, 
+                'width': engine.config['screen_width'], 
+                'height': engine.config['screen_height']
+            }
         }
         
         if hasattr(engine, 'screen_container_stack') and engine.screen_container_stack:
