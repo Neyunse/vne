@@ -82,36 +82,61 @@ class ScriptLexer:
     
     def load_image(self, relative_path):
         """
-        Loads an image. If the path is not found directly, it tries to search in
-        common directories (images/bg, images/sprites) and tries common extensions.
+        The function `load_image` loads an image from a relative path using Pygame, handling exceptions
+        and ensuring full opacity.
+        
+        :param relative_path: The `load_image` method you provided seems to be a part of a class that
+        loads images for a game engine. The `relative_path` parameter is used to specify the path to the
+        image file relative to the game's data directory
+        :return: The `load_image` method returns the loaded image after processing it with full opacity.
         """
-        search_paths = [
-            relative_path,
-            os.path.join("images", "bg", relative_path),
-            os.path.join("images", "sprites", relative_path)
-        ]
-        
-        # Add variations with common extensions if no extension is present
-        exts = [".png", ".jpg", ".jpeg", ".webp"]
-        final_to_try = []
-        for p in search_paths:
-            final_to_try.append(p)
-            # If path doesn't have an extension, add common ones
-            if not os.path.splitext(p)[1]:
-                for ext in exts:
-                    final_to_try.append(p + ext)
+        # Try direct path first
+        try:
+            image_bytes = self.engine.resource_manager.get_bytes(relative_path)
+            image_stream = io.BytesIO(image_bytes)
+            image = pygame.image.load(image_stream).convert_alpha()
+            return image
+        except Exception:
+            pass
 
-        last_err = None
-        for path in final_to_try:
-            try:
-                image_bytes = self.engine.resource_manager.get_bytes(path)
-                image_stream = io.BytesIO(image_bytes)
-                return pygame.image.load(image_stream).convert_alpha()
-            except Exception as e:
-                last_err = e
-                continue
+        # If not found, try searching with extensions and common prefixes
+        search_paths = ["", "images", "images/bg", "images/sprites", "images/ui", "ui"]
+        extensions = ["", ".png", ".jpg", ".jpeg", ".webp"]
         
-        raise Exception(f"Error loading image at '{relative_path}': {last_err}")
+        base_name = relative_path
+        # If relative_path already has an extension, we might want to try without it too, but let's stick to the list.
+        # If it doesn't have an extension, the loop below covers it.
+        
+        for prefix in search_paths:
+            for ext in extensions:
+                # Construct candidate path
+                if prefix:
+                    candidate = f"{prefix}/{base_name}{ext}"
+                else:
+                    candidate = f"{base_name}{ext}"
+                
+                # Check resource manager first
+                try:
+                    image_bytes = self.engine.resource_manager.get_bytes(candidate)
+                    image_stream = io.BytesIO(image_bytes)
+                    image = pygame.image.load(image_stream).convert_alpha()
+                    self.engine.Log(f"[Lexer] Resolved '{relative_path}' to '{candidate}'")
+                    return image
+                except Exception:
+                    pass
+                
+                # Check filesystem (fallback for loose files in dev mode)
+                full_path = os.path.join(self.engine.game_path, "data", candidate)
+                if os.path.exists(full_path):
+                    try:
+                        image = pygame.image.load(full_path).convert_alpha()
+                        self.engine.Log(f"[Lexer] Resolved '{relative_path}' to '{full_path}'")
+                        return image
+                    except Exception:
+                        pass
+        
+        # If still not found, raise exception with the original path
+        raise Exception(f"Error loading image at '{relative_path}' (checked common paths)")
     
     def force_full_opacity(self, surface):
         """

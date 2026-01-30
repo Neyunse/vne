@@ -2,10 +2,15 @@ class StyleManager:
     def __init__(self):
         self.styles = {}
 
-    def define(self, name, **properties):
-        """Defines a new style with the given name and properties."""
+    def define(self, name, parent=None, **properties):
+        """Defines a new style with the given name and properties, optionally inheriting from a parent."""
         if name not in self.styles:
             self.styles[name] = {}
+        
+        if parent:
+            parent_style = self.get(parent)
+            self.styles[name].update(parent_style)
+            
         self.styles[name].update(properties)
 
     def get(self, name, default=None):

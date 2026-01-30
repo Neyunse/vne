@@ -89,15 +89,27 @@ class EventManager:
         self.register_event("qm", self.handle_qm)
         self.register_event("qmBtn", self.handle_qm_button)
         self.register_event("qmEnd", self.handle_qm_end)
+        self.register_event("quick_menu", self.handle_quick_menu)
+        self.register_event("history", self.handle_history)
 
         # Opciones
         self.register_event("choice", self.handle_choice_menu)
         self.register_event("option", self.handle_option_button)
         self.register_event("end_choice", self.handle_end_choice)
-
+        
+        # UI Screens
+        self.register_event("save_screen", self.handle_save_screen)
+        self.register_event("SaveScreen", self.handle_save_screen)
+        self.register_event("load_screen", self.handle_load_screen)
+        self.register_event("LoadScreen", self.handle_load_screen)
+        self.register_event("prefs", self.handle_prefs)
+        self.register_event("Prefs", self.handle_prefs)
+        
         # Eventos
         self.register_event("Scene", self.handle_process_scene)
         self.register_event("Set", self.handle_Set_event)
+        self.register_event("side_image", self.handle_side_image)
+        self.register_event("ctc", self.handle_ctc)
         self.register_event("Quit", self.handle_Quit)
         
         # Herramientas
@@ -117,6 +129,8 @@ class EventManager:
         self.register_event("add_button", self.handle_add_button)
         self.register_event("add_text", self.handle_add_text)
         self.register_event("add_image", self.handle_add_image)
+        self.register_event("add_box", self.handle_add_box)
+        self.register_event("end_box", self.handle_end_box)
         self.register_event("end_screen", self.handle_end_screen)
         self.register_event("show_screen", self.handle_show_screen)
         self.register_event("hide_screen", self.handle_hide_screen)
@@ -259,6 +273,38 @@ class EventManager:
         panel.character_name = engine.current_character_name if engine.current_character_name else None
         panel.set_text(dialogue)
         
+        # UI Overhaul: Quick Menu
+        if hasattr(engine, "quick_menu_buttons") and engine.quick_menu_buttons:
+            # Clear old buttons
+            panel.children = [c for c in panel.children if not getattr(c, 'is_qm', False)]
+            
+            # Create a localized quick menu
+            qm_y = panel.height - 30
+            spacing = 80
+            x_start = panel.width - (len(engine.quick_menu_buttons) * spacing) - 20
+            
+            for i, label in enumerate(engine.quick_menu_buttons):
+                def make_qm_action(l):
+                    # Mapping standard labels to engine functions
+                    cmds = {
+                        "Save": "save_screen",
+                        "Load": "load_screen",
+                        "History": "history",
+                        "Skip": "skip",
+                        "Auto": "auto",
+                        "Settings": "prefs"
+                    }
+                    cmd = cmds.get(l, l.lower())
+                    return lambda: engine.event_manager.handle('@' + cmd, engine)
+                
+                btn = Button(label, make_qm_action(label), x=x_start + i*spacing, y=qm_y, width=70, height=25)
+                btn.is_qm = True
+                btn.font = pygame.font.SysFont("Arial", 12)
+                panel.add_child(btn)
+        
+        # UI Overhaul: Add to history
+        engine.add_to_history(panel.character_name or "", dialogue)
+        
         if panel not in engine.screen_manager.screens:
             engine.screen_manager.show(panel, force_top=True)
 
@@ -270,6 +316,99 @@ class EventManager:
         scene_id = getattr(engine, "current_scene", None) or engine.vars.get("scene", "")
         context_vars = tuple(sorted((k, str(v)) for k, v in engine.vars.items()))
         engine.seen_dialogue.add((scene_id, engine.current_character_name, dialogue, context_vars))
+
+    def handle_quick_menu(self, arg, engine):
+        """
+        Defines or shows the quick menu on the dialogue box.
+        @quick_menu "Save", "Load", "History"
+        """
+        # For now, we'll just store the labels
+        parts = [p.strip().strip('"') for p in arg.split(',')]
+        engine.quick_menu_buttons = parts
+        engine.Log(f"[ui] Quick Menu set: {parts}")
+
+    def handle_history(self, arg, engine):
+        """
+        Shows the history/backlog screen.
+        """
+        from vne.visual import MenuPanel, TextElement, ScrollArea, VerticalLayout
+        
+        win_w = engine.config.get("screen_width", 1280)
+        win_h = engine.config.get("screen_height", 720)
+        
+        panel = MenuPanel(width=win_w, height=win_h, no_bg=False, layout=None, z_index=100)
+        panel.bg_color = (10, 10, 20, 230)
+        
+        # Title
+        title = TextElement("HISTORY", x=50, y=30)
+        title.color = (255, 255, 255)
+        panel.add_child(title)
+        
+        # Scroll Area for history
+        content_h = len(engine.history) * 60 + 100
+        scroll = ScrollArea(x=50, y=100, width=win_w-100, height=win_h-200, content_height=content_h)
+        
+        y_off = 0
+        for entry in reversed(engine.history):
+            name = entry.get("name", "")
+            text = entry.get("text", "")
+            
+            line = TextElement(f"{name}: {text}" if name else text, x=0, y=y_off)
+            line.color = (200, 200, 200)
+            scroll.add_child(line)
+            y_off += 60
+            
+        panel.add_child(scroll)
+        
+        # Close button
+        btn = Button("Close", lambda: engine.screen_manager.hide(panel), x=win_w-150, y=win_h-70, width=120, height=40)
+        panel.add_child(btn)
+        
+        engine.screen_manager.show(panel)
+
+    def handle_side_image(self, arg, engine):
+        """
+        Sets the side image for the current dialogue.
+        @side_image "Kuro:Happy" (Autoconverts to Kuro_Happy)
+        """
+        if not arg.strip():
+            if engine.current_dialog_panel:
+                engine.current_dialog_panel.side_image = None
+            return
+
+        raw_name = arg.strip().strip('"')
+        safe_name = raw_name.replace(":", "_")
+        
+        try:
+            img = engine.lexer.load_image(safe_name)
+            if engine.current_dialog_panel:
+                engine.current_dialog_panel.side_image = img
+                engine.Log(f"[ui] Side image set: {safe_name}")
+        except Exception as e:
+            engine.Log(f"[ui] Warning: Could not load side image '{safe_name}': {e}")
+            # Don't crash, just don't show image
+            if engine.current_dialog_panel:
+                engine.current_dialog_panel.side_image = None
+
+    def handle_ctc(self, arg, engine):
+        """
+        Sets the CTC icon.
+        @ctc "ui/ctc_arrow"
+        """
+        if not arg.strip():
+            if engine.current_dialog_panel:
+                engine.current_dialog_panel.ctc_icon = None
+            return
+
+        raw_name = arg.strip().strip('"')
+        
+        try:
+            img = engine.lexer.load_image(raw_name)
+            if engine.current_dialog_panel:
+                engine.current_dialog_panel.ctc_icon = img
+                engine.Log(f"[ui] CTC icon set: {raw_name}")
+        except Exception:
+             engine.Log(f"[ui] Warning: Could not load CTC icon '{raw_name}'")
 
     def parse_color(self, arg):
         """
@@ -1171,6 +1310,32 @@ class EventManager:
         button_data = {"raw_label": raw_label, "event": action}
         if visual_params:
             button_data["visual_params"] = visual_params
+        
+        # Check if we are defining a screen (new system)
+        if hasattr(engine, 'screen_container_stack') and engine.screen_container_stack:
+            # Convert to element definition for instantiate_elements
+            # visual_params needs to be treated as kwargs
+            # clean up styles: style="btn_main" might have quotes
+            kwargs = {}
+            if visual_params:
+                for k, v in visual_params.items():
+                    # Strip quotes if present
+                    if isinstance(v, str):
+                        clean_v = v.strip().strip('"').strip("'")
+                        kwargs[k] = clean_v
+                    else:
+                        kwargs[k] = v
+                        
+            element = {
+                'type': 'button',
+                'label': raw_label,
+                'action': action,
+                'kwargs': kwargs
+            }
+            engine.screen_container_stack[-1].append(element)
+            engine.Log(f"[button] Added to screen stack: '{raw_label}'")
+            return
+
         if not hasattr(engine, "current_menu_buttons"):
             engine.current_menu_buttons = []
         engine.current_menu_buttons.append(button_data)
@@ -1779,11 +1944,15 @@ class EventManager:
         if not name_match: return
         name = name_match.group(1)
         kwargs = self._parse_kwargs(arg)
+        
+        parent = kwargs.pop('parent', None)
+        
         # Load background image if specified in style
         if 'bg_image' in kwargs:
             kwargs['bg_image'] = engine.lexer.load_image(kwargs['bg_image'])
-        engine.style_manager.define(name, **kwargs)
-        engine.Log(f"[ui] Style defined: {name}")
+        
+        engine.style_manager.define(name, parent=parent, **kwargs)
+        engine.Log(f"[ui] Style defined: {name} (parent: {parent})")
 
     def handle_screen(self, arg, engine):
         import re
@@ -1791,38 +1960,83 @@ class EventManager:
         name = name_match.group(1) if name_match else "unnamed_screen"
         kwargs = self._parse_kwargs(arg)
         engine.current_screen_def = {"name": name, "elements": [], "kwargs": kwargs}
+        # Initialize container stack with the root elements list
+        engine.screen_container_stack = [engine.current_screen_def['elements']]
         engine.Log(f"[ui] Defining screen: {name}")
+
+    def handle_add_box(self, arg, engine):
+        kwargs = self._parse_kwargs(arg)
+        name = kwargs.pop('name', 'box') # Optional name for the box
+        
+        box_def = {
+            'type': 'box',
+            'kwargs': kwargs,
+            'elements': []
+        }
+        
+        # Add the box to the current container
+        if hasattr(engine, 'screen_container_stack') and engine.screen_container_stack:
+            engine.screen_container_stack[-1].append(box_def)
+            # Push the box's elements list as the new active container
+            engine.screen_container_stack.append(box_def['elements'])
+        else:
+             engine.Log("[ui] Error: @add_box called outside of @screen block or stack missing.")
+
+    def handle_end_box(self, arg, engine):
+        if hasattr(engine, 'screen_container_stack') and len(engine.screen_container_stack) > 1:
+            engine.screen_container_stack.pop()
+        else:
+            engine.Log("[ui] Error: @end_box called without a matching @add_box.")
+
 
     def handle_add_button(self, arg, engine):
         kwargs = self._parse_kwargs(arg)
         label = kwargs.pop('label', 'Button')
         action_str = kwargs.pop('action', '')
-        if hasattr(engine, 'current_screen_def'):
-            engine.current_screen_def['elements'].append({
-                'type': 'button', 'label': label, 'action': action_str, 'kwargs': kwargs
-            })
+        
+        element = {
+            'type': 'button', 'label': label, 'action': action_str, 'kwargs': kwargs
+        }
+        
+        if hasattr(engine, 'screen_container_stack') and engine.screen_container_stack:
+            engine.screen_container_stack[-1].append(element)
+        elif hasattr(engine, 'current_screen_def'):
+             # Fallback for integrity, though stack should exist
+             engine.current_screen_def['elements'].append(element)
 
     def handle_add_text(self, arg, engine):
         kwargs = self._parse_kwargs(arg)
         text = kwargs.pop('text', '')
-        if hasattr(engine, 'current_screen_def'):
-            engine.current_screen_def['elements'].append({
-                'type': 'text', 'text': text, 'kwargs': kwargs
-            })
+        
+        element = {
+            'type': 'text', 'text': text, 'kwargs': kwargs
+        }
+        
+        if hasattr(engine, 'screen_container_stack') and engine.screen_container_stack:
+            engine.screen_container_stack[-1].append(element)
+        elif hasattr(engine, 'current_screen_def'):
+            engine.current_screen_def['elements'].append(element)
 
     def handle_add_image(self, arg, engine):
         kwargs = self._parse_kwargs(arg)
         src = kwargs.pop('src', '')
-        if hasattr(engine, 'current_screen_def'):
-            engine.current_screen_def['elements'].append({
-                'type': 'image', 'src': src, 'kwargs': kwargs
-            })
+        
+        element = {
+            'type': 'image', 'src': src, 'kwargs': kwargs
+        }
+        
+        if hasattr(engine, 'screen_container_stack') and engine.screen_container_stack:
+            engine.screen_container_stack[-1].append(element)
+        elif hasattr(engine, 'current_screen_def'):
+            engine.current_screen_def['elements'].append(element)
 
     def handle_end_screen(self, arg, engine):
         sdef = getattr(engine, 'current_screen_def', None)
         if sdef:
             engine.screen_definitions[sdef['name']] = sdef
             engine.current_screen_def = None
+            if hasattr(engine, 'screen_container_stack'):
+                engine.screen_container_stack = []
             engine.Log(f"[ui] Screen finalized: {sdef['name']}")
 
     def handle_show_screen(self, arg, engine):
@@ -1841,6 +2055,8 @@ class EventManager:
         layout = None
         if layout_type == 'horizontal':
             layout = HorizontalLayout(margin=margin)
+        elif layout_type == 'vertical': # Default vertical if explicit
+            layout = VerticalLayout(margin=margin)
         elif layout_type == 'grid':
             rows = screen_kwargs.get('rows', 2)
             cols = screen_kwargs.get('cols', 2)
@@ -1855,35 +2071,80 @@ class EventManager:
         panel = MenuPanel(width=engine.config['screen_width'], height=engine.config['screen_height'], no_bg=True, no_border=True, layout=layout)
         panel.screen_name = name
 
-        for el in sdef['elements']:
-            kwargs = el['kwargs']
-            style_name = kwargs.pop('style', None)
-            
-            if el['type'] == 'button':
-                def make_action(cmd):
-                    return lambda: engine.event_manager.handle('@' + cmd, engine)
-                obj = Button(el['label'], make_action(el['action']))
-                obj.font = engine.renderer.font
-            elif el['type'] == 'text':
-                obj = TextElement(el['text'])
-                obj.font = engine.renderer.font
-            elif el['type'] == 'image':
-                img = engine.lexer.load_image(el['src'])
-                w = kwargs.pop('width', None)
-                h = kwargs.pop('height', None)
-                obj = ImageElement(img, width=w, height=h)
-            
-            if style_name:
-                engine.style_manager.apply(obj, style_name)
-            obj.apply_style(kwargs)
-            
-            # Manual positioning fallback (only if no layout or specifically centered)
-            if obj.x == 'center':
-                obj.x = (panel.width - obj.width) // 2
-            if obj.y == 'center':
-                obj.y = (panel.height - obj.height) // 2
-            
-            panel.add_child(obj)
+        engine.Log(f"[ui-debug] Instantiating screen '{name}' with elements: {len(sdef['elements'])}")
+        import json
+        def simple_dump(opts):
+            return str([ (o.get('type'), o.get('label') or o.get('text'), len(o.get('elements', []))) for o in opts ])
+        engine.Log(f"[ui-debug] Root structure: {simple_dump(sdef['elements'])}")
+
+        def instantiate_elements(elements, parent_container):
+            for el in elements:
+                engine.Log(f"[ui-debug] Processing element type: {el.get('type')}")
+                kwargs = el.get('kwargs', {}).copy()
+                style_name = kwargs.pop('style', None)
+                obj = None
+                
+                if el['type'] == 'button':
+                    def make_action(cmd):
+                         return lambda: engine.event_manager.handle('@' + cmd, engine)
+                    label = el.get('label', 'Button')
+                    action = el.get('action', '')
+                    obj = Button(label, make_action(action))
+                    obj.font = engine.renderer.font
+                
+                elif el['type'] == 'text':
+                    text = el.get('text', '')
+                    obj = TextElement(text)
+                    obj.font = engine.renderer.font
+                
+                elif el['type'] == 'image':
+                    src = el.get('src', '')
+                    img = engine.lexer.load_image(src)
+                    w = kwargs.pop('width', None)
+                    h = kwargs.pop('height', None)
+                    obj = ImageElement(img, width=w, height=h)
+                
+                elif el['type'] == 'box':
+                    # Recursive container
+                    box_layout_type = kwargs.pop('layout', 'vertical').lower() # Default boxes to vertical
+                    box_w = kwargs.pop('width', 300)
+                    box_h = kwargs.pop('height', 300)
+                    no_bg = kwargs.pop('no_bg', False)
+                    
+                    box_layout = None
+                    if box_layout_type == 'horizontal':
+                        box_layout = HorizontalLayout()
+                    elif box_layout_type == 'vertical':
+                         box_layout = VerticalLayout()
+                    
+                    obj = MenuPanel(width=box_w, height=box_h, layout=box_layout, no_bg=no_bg)
+                    
+                    # Recursively instantiate children
+                    instantiate_elements(el['elements'], obj)
+
+                if obj:
+                    if style_name:
+                        engine.style_manager.apply(obj, style_name)
+                    obj.apply_style(kwargs)
+                    
+                    # Manual positioning fallback (only if no layout or specifically centered)
+                    # Note: Layouts in visual.py often override x/y, but we set them anyway
+                    if obj.x == 'center':
+                        if parent_container.width:
+                            obj.x = (parent_container.width - obj.width) // 2
+                        else:
+                            obj.x = 0 
+                            
+                    # 'center' y processing might be tricky depending on parent height availability
+                    if obj.y == 'center':
+                        if parent_container.height:
+                             obj.y = (parent_container.height - obj.height) // 2
+                        else:
+                             obj.y = 0
+
+                    parent_container.add_child(obj)
+
+        instantiate_elements(sdef['elements'], panel)
 
         engine.screen_manager.show(panel)
         engine.Log(f"[ui] Showing screen: {name}")
@@ -1906,3 +2167,18 @@ class EventManager:
                 engine.Log(f"[ui] Config updated: {k}")
             else:
                 engine.Log(f"[ui] Warning: '{k}' not found in engine configuration.")
+
+    def handle_save_screen(self, arg, engine):
+        from vne.visual import SaveScreen
+        screen = SaveScreen(engine)
+        engine.screen_manager.show(screen)
+
+    def handle_load_screen(self, arg, engine):
+        from vne.visual import LoadScreen
+        screen = LoadScreen(engine)
+        engine.screen_manager.show(screen)
+
+    def handle_prefs(self, arg, engine):
+        from vne.visual import PreferencesScreen
+        screen = PreferencesScreen(engine)
+        engine.screen_manager.show(screen)

@@ -8,3 +8,7 @@
 # Configuración de cuadro de diálogo
 @ui_config dialogue_rect={x=100,y=520,width=1080,height=160}
 @ui_config namebox_rect={bg_color=(40,40,80),border_color=(200,200,255),radius=10}
+
+@ui_style "btn_main" width=250 height=45 radius=10 bg_color=(30,30,50) hover_bg_color=(50,50,90) border_color=(255,255,255) border_width=1
+
+ 

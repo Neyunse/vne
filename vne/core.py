@@ -60,11 +60,22 @@ class ScreenManager:
                 except Exception:
                     pass
                 # For other exceptions, log to engine log if possible
-                try:
-                    if hasattr(self, 'modal'):
-                        pass
                 except Exception:
                     pass
+        
+        # UI Debugging view
+        if getattr(self, 'debug_ui', False):
+            for screen in self.screens:
+                self._render_debug_info(screen, surface)
+
+    def _render_debug_info(self, element, surface):
+        abs_x, abs_y = element.get_absolute_position()
+        rect = pygame.Rect(abs_x, abs_y, element.width, element.height)
+        pygame.draw.rect(surface, (255, 0, 0), rect, 1)
+        
+        for child in element.children:
+            self._render_debug_info(child, surface)
+
     def handle_event(self, event):
         for screen in reversed(self.screens):
             handled = screen.handle_event(event)
@@ -98,6 +109,17 @@ class VNEngine:
         self.checkpoints = {}
         self.condition_stack = []
         self.current_menu_buttons = []
+
+        # UI Overhaul Additions
+        self.history = [] # FIFO buffer for dialogue
+        self.preferences = {
+            "music_volume": 0.8,
+            "sfx_volume": 1.0,
+            "text_speed": 30,
+            "auto_forward_mode": False,
+            "skip_unread": False
+        }
+        self.load_settings()
         self.quick_menu_buttons = []
         self.current_bgm = None
         self.current_bg_filename = None
@@ -131,6 +153,7 @@ class VNEngine:
         self.awaiting_input = False
         self.current_dialog_panel = None
         self.screen_definitions = {}
+        self.debug_ui = False # Toggle with F12
     
     def should_execute_line(self):
         """
@@ -141,6 +164,43 @@ class VNEngine:
         return all(self.condition_stack)
     
          
+    def add_to_history(self, name, text):
+        """Adds a line of dialogue to the history buffer."""
+        from datetime import datetime
+        self.history.append({"name": name, "text": text, "timestamp": datetime.now().isoformat()})
+        if len(self.history) > 100:
+            self.history.pop(0)
+
+    def load_settings(self):
+        """Loads engine preferences from settings.json."""
+        import json
+        settings_path = os.path.join(self.game_path, "settings.json")
+        if os.path.exists(settings_path):
+            try:
+                with open(settings_path, "r") as f:
+                    self.preferences.update(json.load(f))
+            except:
+                self.Log("[settings] Failed to load settings.json")
+
+    def save_settings(self):
+        """Saves current preferences to settings.json."""
+        import json
+        settings_path = os.path.join(self.game_path, "settings.json")
+        try:
+            with open(settings_path, "w") as f:
+                json.dump(self.preferences, f, indent=4)
+        except:
+            self.Log("[settings] Failed to save settings.json")
+
+    def setup_audio_volumes(self):
+        """Applies preferences to the audio system."""
+        # This will be called when volumes change
+        try:
+            # Simple volume sync for now
+            pygame.mixer.music.set_volume(self.preferences.get("music_volume", 0.8))
+        except:
+            pass
+
     def Log(self, log, _=None):
         """
         The function `Log` appends a log message to the log file and prints to console.
@@ -285,7 +345,12 @@ VNE %(engineVersion)s
                 if event.type == pygame.QUIT:
                     self.running = False
                 
-                # Dialogue input handling
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_F12:
+                        self.debug_ui = not self.debug_ui
+                        self.Log(f"[dev] Debug UI {'Enabled' if self.debug_ui else 'Disabled'}")
+
+                handled_by_ui = self.screen_manager.handle_event(event)
                 handled = False
                 if self.awaiting_input and self.running:
                     # Dialogue/Input specific handling
